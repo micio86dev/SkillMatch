@@ -112,17 +112,6 @@ export function Layout({ children }: LayoutProps) {
                 {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
               </Button>
 
-              {/* Notifications (only for authenticated users) */}
-              {isAuthenticated && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="p-2 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                  aria-label="Notifications"
-                >
-                  <Bell className="h-4 w-4" />
-                </Button>
-              )}
 
               {/* Auth buttons */}
               {isAuthenticated ? (
