@@ -26,6 +26,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { ProjectApplyButton } from "@/components/project-apply-button";
+import { ApplicationManager } from "@/components/application-manager";
 
 interface ProjectWithCompany extends Project {
   company: UserType;
@@ -198,6 +200,14 @@ export default function ProjectDetail() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
+              {/* Apply button for professionals on open projects */}
+              {project.status === 'open' && (
+                <ProjectApplyButton 
+                  projectId={project.id}
+                  projectTitle={project.title}
+                  isProjectFull={false}
+                />
+              )}
               {/* Only show subscribe button for open projects and authenticated users */}
               {project.status === 'open' && isAuthenticated && (
                 <Button
@@ -432,21 +442,30 @@ export default function ProjectDetail() {
               </CardContent>
             </Card>
 
-            {/* Apply Button */}
+            {/* Apply Button for Professionals */}
             {project.status === 'open' && (
               <Card>
-                <CardContent className="p-6">
-                  <Button className="w-full" size="lg">
-                    Apply for Project
-                  </Button>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 text-center">
-                    Connect with the company to discuss this opportunity
-                  </p>
+                <CardContent className="p-6 flex justify-center">
+                  <ProjectApplyButton 
+                    projectId={project.id}
+                    projectTitle={project.title}
+                    isProjectFull={false}
+                  />
                 </CardContent>
               </Card>
             )}
           </div>
         </div>
+
+        {/* Application Manager for Project Owners */}
+        {isAuthenticated && user && project.companyUserId === user.id && (
+          <div className="mt-8">
+            <ApplicationManager 
+              projectId={project.id}
+              projectTitle={project.title}
+            />
+          </div>
+        )}
       </div>
     </Layout>
   );
