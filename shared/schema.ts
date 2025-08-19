@@ -434,7 +434,49 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-});
+}).refine(
+  (data) => {
+    // Preventive 1: Budget range validation - budgetMin must be less than budgetMax
+    if (data.budgetMin && data.budgetMax && Number(data.budgetMin) >= Number(data.budgetMax)) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: "Minimum budget must be less than maximum budget",
+    path: ["budgetMin"],
+  }
+).refine(
+  (data) => {
+    // Preventive 2: Minimum budget threshold - prevent unreasonably low budgets
+    if (data.budgetMin && Number(data.budgetMin) < 50) {
+      return false;
+    }
+    if (data.budgetMax && Number(data.budgetMax) < 50) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: "Budget must be at least $50 to ensure fair compensation",
+    path: ["budgetMin"],
+  }
+).refine(
+  (data) => {
+    // Preventive 3: Maximum budget limit - prevent spam or unrealistic budgets
+    if (data.budgetMin && Number(data.budgetMin) > 1000000) {
+      return false;
+    }
+    if (data.budgetMax && Number(data.budgetMax) > 1000000) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: "Budget cannot exceed $1,000,000. Contact support for larger projects",
+    path: ["budgetMax"],
+  }
+);
 
 export const insertPostSchema = createInsertSchema(posts).omit({
   id: true,

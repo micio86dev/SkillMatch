@@ -54,7 +54,7 @@ export class JobImportService {
           // Create or find company user
           const companyUser = await this.createOrFindCompanyUser(parsedJob.companyName, parsedJob.companyDescription);
           
-          // Create project
+          // Create project with budget validation
           const projectData = {
             companyUserId: companyUser.id,
             title: parsedJob.title,
@@ -69,11 +69,22 @@ export class JobImportService {
             location: parsedJob.location,
             isRemote: parsedJob.isRemote,
           } as any;
-          await storage.createProject(projectData);
-          imported++;
           
-          console.log(`Imported job: ${parsedJob.title} from ${parsedJob.companyName}`);
-          await this.recordJobImport(parsedJob.title, parsedJob.companyName, rawJob.sourceUrl);
+          try {
+            await storage.createProject(projectData);
+            imported++;
+            console.log(`Imported job: ${parsedJob.title} from ${parsedJob.companyName}`);
+            await this.recordJobImport(parsedJob.title, parsedJob.companyName, rawJob.sourceUrl);
+          } catch (projectError: any) {
+            // Handle budget validation errors for imported projects
+            if (projectError.message && projectError.message.includes("Budget")) {
+              console.warn(`Skipping project "${parsedJob.title}" due to budget validation: ${projectError.message}`);
+              skipped++;
+              continue;
+            } else {
+              throw projectError; // Re-throw non-budget errors
+            }
+          }
           
           if (imported >= designersCount + projectManagersCount) {
             break;
@@ -133,7 +144,7 @@ export class JobImportService {
           // Create or find company user
           const companyUser = await this.createOrFindCompanyUser(parsedJob.companyName, parsedJob.companyDescription);
           
-          // Create project
+          // Create project with budget validation
           const projectData = {
             companyUserId: companyUser.id,
             title: parsedJob.title,
@@ -148,19 +159,29 @@ export class JobImportService {
             location: parsedJob.location,
             isRemote: parsedJob.isRemote,
           } as any;
-          await storage.createProject(projectData);
-          imported++;
           
-          // Stop if we've imported enough jobs
-          if (imported >= maxJobs) {
-            break;
+          try {
+            await storage.createProject(projectData);
+            imported++;
+            
+            // Store import record to prevent duplicates
+            await this.recordJobImport(parsedJob.title, parsedJob.companyName, parsedJob.originalUrl);
+            console.log(`Imported job: ${parsedJob.title} from ${parsedJob.companyName}`);
+            
+            // Stop if we've imported enough jobs
+            if (imported >= maxJobs) {
+              break;
+            }
+          } catch (projectError: any) {
+            // Handle budget validation errors for imported projects
+            if (projectError.message && projectError.message.includes("Budget")) {
+              console.warn(`Skipping project "${parsedJob.title}" due to budget validation: ${projectError.message}`);
+              skipped++;
+              continue;
+            } else {
+              throw projectError; // Re-throw non-budget errors
+            }
           }
-
-          // Store import record to prevent duplicates
-          await this.recordJobImport(parsedJob.title, parsedJob.companyName, parsedJob.originalUrl);
-          
-          imported++;
-          console.log(`Imported job: ${parsedJob.title} from ${parsedJob.companyName}`);
 
           // Add delay to be respectful to websites
           await new Promise(resolve => setTimeout(resolve, 1000));

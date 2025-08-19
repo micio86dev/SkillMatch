@@ -317,6 +317,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(project);
     } catch (error) {
       console.error("Error creating project:", error);
+      
+      // Handle validation errors with specific budget preventive messages
+      if (error instanceof Error && error.message.includes("Budget")) {
+        return res.status(400).json({ 
+          message: error.message,
+          type: "validation_error"
+        });
+      }
+      
       res.status(500).json({ message: "Failed to create project" });
     }
   });
@@ -337,6 +346,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedProject);
     } catch (error) {
       console.error("Error updating project:", error);
+      
+      // Handle validation errors with specific budget preventive messages
+      if (error instanceof Error && error.message.includes("Budget")) {
+        return res.status(400).json({ 
+          message: error.message,
+          type: "validation_error"
+        });
+      }
+      
       res.status(500).json({ message: "Failed to update project" });
     }
   });
