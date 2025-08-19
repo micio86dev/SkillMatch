@@ -200,35 +200,6 @@ export default function ProjectDetail() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              {/* Apply button for professionals on open projects */}
-              {project.status === 'open' && (
-                <ProjectApplyButton 
-                  projectId={project.id}
-                  projectTitle={project.title}
-                  isProjectFull={false}
-                />
-              )}
-              {/* Only show subscribe button for open projects and authenticated users */}
-              {project.status === 'open' && isAuthenticated && (
-                <Button
-                  variant={subscriptionStatus?.isSubscribed ? "default" : "outline"}
-                  size="sm"
-                  onClick={handleSubscription}
-                  disabled={subscriptionMutation.isPending}
-                  className={subscriptionStatus?.isSubscribed 
-                    ? "bg-blue-600 text-white hover:bg-blue-700" 
-                    : ""}
-                >
-                  {subscriptionMutation.isPending ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
-                  ) : subscriptionStatus?.isSubscribed ? (
-                    <Bell className="h-4 w-4 mr-2" />
-                  ) : (
-                    <BellOff className="h-4 w-4 mr-2" />
-                  )}
-                  {subscriptionStatus?.isSubscribed ? "Subscribed" : "Subscribe"}
-                </Button>
-              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -442,20 +413,29 @@ export default function ProjectDetail() {
               </CardContent>
             </Card>
 
-            {/* Apply Button for Professionals */}
-            {project.status === 'open' && (
-              <Card>
-                <CardContent className="p-6 flex justify-center">
-                  <ProjectApplyButton 
-                    projectId={project.id}
-                    projectTitle={project.title}
-                    isProjectFull={false}
-                  />
-                </CardContent>
-              </Card>
-            )}
           </div>
         </div>
+
+        {/* Apply for Project Button - Moved to Bottom */}
+        {project.status === 'open' && (
+          <div className="mt-8">
+            <Card>
+              <CardContent className="p-8 text-center">
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-4">
+                  Ready to work on this project?
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400 mb-6">
+                  Submit your application and showcase why you're the perfect fit for this opportunity.
+                </p>
+                <ProjectApplyButton 
+                  projectId={project.id}
+                  projectTitle={project.title}
+                  isProjectFull={false}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Application Manager for Project Owners */}
         {isAuthenticated && user && project.companyUserId === user.id && (
