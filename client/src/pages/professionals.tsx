@@ -59,7 +59,7 @@ export default function Professionals() {
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
             IT Professionals
           </h1>
-          <p className="text-slate-600 dark:text-slate-400">
+          <p className="text-slate-700 dark:text-slate-300">
             Discover and connect with talented developers, designers, and tech experts
           </p>
         </div>
@@ -69,7 +69,7 @@ export default function Professionals() {
           <CardContent className="p-6">
             <div className="space-y-4">
               <div className="flex items-center space-x-2 mb-4">
-                <Filter className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                <Filter className="h-5 w-5 text-slate-700 dark:text-slate-300" />
                 <h3 className="font-semibold text-slate-900 dark:text-white">Filter Professionals</h3>
                 {hasActiveFilters && (
                   <Button variant="ghost" size="sm" onClick={clearFilters}>

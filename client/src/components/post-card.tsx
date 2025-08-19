@@ -34,7 +34,7 @@ export function PostCard({ post }: PostCardProps) {
             <h4 className="font-semibold text-slate-900 dark:text-white">
               {user.firstName} {user.lastName}
             </h4>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-slate-700 dark:text-slate-300">
               {formatDistanceToNow(new Date(post.createdAt || ''))} ago
             </p>
           </div>

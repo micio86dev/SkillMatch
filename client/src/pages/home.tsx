@@ -63,7 +63,7 @@ export default function Home() {
               <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
                 Welcome back, {user?.firstName || "Professional"}!
               </h1>
-              <p className="text-slate-600 dark:text-slate-400">
+              <p className="text-slate-700 dark:text-slate-300">
                 Stay connected with the IT community and discover new opportunities.
               </p>
             </div>
@@ -83,7 +83,7 @@ export default function Home() {
                 <Users className="h-6 w-6 text-primary" />
               </div>
               <h3 className="text-2xl font-bold text-slate-900 dark:text-white">50K+</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">Active Professionals</p>
+              <p className="text-sm text-slate-700 dark:text-slate-300">Active Professionals</p>
             </CardContent>
           </Card>
 
@@ -93,7 +93,7 @@ export default function Home() {
                 <Briefcase className="h-6 w-6 text-green-600 dark:text-green-400" />
               </div>
               <h3 className="text-2xl font-bold text-slate-900 dark:text-white">1.2K</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">Open Projects</p>
+              <p className="text-sm text-slate-700 dark:text-slate-300">Open Projects</p>
             </CardContent>
           </Card>
 
@@ -103,7 +103,7 @@ export default function Home() {
                 <MessageSquare className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
               <h3 className="text-2xl font-bold text-slate-900 dark:text-white">24</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">Unread Messages</p>
+              <p className="text-sm text-slate-700 dark:text-slate-300">Unread Messages</p>
             </CardContent>
           </Card>
 
@@ -113,7 +113,7 @@ export default function Home() {
                 <TrendingUp className="h-6 w-6 text-orange-600 dark:text-orange-400" />
               </div>
               <h3 className="text-2xl font-bold text-slate-900 dark:text-white">+15%</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">Profile Views</p>
+              <p className="text-sm text-slate-700 dark:text-slate-300">Profile Views</p>
             </CardContent>
           </Card>
         </div>

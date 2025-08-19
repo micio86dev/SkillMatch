@@ -70,7 +70,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
               {company.firstName || 'Company Name'}
             </h3>
             {project.location && (
-              <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center">
+              <p className="text-sm text-slate-700 dark:text-slate-300 flex items-center">
                 <MapPin className="h-3 w-3 mr-1" />
                 {project.location}
               </p>

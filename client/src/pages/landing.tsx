@@ -133,7 +133,7 @@ export default function Landing() {
                   <span className="text-primary">Collaborate.</span>{" "}
                   Create.
                 </h1>
-                <p className="text-xl text-slate-600 dark:text-slate-300 leading-relaxed">
+                <p className="text-xl text-slate-700 dark:text-slate-200 leading-relaxed">
                   The professional network where IT talent meets opportunity. Join thousands of developers, designers, and tech professionals building the future.
                 </p>
               </div>
@@ -161,15 +161,15 @@ export default function Landing() {
               <div className="flex items-center space-x-8 pt-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-slate-900 dark:text-white">50K+</div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">IT Professionals</div>
+                  <div className="text-sm text-slate-700 dark:text-slate-300">IT Professionals</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-slate-900 dark:text-white">12K+</div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">Companies</div>
+                  <div className="text-sm text-slate-700 dark:text-slate-300">Companies</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-slate-900 dark:text-white">25K+</div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">Projects Completed</div>
+                  <div className="text-sm text-slate-700 dark:text-slate-300">Projects Completed</div>
                 </div>
               </div>
             </div>
@@ -183,7 +183,7 @@ export default function Landing() {
               <div className="absolute -bottom-6 -left-6 bg-white dark:bg-slate-800 p-6 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700">
                 <div className="flex items-center space-x-3">
                   <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="text-sm font-medium text-slate-600 dark:text-slate-300">2,847 professionals online</span>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200">2,847 professionals online</span>
                 </div>
               </div>
             </div>
@@ -196,7 +196,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white">Meet Top IT Professionals</h2>
-            <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">Connect with skilled developers, designers, and tech experts ready to bring your projects to life</p>
+            <p className="text-lg text-slate-700 dark:text-slate-200 max-w-2xl mx-auto">Connect with skilled developers, designers, and tech experts ready to bring your projects to life</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -211,14 +211,14 @@ export default function Landing() {
                     />
                     <div>
                       <h3 className="font-semibold text-slate-900 dark:text-white">{professional.name}</h3>
-                      <p className="text-slate-600 dark:text-slate-400">{professional.title}</p>
+                      <p className="text-slate-700 dark:text-slate-300">{professional.title}</p>
                       <div className="flex items-center space-x-1 mt-1">
                         <div className="flex text-yellow-400">
                           {[1, 2, 3, 4, 5].map((star) => (
                             <Star key={star} className="h-3 w-3 fill-current" />
                           ))}
                         </div>
-                        <span className="text-sm text-slate-600 dark:text-slate-400">{professional.rating} ({professional.reviews})</span>
+                        <span className="text-sm text-slate-700 dark:text-slate-300">{professional.rating} ({professional.reviews})</span>
                       </div>
                     </div>
                   </div>
@@ -230,11 +230,11 @@ export default function Landing() {
                         </Badge>
                       ))}
                     </div>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">{professional.bio}</p>
+                    <p className="text-sm text-slate-700 dark:text-slate-300">{professional.bio}</p>
                     <div className="flex items-center justify-between pt-2">
                       <div className="flex items-center space-x-1">
                         <div className={`w-2 h-2 rounded-full ${getAvailabilityColor(professional.availability)}`} />
-                        <span className="text-sm text-slate-600 dark:text-slate-400">
+                        <span className="text-sm text-slate-700 dark:text-slate-300">
                           {getAvailabilityText(professional.availability)}
                         </span>
                       </div>
@@ -261,7 +261,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white">How DevConnect Works</h2>
-            <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">Simple, smart, and efficient - connecting the right talent with the right opportunities</p>
+            <p className="text-lg text-slate-700 dark:text-slate-200 max-w-2xl mx-auto">Simple, smart, and efficient - connecting the right talent with the right opportunities</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-12">
@@ -270,7 +270,7 @@ export default function Landing() {
                 <User className="text-2xl text-primary h-8 w-8" />
               </div>
               <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Create Your Profile</h3>
-              <p className="text-slate-600 dark:text-slate-400">Build a comprehensive professional profile showcasing your skills, experience, and availability. Upload your CV and portfolio.</p>
+              <p className="text-slate-700 dark:text-slate-300">Build a comprehensive professional profile showcasing your skills, experience, and availability. Upload your CV and portfolio.</p>
             </div>
 
             <div className="text-center space-y-4">
@@ -278,7 +278,7 @@ export default function Landing() {
                 <Users className="text-2xl text-primary h-8 w-8" />
               </div>
               <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Smart Matching</h3>
-              <p className="text-slate-600 dark:text-slate-400">Our AI-powered system matches professionals with relevant projects based on skills, experience level, and preferences.</p>
+              <p className="text-slate-700 dark:text-slate-300">Our AI-powered system matches professionals with relevant projects based on skills, experience level, and preferences.</p>
             </div>
 
             <div className="text-center space-y-4">
@@ -286,7 +286,7 @@ export default function Landing() {
                 <MessageSquare className="text-2xl text-primary h-8 w-8" />
               </div>
               <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Connect & Collaborate</h3>
-              <p className="text-slate-600 dark:text-slate-400">Message directly, negotiate terms, and start working together. Rate and review each other after successful collaborations.</p>
+              <p className="text-slate-700 dark:text-slate-300">Message directly, negotiate terms, and start working together. Rate and review each other after successful collaborations.</p>
             </div>
           </div>
         </div>
@@ -297,7 +297,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white">Recent Projects</h2>
-            <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">Discover exciting opportunities from companies looking for skilled IT professionals</p>
+            <p className="text-lg text-slate-700 dark:text-slate-200 max-w-2xl mx-auto">Discover exciting opportunities from companies looking for skilled IT professionals</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -310,12 +310,12 @@ export default function Landing() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-slate-900 dark:text-white">{project.company}</h3>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">{project.location}</p>
+                      <p className="text-sm text-slate-700 dark:text-slate-300">{project.location}</p>
                     </div>
                   </div>
                   
                   <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{project.title}</h4>
-                  <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm">{project.description}</p>
+                  <p className="text-slate-700 dark:text-slate-300 mb-4 text-sm">{project.description}</p>
                   
                   <div className="space-y-3 mb-4">
                     <div className="flex flex-wrap gap-2">
@@ -327,7 +327,7 @@ export default function Landing() {
                     </div>
                     
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-600 dark:text-slate-400">
+                      <span className="text-slate-700 dark:text-slate-300">
                         Est. {project.hours}
                       </span>
                       <span className="font-semibold text-slate-900 dark:text-white">{project.budget}</span>
@@ -335,8 +335,8 @@ export default function Landing() {
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-600 dark:text-slate-400">Posted {project.posted}</span>
-                    <Badge className={project.status === 'open' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                    <span className="text-xs text-slate-700 dark:text-slate-300">Posted {project.posted}</span>
+                    <Badge className={project.status === 'open' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'}>
                       {project.status === 'open' ? 'Open' : 'In Review'}
                     </Badge>
                   </div>
@@ -360,7 +360,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white">Success Stories</h2>
-            <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">See how DevConnect has helped professionals and companies achieve their goals</p>
+            <p className="text-lg text-slate-700 dark:text-slate-200 max-w-2xl mx-auto">See how DevConnect has helped professionals and companies achieve their goals</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -372,7 +372,7 @@ export default function Landing() {
                       <Star key={star} className="h-4 w-4 fill-current" />
                     ))}
                   </div>
-                  <p className="text-slate-700 dark:text-slate-300 mb-6">"{testimonial.text}"</p>
+                  <p className="text-slate-800 dark:text-slate-200 mb-6">"{testimonial.text}"</p>
                   <div className="flex items-center space-x-4">
                     <img 
                       src={testimonial.image} 
@@ -381,7 +381,7 @@ export default function Landing() {
                     />
                     <div>
                       <h4 className="font-semibold text-slate-900 dark:text-white">{testimonial.name}</h4>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">{testimonial.role}</p>
+                      <p className="text-sm text-slate-700 dark:text-slate-300">{testimonial.role}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -396,7 +396,7 @@ export default function Landing() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="space-y-8">
             <h2 className="text-3xl lg:text-5xl font-bold text-white">Ready to Connect?</h2>
-            <p className="text-xl text-primary-100 max-w-2xl mx-auto">Join thousands of IT professionals and companies who are already building the future together.</p>
+            <p className="text-xl text-white/90 max-w-2xl mx-auto">Join thousands of IT professionals and companies who are already building the future together.</p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-lg mx-auto">
               <Button 

@@ -60,14 +60,14 @@ export function ProfessionalCard({ professional, onConnect, onMessage }: Profess
             <h3 className="font-semibold text-slate-900 dark:text-white">
               {user.firstName} {user.lastName}
             </h3>
-            <p className="text-slate-600 dark:text-slate-400">{professional.title}</p>
+            <p className="text-slate-700 dark:text-slate-300">{professional.title}</p>
             <div className="flex items-center space-x-1 mt-1">
               <div className="flex text-yellow-400">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star key={star} className="h-3 w-3 fill-current" />
                 ))}
               </div>
-              <span className="text-sm text-slate-600 dark:text-slate-400">4.9 (127)</span>
+              <span className="text-sm text-slate-700 dark:text-slate-300">4.9 (127)</span>
             </div>
           </div>
         </div>
@@ -89,7 +89,7 @@ export function ProfessionalCard({ professional, onConnect, onMessage }: Profess
 
           {/* Bio */}
           {professional.bio && (
-            <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-3">
+            <p className="text-sm text-slate-700 dark:text-slate-300 line-clamp-3">
               {professional.bio}
             </p>
           )}
@@ -98,7 +98,7 @@ export function ProfessionalCard({ professional, onConnect, onMessage }: Profess
           <div className="flex items-center justify-between pt-2">
             <div className="flex items-center space-x-1">
               <div className={`w-2 h-2 rounded-full ${getAvailabilityColor(professional.availability || 'available')}`} />
-              <span className="text-sm text-slate-600 dark:text-slate-400">
+              <span className="text-sm text-slate-700 dark:text-slate-300">
                 {getAvailabilityText(professional.availability || 'available')}
               </span>
             </div>

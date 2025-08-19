@@ -110,7 +110,7 @@ export default function Projects() {
               <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
                 Projects
               </h1>
-              <p className="text-slate-600 dark:text-slate-400">
+              <p className="text-slate-700 dark:text-slate-300">
                 Discover exciting opportunities or post your own project
               </p>
             </div>
