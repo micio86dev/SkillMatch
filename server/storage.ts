@@ -43,6 +43,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: Omit<RegisterUser, 'confirmPassword'>): Promise<User>;
+  upsertUser(user: { id: string; email?: string; firstName?: string; lastName?: string; profileImageUrl?: string }): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   updateUserLanguage(id: string, language: string): Promise<User>;
   
@@ -67,7 +68,7 @@ export interface IStorage {
   getCompanyWithProjects(id: string): Promise<(CompanyProfile & { user: User; projects: Project[] }) | undefined>;
   
   // Project operations
-  getProject(id: string): Promise<Project | undefined>;
+  getProject(id: string): Promise<(Project & { company: User }) | undefined>;
   getProjects(filters?: { status?: string; companyUserId?: string }): Promise<(Project & { company: User })[]>;
   createProject(project: InsertProject): Promise<Project>;
   updateProject(id: string, project: Partial<InsertProject>): Promise<Project>;
@@ -142,6 +143,30 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db
       .insert(users)
       .values(userData)
+      .returning();
+    return user;
+  }
+
+  async upsertUser(userData: { id: string; email?: string; firstName?: string; lastName?: string; profileImageUrl?: string }): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values({
+        id: userData.id,
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        profileImageUrl: userData.profileImageUrl,
+      })
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          email: userData.email,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          profileImageUrl: userData.profileImageUrl,
+          updatedAt: new Date(),
+        },
+      })
       .returning();
     return user;
   }
@@ -331,9 +356,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Project operations
-  async getProject(id: string): Promise<Project | undefined> {
-    const [project] = await db.select().from(projects).where(eq(projects.id, id));
-    return project;
+  async getProject(id: string): Promise<(Project & { company: User }) | undefined> {
+    const [result] = await db
+      .select()
+      .from(projects)
+      .innerJoin(users, eq(projects.companyUserId, users.id))
+      .where(eq(projects.id, id));
+    
+    if (!result) {
+      return undefined;
+    }
+    
+    return {
+      ...result.projects,
+      company: result.users
+    };
   }
 
   async getProjects(filters?: { status?: string; companyUserId?: string }): Promise<(Project & { company: User })[]> {
