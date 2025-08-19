@@ -411,7 +411,7 @@ export default function Landing() {
               <Button 
                 size="lg" 
                 variant="outline"
-                className="flex-1 text-lg border-white text-white hover:bg-white hover:text-blue-600"
+                className="flex-1 text-lg border-white text-white hover:bg-white hover:text-primary"
                 onClick={() => window.location.href = "/api/login"}
               >
                 <Briefcase className="mr-2 h-5 w-5" />
