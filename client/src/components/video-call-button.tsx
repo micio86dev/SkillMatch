@@ -32,6 +32,7 @@ export function VideoCallButton({
   } | null>(null);
 
   const handleStartCall = () => {
+    console.log('Video call button clicked', { recipientId, recipientName });
     if (!recipientId || !recipientName) {
       console.error('Recipient information missing');
       return;

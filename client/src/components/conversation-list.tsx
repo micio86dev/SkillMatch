@@ -103,14 +103,17 @@ export function ConversationList({
                 </div>
                 
                 <div className="flex items-center gap-1 ml-1 md:ml-2 flex-shrink-0">
-                  <div onClick={(e) => e.stopPropagation()}>
+                  <div onClick={(e) => {
+                    console.log('Wrapper div clicked');
+                    e.stopPropagation();
+                  }}>
                     <VideoCallButton 
                       recipientId={conversation.contact.id}
                       recipientName={conversation.contact.name}
                       recipientImageUrl={conversation.contact.profileImageUrl}
                       size="sm"
                       variant="ghost"
-                      className="h-7 w-7 md:h-8 md:w-8 p-0 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                      className="h-7 w-7 md:h-8 md:w-8 p-0 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 z-10 relative"
                     />
                   </div>
                 </div>
