@@ -30,7 +30,6 @@ export function Layout({ children }: LayoutProps) {
     { name: 'Professionals', href: '/professionals', icon: Users },
     { name: 'Projects', href: '/projects', icon: Briefcase },
     { name: 'Messages', href: '/messages', icon: MessageSquare },
-    { name: 'Profile', href: '/profile', icon: User },
   ] : [
     { name: 'Browse Talent', href: '/professionals' },
     { name: 'Find Projects', href: '/projects' },
@@ -116,26 +115,6 @@ export function Layout({ children }: LayoutProps) {
               {/* Auth buttons */}
               {isAuthenticated ? (
                 <div className="flex items-center space-x-3">
-                  <Link href="/profile">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="flex items-center space-x-2 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                    >
-                      {user?.profileImageUrl ? (
-                        <img 
-                          src={user.profileImageUrl} 
-                          alt="Profile" 
-                          className="w-6 h-6 rounded-full object-cover"
-                        />
-                      ) : (
-                        <User className="h-4 w-4" />
-                      )}
-                      <span className="hidden sm:inline font-medium">
-                        {user?.firstName || user?.email}
-                      </span>
-                    </Button>
-                  </Link>
                   <Button
                     variant="ghost"
                     size="sm"
