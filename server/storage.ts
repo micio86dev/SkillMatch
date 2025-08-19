@@ -151,11 +151,11 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (filters.availability) {
-      conditions.push(eq(professionalProfiles.availability, filters.availability));
+      conditions.push(eq(professionalProfiles.availability, filters.availability as any));
     }
 
     if (filters.seniorityLevel) {
-      conditions.push(eq(professionalProfiles.seniorityLevel, filters.seniorityLevel));
+      conditions.push(eq(professionalProfiles.seniorityLevel, filters.seniorityLevel as any));
     }
 
     if (filters.minRate !== undefined) {
@@ -167,7 +167,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      query = query.where(and(...conditions)) as any;
     }
 
     const results = await query;
@@ -219,7 +219,7 @@ export class DatabaseStorage implements IStorage {
     const conditions = [];
 
     if (filters?.status) {
-      conditions.push(eq(projects.status, filters.status));
+      conditions.push(eq(projects.status, filters.status as any));
     }
 
     if (filters?.companyUserId) {
@@ -227,7 +227,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      query = query.where(and(...conditions)) as any;
     }
 
     const results = await query;
@@ -273,7 +273,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      query = query.where(and(...conditions)) as any;
     }
 
     const results = await query;
@@ -396,18 +396,19 @@ export class DatabaseStorage implements IStorage {
 
   // Connection operations
   async getConnections(userId: string, status?: string): Promise<(Connection & { requester: User; addressee: User })[]> {
-    let query = db
+    const conditions = [
+      or(eq(connections.requesterId, userId), eq(connections.addresseeId, userId))
+    ];
+
+    if (status) {
+      conditions.push(eq(connections.status, status as any));
+    }
+
+    const query = db
       .select()
       .from(connections)
       .innerJoin(users, eq(connections.requesterId, users.id))
-      .where(or(eq(connections.requesterId, userId), eq(connections.addresseeId, userId)));
-
-    if (status) {
-      query = query.where(and(
-        or(eq(connections.requesterId, userId), eq(connections.addresseeId, userId)),
-        eq(connections.status, status)
-      ));
-    }
+      .where(and(...conditions));
 
     const results = await query;
     return results.map(result => ({
@@ -428,7 +429,7 @@ export class DatabaseStorage implements IStorage {
   async updateConnectionStatus(id: string, status: string): Promise<Connection> {
     const [updated] = await db
       .update(connections)
-      .set({ status, updatedAt: new Date() })
+      .set({ status: status as any, updatedAt: new Date() })
       .where(eq(connections.id, id))
       .returning();
     return updated;
