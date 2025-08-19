@@ -5,6 +5,7 @@ import { Clock, MapPin, Building, DollarSign, Users } from "lucide-react";
 import { Project, User } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
 import { LikeButton } from "@/components/like-button";
+import { CompactSubscriptionButton } from "@/components/project-subscription-button";
 
 interface ProjectCardProps {
   project: Project & { company: User };
@@ -171,12 +172,16 @@ export function ProjectCard({ project }: ProjectCardProps) {
           </div>
         </div>
         
-        {/* Like button for projects */}
-        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+        {/* Action buttons */}
+        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
           <LikeButton
             itemType="projects"
             itemId={project.id}
             initialLikeCount={project.likesCount || 0}
+          />
+          <CompactSubscriptionButton
+            projectId={project.id}
+            projectStatus={project.status || 'open'}
           />
         </div>
         </CardContent>

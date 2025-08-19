@@ -7,6 +7,7 @@ import {
   postLikes,
   commentLikes,
   projectLikes,
+  projectSubscriptions,
   postComments,
   messages,
   feedback,
@@ -34,6 +35,8 @@ import {
   type InsertNotification,
   type NotificationPreferences,
   type InsertNotificationPreferences,
+  type ProjectSubscription,
+  type InsertProjectSubscription,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, ilike, sql, ne } from "drizzle-orm";
@@ -628,6 +631,51 @@ export class DatabaseStorage implements IStorage {
         .set({ likesCount: sql`${projects.likesCount} - 1` })
         .where(eq(projects.id, projectId));
     });
+  }
+
+  // Project subscription methods
+  async subscribeToProject(projectId: string, userId: string): Promise<void> {
+    await db.insert(projectSubscriptions).values({ projectId, userId });
+  }
+
+  async unsubscribeFromProject(projectId: string, userId: string): Promise<void> {
+    await db
+      .delete(projectSubscriptions)
+      .where(and(eq(projectSubscriptions.projectId, projectId), eq(projectSubscriptions.userId, userId)));
+  }
+
+  async isSubscribedToProject(projectId: string, userId: string): Promise<boolean> {
+    const [subscription] = await db
+      .select()
+      .from(projectSubscriptions)
+      .where(and(eq(projectSubscriptions.projectId, projectId), eq(projectSubscriptions.userId, userId)))
+      .limit(1);
+    return !!subscription;
+  }
+
+  async getProjectSubscribers(projectId: string): Promise<User[]> {
+    const results = await db
+      .select()
+      .from(projectSubscriptions)
+      .innerJoin(users, eq(projectSubscriptions.userId, users.id))
+      .where(eq(projectSubscriptions.projectId, projectId));
+    
+    return results.map(result => result.users);
+  }
+
+  async getUserProjectSubscriptions(userId: string): Promise<(Project & { company: User })[]> {
+    const results = await db
+      .select()
+      .from(projectSubscriptions)
+      .innerJoin(projects, eq(projectSubscriptions.projectId, projects.id))
+      .innerJoin(users, eq(projects.companyUserId, users.id))
+      .where(eq(projectSubscriptions.userId, userId))
+      .orderBy(desc(projectSubscriptions.createdAt));
+    
+    return results.map(result => ({
+      ...result.projects,
+      company: result.users,
+    }));
   }
 
   async isPostLikedByUser(postId: string, userId: string): Promise<boolean> {

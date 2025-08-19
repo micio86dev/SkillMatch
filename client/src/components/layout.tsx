@@ -52,6 +52,7 @@ export function Layout({ children }: LayoutProps) {
   const navigation = isAuthenticated ? [
     { name: 'Professionals', href: '/professionals', icon: Users },
     { name: 'Projects', href: '/projects', icon: Briefcase },
+    ...(user?.userType === 'professional' ? [{ name: 'Subscriptions', href: '/subscriptions', icon: Bell }] : []),
     { name: 'Companies', href: '/companies', icon: Building2 },
     { name: 'Career Insights', href: '/career-insights', icon: Code },
     { name: 'Messages', href: '/messages', icon: MessageSquare },

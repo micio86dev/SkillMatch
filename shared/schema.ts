@@ -135,6 +135,14 @@ export const projectLikes = pgTable("project_likes", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Project subscriptions - professionals can subscribe to projects for updates
+export const projectSubscriptions = pgTable("project_subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").references(() => projects.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Post comments
 export const postComments = pgTable("post_comments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -232,6 +240,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.id],
     references: [notificationPreferences.userId],
   }),
+  projectSubscriptions: many(projectSubscriptions),
 }));
 
 export const professionalProfilesRelations = relations(professionalProfiles, ({ one }) => ({
@@ -254,6 +263,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
     references: [users.id],
   }),
   likes: many(projectLikes),
+  subscriptions: many(projectSubscriptions),
 }));
 
 export const postsRelations = relations(posts, ({ one, many }) => ({
@@ -294,6 +304,17 @@ export const projectLikesRelations = relations(projectLikes, ({ one }) => ({
   }),
   user: one(users, {
     fields: [projectLikes.userId],
+    references: [users.id],
+  }),
+}));
+
+export const projectSubscriptionsRelations = relations(projectSubscriptions, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectSubscriptions.projectId],
+    references: [projects.id],
+  }),
+  user: one(users, {
+    fields: [projectSubscriptions.userId],
     references: [users.id],
   }),
 }));
@@ -489,3 +510,11 @@ export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type NotificationPreferences = typeof notificationPreferences.$inferSelect;
 export type InsertNotificationPreferences = z.infer<typeof insertNotificationPreferencesSchema>;
+export type ProjectSubscription = typeof projectSubscriptions.$inferSelect;
+export type InsertProjectSubscription = typeof projectSubscriptions.$inferInsert;
+
+// Schemas for project subscriptions
+export const insertProjectSubscriptionSchema = createInsertSchema(projectSubscriptions).omit({
+  id: true,
+  createdAt: true,
+});

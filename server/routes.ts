@@ -341,6 +341,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Project subscription routes
+  app.post('/api/projects/:id/subscribe', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id: projectId } = req.params;
+      const userId = req.session.userId!;
+      
+      // Check if project exists and is open
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      if (project.status !== 'open') {
+        return res.status(400).json({ message: "Can only subscribe to open projects" });
+      }
+      
+      // Check if already subscribed
+      const isSubscribed = await storage.isSubscribedToProject(projectId, userId);
+      if (isSubscribed) {
+        return res.status(400).json({ message: "Already subscribed to this project" });
+      }
+      
+      await storage.subscribeToProject(projectId, userId);
+      res.json({ success: true, message: "Successfully subscribed to project" });
+    } catch (error) {
+      console.error("Error subscribing to project:", error);
+      res.status(500).json({ message: "Failed to subscribe to project" });
+    }
+  });
+
+  app.delete('/api/projects/:id/subscribe', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id: projectId } = req.params;
+      const userId = req.session.userId!;
+      
+      await storage.unsubscribeFromProject(projectId, userId);
+      res.json({ success: true, message: "Successfully unsubscribed from project" });
+    } catch (error) {
+      console.error("Error unsubscribing from project:", error);
+      res.status(500).json({ message: "Failed to unsubscribe from project" });
+    }
+  });
+
+  app.get('/api/projects/:id/subscription-status', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id: projectId } = req.params;
+      const userId = req.session.userId!;
+      
+      const isSubscribed = await storage.isSubscribedToProject(projectId, userId);
+      res.json({ isSubscribed });
+    } catch (error) {
+      console.error("Error checking subscription status:", error);
+      res.status(500).json({ message: "Failed to check subscription status" });
+    }
+  });
+
+  app.get('/api/user/subscriptions', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId!;
+      const subscriptions = await storage.getUserProjectSubscriptions(userId);
+      res.json(subscriptions);
+    } catch (error) {
+      console.error("Error fetching user subscriptions:", error);
+      res.status(500).json({ message: "Failed to fetch subscriptions" });
+    }
+  });
+
   // Post routes
   app.get('/api/posts', async (req, res) => {
     try {
