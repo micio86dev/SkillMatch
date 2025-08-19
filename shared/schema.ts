@@ -365,6 +365,12 @@ export const insertUserSchema = createInsertSchema(users).omit({
   updatedAt: true,
 });
 
+// Auth-specific schema that includes ID for Replit Auth OIDC
+export const authUpsertUserSchema = createInsertSchema(users).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertProfessionalProfileSchema = createInsertSchema(professionalProfiles).omit({
   id: true,
   createdAt: true,
@@ -418,6 +424,7 @@ export const insertNotificationPreferencesSchema = createInsertSchema(notificati
 
 // Types
 export type UpsertUser = z.infer<typeof insertUserSchema>;
+export type AuthUpsertUser = z.infer<typeof authUpsertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type ProfessionalProfile = typeof professionalProfiles.$inferSelect;
 export type InsertProfessionalProfile = z.infer<typeof insertProfessionalProfileSchema>;

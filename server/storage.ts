@@ -15,6 +15,7 @@ import {
   notificationPreferences,
   type User,
   type UpsertUser,
+  type AuthUpsertUser,
   type ProfessionalProfile,
   type InsertProfessionalProfile,
   type CompanyProfile,
@@ -40,7 +41,7 @@ import { eq, desc, and, or, ilike, sql } from "drizzle-orm";
 export interface IStorage {
   // User operations (IMPORTANT: mandatory for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
+  upsertUser(user: AuthUpsertUser): Promise<User>;
   
   // Professional profile operations
   getProfessionalProfile(userId: string): Promise<ProfessionalProfile | undefined>;
@@ -117,7 +118,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
+  async upsertUser(userData: AuthUpsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
       .values(userData)
