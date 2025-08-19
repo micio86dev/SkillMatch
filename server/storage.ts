@@ -8,6 +8,7 @@ import {
   commentLikes,
   projectLikes,
   projectSubscriptions,
+  projectApplications,
   projectPreventives,
   postComments,
   messages,
@@ -38,6 +39,8 @@ import {
   type InsertNotificationPreferences,
   type ProjectSubscription,
   type InsertProjectSubscription,
+  type ProjectApplication,
+  type InsertProjectApplication,
   type ProjectPreventive,
   type InsertProjectPreventive,
 } from "@shared/schema";
@@ -761,6 +764,131 @@ export class DatabaseStorage implements IStorage {
       );
     
     return [...userPreventives, ...globalPreventives];
+  }
+
+  // Project applications CRUD operations
+  async createProjectApplication(applicationData: InsertProjectApplication): Promise<ProjectApplication> {
+    const [application] = await db
+      .insert(projectApplications)
+      .values(applicationData)
+      .returning();
+    return application;
+  }
+
+  async getProjectApplications(projectId: string): Promise<(ProjectApplication & { user: User })[]> {
+    const results = await db
+      .select()
+      .from(projectApplications)
+      .innerJoin(users, eq(projectApplications.userId, users.id))
+      .where(eq(projectApplications.projectId, projectId))
+      .orderBy(desc(projectApplications.appliedAt));
+    
+    return results.map(result => ({
+      ...result.project_applications,
+      user: result.users,
+    }));
+  }
+
+  async getUserApplications(userId: string): Promise<(ProjectApplication & { project: Project & { company: User } })[]> {
+    const results = await db
+      .select()
+      .from(projectApplications)
+      .innerJoin(projects, eq(projectApplications.projectId, projects.id))
+      .innerJoin(users, eq(projects.companyUserId, users.id))
+      .where(eq(projectApplications.userId, userId))
+      .orderBy(desc(projectApplications.appliedAt));
+    
+    return results.map(result => ({
+      ...result.project_applications,
+      project: {
+        ...result.projects,
+        company: result.users,
+      },
+    }));
+  }
+
+  async acceptProjectApplication(applicationId: string, respondedBy: string): Promise<ProjectApplication | undefined> {
+    const [application] = await db
+      .update(projectApplications)
+      .set({ 
+        status: "accepted", 
+        respondedAt: new Date(),
+        respondedBy 
+      })
+      .where(eq(projectApplications.id, applicationId))
+      .returning();
+    
+    if (application) {
+      // Check if project should be marked as assigned
+      await this.checkAndUpdateProjectStatus(application.projectId);
+    }
+    
+    return application;
+  }
+
+  async rejectProjectApplication(applicationId: string, respondedBy: string): Promise<ProjectApplication | undefined> {
+    const [application] = await db
+      .update(projectApplications)
+      .set({ 
+        status: "rejected", 
+        respondedAt: new Date(),
+        respondedBy 
+      })
+      .where(eq(projectApplications.id, applicationId))
+      .returning();
+    
+    return application;
+  }
+
+  async getAcceptedApplicationsCount(projectId: string): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(projectApplications)
+      .where(
+        and(
+          eq(projectApplications.projectId, projectId),
+          eq(projectApplications.status, "accepted")
+        )
+      );
+    
+    return result[0]?.count || 0;
+  }
+
+  async checkAndUpdateProjectStatus(projectId: string): Promise<void> {
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectId));
+    
+    if (!project) return;
+    
+    const acceptedCount = await this.getAcceptedApplicationsCount(projectId);
+    
+    // If accepted applications equal team size, mark project as assigned
+    if (acceptedCount >= (project.teamSize || 1) && project.status === "open") {
+      await db
+        .update(projects)
+        .set({ 
+          status: "assigned",
+          updatedAt: new Date()
+        })
+        .where(eq(projects.id, projectId));
+    }
+  }
+
+  async hasUserAppliedToProject(projectId: string, userId: string): Promise<boolean> {
+    const [application] = await db
+      .select()
+      .from(projectApplications)
+      .where(
+        and(
+          eq(projectApplications.projectId, projectId),
+          eq(projectApplications.userId, userId)
+        )
+      )
+      .limit(1);
+    
+    return !!application;
   }
 
   async isPostLikedByUser(postId: string, userId: string): Promise<boolean> {

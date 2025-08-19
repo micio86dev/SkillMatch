@@ -143,6 +143,19 @@ export const projectSubscriptions = pgTable("project_subscriptions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Project applications - professionals apply to join projects, companies can accept/reject
+export const projectApplications = pgTable("project_applications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").references(() => projects.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  status: varchar("status", { enum: ["pending", "accepted", "rejected"] }).default("pending"),
+  coverLetter: text("cover_letter"),
+  proposedRate: decimal("proposed_rate", { precision: 10, scale: 2 }),
+  appliedAt: timestamp("applied_at").defaultNow(),
+  respondedAt: timestamp("responded_at"),
+  respondedBy: varchar("responded_by").references(() => users.id),
+});
+
 // Project preventives - custom validation rules for projects
 export const projectPreventives = pgTable("project_preventives", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -256,6 +269,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     references: [notificationPreferences.userId],
   }),
   projectSubscriptions: many(projectSubscriptions),
+  projectApplications: many(projectApplications),
   projectPreventives: many(projectPreventives),
 }));
 
@@ -331,6 +345,21 @@ export const projectSubscriptionsRelations = relations(projectSubscriptions, ({ 
   }),
   user: one(users, {
     fields: [projectSubscriptions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const projectApplicationsRelations = relations(projectApplications, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectApplications.projectId],
+    references: [projects.id],
+  }),
+  user: one(users, {
+    fields: [projectApplications.userId],
+    references: [users.id],
+  }),
+  respondedByUser: one(users, {
+    fields: [projectApplications.respondedBy],
     references: [users.id],
   }),
 }));
@@ -577,6 +606,8 @@ export type NotificationPreferences = typeof notificationPreferences.$inferSelec
 export type InsertNotificationPreferences = z.infer<typeof insertNotificationPreferencesSchema>;
 export type ProjectSubscription = typeof projectSubscriptions.$inferSelect;
 export type InsertProjectSubscription = typeof projectSubscriptions.$inferInsert;
+export type ProjectApplication = typeof projectApplications.$inferSelect;
+export type InsertProjectApplication = typeof projectApplications.$inferInsert;
 export type ProjectPreventive = typeof projectPreventives.$inferSelect;
 export type InsertProjectPreventive = typeof projectPreventives.$inferInsert;
 
@@ -584,6 +615,14 @@ export type InsertProjectPreventive = typeof projectPreventives.$inferInsert;
 export const insertProjectSubscriptionSchema = createInsertSchema(projectSubscriptions).omit({
   id: true,
   createdAt: true,
+});
+
+// Schemas for project applications
+export const insertProjectApplicationSchema = createInsertSchema(projectApplications).omit({
+  id: true,
+  appliedAt: true,
+  respondedAt: true,
+  respondedBy: true,
 });
 
 // Schemas for project preventives

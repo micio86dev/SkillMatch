@@ -566,6 +566,187 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
+  // Project applications routes
+  app.post('/api/projects/:projectId/apply', isAuthenticated, async (req: any, res) => {
+    try {
+      const { projectId } = req.params;
+      const userId = req.session.userId!;
+      const { coverLetter, proposedRate } = req.body;
+      
+      // Check if user has already applied
+      const hasApplied = await storage.hasUserAppliedToProject(projectId, userId);
+      if (hasApplied) {
+        return res.status(400).json({ message: "You have already applied to this project" });
+      }
+      
+      // Verify project exists and is open
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      if (project.status !== "open") {
+        return res.status(400).json({ message: "This project is no longer accepting applications" });
+      }
+      
+      const applicationData = {
+        projectId,
+        userId,
+        coverLetter,
+        proposedRate,
+        status: "pending" as const,
+      };
+      
+      const application = await storage.createProjectApplication(applicationData);
+      res.json(application);
+    } catch (error) {
+      console.error("Error creating application:", error);
+      res.status(500).json({ message: "Failed to submit application" });
+    }
+  });
+
+  app.get('/api/projects/:projectId/applications', isAuthenticated, async (req: any, res) => {
+    try {
+      const { projectId } = req.params;
+      const userId = req.session.userId!;
+      
+      // Verify project ownership
+      const project = await storage.getProject(projectId);
+      if (!project || project.companyUserId !== userId) {
+        return res.status(403).json({ message: "Not authorized to view applications for this project" });
+      }
+      
+      const applications = await storage.getProjectApplications(projectId);
+      res.json(applications);
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+      res.status(500).json({ message: "Failed to fetch applications" });
+    }
+  });
+
+  app.get('/api/applications/:applicationId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { applicationId } = req.params;
+      const userId = req.session.userId!;
+      
+      // Get all applications (we'll need to improve this)
+      const allProjects = await storage.getProjects({});
+      let application: any = null;
+      
+      for (const project of allProjects) {
+        const applications = await storage.getProjectApplications(project.id);
+        const found = applications.find(app => app.id === applicationId);
+        if (found) {
+          application = found;
+          break;
+        }
+      }
+      
+      if (!application) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+      
+      res.json(application);
+    } catch (error) {
+      console.error("Error fetching application:", error);
+      res.status(500).json({ message: "Failed to fetch application" });
+    }
+  });
+
+  app.post('/api/applications/:applicationId/accept', isAuthenticated, async (req: any, res) => {
+    try {
+      const { applicationId } = req.params;
+      const userId = req.session.userId!;
+      
+      // Get application details first
+      const allProjects = await storage.getProjects({});
+      let application: any = null;
+      
+      for (const project of allProjects) {
+        const applications = await storage.getProjectApplications(project.id);
+        const found = applications.find(app => app.id === applicationId);
+        if (found) {
+          application = found;
+          break;
+        }
+      }
+      
+      if (!application) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+      
+      // Verify project ownership
+      const project = await storage.getProject(application.projectId);
+      if (!project || project.companyUserId !== userId) {
+        return res.status(403).json({ message: "Not authorized to accept this application" });
+      }
+      
+      const updatedApplication = await storage.acceptProjectApplication(applicationId, userId);
+      res.json(updatedApplication);
+    } catch (error) {
+      console.error("Error accepting application:", error);
+      res.status(500).json({ message: "Failed to accept application" });
+    }
+  });
+
+  app.post('/api/applications/:applicationId/reject', isAuthenticated, async (req: any, res) => {
+    try {
+      const { applicationId } = req.params;
+      const userId = req.session.userId!;
+      
+      // Get application details first
+      const allProjects = await storage.getProjects({});
+      let application: any = null;
+      
+      for (const project of allProjects) {
+        const applications = await storage.getProjectApplications(project.id);
+        const found = applications.find(app => app.id === applicationId);
+        if (found) {
+          application = found;
+          break;
+        }
+      }
+      
+      if (!application) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+      
+      // Verify project ownership
+      const project = await storage.getProject(application.projectId);
+      if (!project || project.companyUserId !== userId) {
+        return res.status(403).json({ message: "Not authorized to reject this application" });
+      }
+      
+      const updatedApplication = await storage.rejectProjectApplication(applicationId, userId);
+      res.json(updatedApplication);
+    } catch (error) {
+      console.error("Error rejecting application:", error);
+      res.status(500).json({ message: "Failed to reject application" });
+    }
+  });
+
+  app.get('/api/user/applications', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId!;
+      const applications = await storage.getUserApplications(userId);
+      res.json(applications);
+    } catch (error) {
+      console.error("Error fetching user applications:", error);
+      res.status(500).json({ message: "Failed to fetch applications" });
+    }
+  });
+
+  app.get('/api/projects/:projectId/accepted-count', async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      const count = await storage.getAcceptedApplicationsCount(projectId);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching accepted count:", error);
+      res.status(500).json({ message: "Failed to fetch accepted count" });
+    }
+  });
+
   // Post routes
   app.get('/api/posts', async (req, res) => {
     try {

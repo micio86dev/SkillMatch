@@ -6,6 +6,8 @@ import { Project, User } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
 import { LikeButton } from "@/components/like-button";
 import { CompactSubscriptionButton } from "@/components/project-subscription-button";
+import { ProjectApplyButton } from "@/components/project-apply-button";
+import { useQuery } from "@tanstack/react-query";
 
 interface ProjectCardProps {
   project: Project & { company: User };
@@ -13,6 +15,19 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project }: ProjectCardProps) {
   const { company } = project;
+
+  // Get accepted applications count to check if project is full
+  const { data: acceptedCount = 0 } = useQuery({
+    queryKey: [`/api/projects/${project.id}/accepted-count`],
+    queryFn: async () => {
+      const response = await fetch(`/api/projects/${project.id}/accepted-count`, { credentials: 'include' });
+      if (!response.ok) return 0;
+      const data = await response.json();
+      return data.count || 0;
+    },
+  });
+
+  const isProjectFull = acceptedCount >= (project.teamSize || 1);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -179,10 +194,17 @@ export function ProjectCard({ project }: ProjectCardProps) {
             itemId={project.id}
             initialLikeCount={project.likesCount || 0}
           />
-          <CompactSubscriptionButton
-            projectId={project.id}
-            projectStatus={project.status || 'open'}
-          />
+          <div className="flex items-center gap-2">
+            <CompactSubscriptionButton
+              projectId={project.id}
+              projectStatus={project.status || 'open'}
+            />
+            <ProjectApplyButton 
+              projectId={project.id} 
+              projectTitle={project.title} 
+              isProjectFull={isProjectFull} 
+            />
+          </div>
         </div>
         </CardContent>
       </Card>
