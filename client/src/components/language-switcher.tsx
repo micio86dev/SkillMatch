@@ -80,7 +80,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
             </div>
           </SelectValue>
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="max-h-96">
           {SUPPORTED_LANGUAGES.map((language) => (
             <SelectItem key={language.code} value={language.code}>
               <div className="flex items-center gap-2">
