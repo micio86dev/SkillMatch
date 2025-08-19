@@ -419,7 +419,7 @@ export default function Landing() {
               </Button>
             </div>
 
-            <p className="text-primary-200 text-sm">Free to join • No credit card required</p>
+            <p className="text-white text-sm">Free to join • No credit card required</p>
           </div>
         </div>
       </section>
