@@ -38,6 +38,10 @@
   --primary-700: hsl(221.2 83.2% 43%);
   --primary-100: hsl(221.2 83.2% 93%);
   
+  /* Nerdy code styling */
+  --code-bg: hsl(220 13% 18%);
+  --code-text: hsl(152 66% 70%);
+  
   --slate-50: hsl(210 40% 98%);
   --slate-100: hsl(210 40% 96%);
   --slate-200: hsl(214.3 31.8% 91.4%);
@@ -125,6 +129,26 @@
   
   .text-accessible {
     @apply text-slate-700 dark:text-slate-200;
+  }
+  
+  /* Nerdy code animations */
+  .code-animation {
+    animation: typing 2s steps(20, end), blink-caret .75s step-end infinite;
+  }
+  
+  @keyframes typing {
+    from { width: 0 }
+    to { width: 100% }
+  }
+  
+  @keyframes blink-caret {
+    from, to { border-color: transparent }
+    50% { border-color: var(--primary-500); }
+  }
+  
+  /* Gradient text effects */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent;
   }
 }
 

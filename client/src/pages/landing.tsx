@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, Code, Users, Briefcase, MessageSquare, ArrowRight, CheckCircle, User } from "lucide-react";
+import { Header } from "@/components/header";
+import { Star, Code, Users, Briefcase, MessageSquare, ArrowRight, CheckCircle, User, Zap, Shield, Rocket } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Landing() {
@@ -122,6 +123,7 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen">
+      <Header />
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 to-slate-100 dark:from-slate-800 dark:to-slate-900 py-20 lg:py-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -129,12 +131,11 @@ export default function Landing() {
             <div className="space-y-8">
               <div className="space-y-4">
                 <h1 className="text-4xl lg:text-6xl font-bold text-slate-900 dark:text-white leading-tight">
-                  Connect.{" "}
-                  <span className="text-primary">Collaborate.</span>{" "}
-                  Create.
+                  Where IT talent{" "}
+                  <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">meets opportunity</span>
                 </h1>
                 <p className="text-xl text-slate-700 dark:text-slate-200 leading-relaxed">
-                  The professional network where IT talent meets opportunity. Join thousands of developers, designers, and tech professionals building the future.
+                  Connect with top IT professionals and innovative companies. Real-time collaboration, video calls, and smart project matching - all in one platform.
                 </p>
               </div>
               
@@ -260,30 +261,30 @@ export default function Landing() {
       <section className="py-20 bg-slate-50 dark:bg-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4 mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white">How DevConnect Works</h2>
+            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white">How VibeSync Works</h2>
             <p className="text-lg text-slate-700 dark:text-slate-200 max-w-2xl mx-auto">Simple, smart, and efficient - connecting the right talent with the right opportunities</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-12">
             <div className="text-center space-y-4">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                <User className="text-2xl text-primary h-8 w-8" />
+              <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-purple-600/20 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+                <Rocket className="text-primary h-8 w-8" />
               </div>
               <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Create Your Profile</h3>
               <p className="text-slate-700 dark:text-slate-300">Build a comprehensive professional profile showcasing your skills, experience, and availability. Upload your CV and portfolio.</p>
             </div>
 
             <div className="text-center space-y-4">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                <Users className="text-2xl text-primary h-8 w-8" />
+              <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-purple-600/20 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+                <Zap className="text-primary h-8 w-8" />
               </div>
               <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Smart Matching</h3>
               <p className="text-slate-700 dark:text-slate-300">Our AI-powered system matches professionals with relevant projects based on skills, experience level, and preferences.</p>
             </div>
 
             <div className="text-center space-y-4">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                <MessageSquare className="text-2xl text-primary h-8 w-8" />
+              <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-purple-600/20 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+                <Shield className="text-primary h-8 w-8" />
               </div>
               <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Connect & Collaborate</h3>
               <p className="text-slate-700 dark:text-slate-300">Message directly, negotiate terms, and start working together. Rate and review each other after successful collaborations.</p>
@@ -360,7 +361,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white">Success Stories</h2>
-            <p className="text-lg text-slate-700 dark:text-slate-200 max-w-2xl mx-auto">See how DevConnect has helped professionals and companies achieve their goals</p>
+            <p className="text-lg text-slate-700 dark:text-slate-200 max-w-2xl mx-auto">See how VibeSync has helped professionals and companies achieve their goals</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -433,9 +434,9 @@ export default function Landing() {
                 <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                   <Code className="text-white text-sm" />
                 </div>
-                <span className="text-xl font-bold text-primary">DevConnect</span>
+                <span className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">VibeSync</span>
               </div>
-              <p className="text-slate-400">Connecting IT professionals with opportunities worldwide. Build your career, grow your network.</p>
+              <p className="text-slate-400">Where IT professionals and companies connect, collaborate, and create the future together.</p>
             </div>
 
             <div className="space-y-4">
@@ -467,7 +468,7 @@ export default function Landing() {
           </div>
 
           <div className="border-t border-slate-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-slate-400">&copy; 2024 DevConnect. All rights reserved.</p>
+            <p className="text-slate-400">&copy; 2024 VibeSync. All rights reserved.</p>
           </div>
         </div>
       </footer>
