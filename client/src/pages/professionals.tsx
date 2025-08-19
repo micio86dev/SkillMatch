@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { PageShare, usePageShare } from "@/components/page-share";
 
 export default function Professionals() {
   const { toast } = useToast();
@@ -23,6 +24,12 @@ export default function Professionals() {
     seniorityLevel: "any",
     minRate: "",
     maxRate: "",
+  });
+  
+  const pageShareData = usePageShare('custom', {
+    title: 'Browse IT Professionals',
+    description: 'Discover and connect with talented IT professionals in our community. Find experts in software development, data science, cybersecurity, and more.',
+    hashtags: ['Developers', 'ITTalent', 'TechExperts', 'Hiring']
   });
 
   const queryFilters = {
@@ -404,6 +411,13 @@ export default function Professionals() {
           </Card>
         )}
       </div>
+      
+      <PageShare
+        title={pageShareData.title}
+        description={pageShareData.description}
+        hashtags={pageShareData.hashtags}
+        variant="floating"
+      />
     </Layout>
   );
 }

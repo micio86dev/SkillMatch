@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageSquare, Share, MoreHorizontal, User, Send, Edit, Trash2, Link, Copy } from "lucide-react";
+import { MessageSquare, MoreHorizontal, User, Send, Edit, Trash2, Link, Copy } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +26,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { SocialShare } from "@/components/social-share";
 
 interface PostCardProps {
   post: Post & { user: UserType };
@@ -109,22 +110,9 @@ export function PostCard({ post }: PostCardProps) {
     setShowDeleteDialog(false);
   };
 
-  const handleSharePost = async () => {
-    const postUrl = `${window.location.origin}/?post=${post.id}`;
-    try {
-      await navigator.clipboard.writeText(postUrl);
-      toast({
-        title: "Success",
-        description: "Post link copied to clipboard!",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to copy link. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+  const getPostUrl = () => `${window.location.origin}/?post=${post.id}`;
+  const getPostTitle = () => `${user.firstName} ${user.lastName} shared on DevConnect`;
+  const getPostHashtags = () => ['DevConnect', 'Networking', 'ITJobs', 'TechCommunity'];
 
   return (
     <Card>
@@ -227,15 +215,13 @@ export function PostCard({ post }: PostCardProps) {
             <span>{post.commentsCount || 0} comments</span>
           </Button>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex items-center space-x-2 text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-medium"
-            onClick={handleSharePost}
-          >
-            <Share className="h-4 w-4" />
-            <span>Share</span>
-          </Button>
+          <SocialShare
+            title={getPostTitle()}
+            content={post.content}
+            url={getPostUrl()}
+            hashtags={getPostHashtags()}
+            author={`${user.firstName} ${user.lastName}`}
+          />
         </div>
 
         {/* Comments section */}
