@@ -15,9 +15,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { insertProfessionalProfileSchema, insertCompanyProfileSchema, type ProfessionalProfile, type CompanyProfile } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { User, Building, Star, MapPin, Globe, Github, Linkedin, Upload, Edit3, Bell, FileText, ExternalLink } from "lucide-react";
+import { User as UserIcon, Building, Star, MapPin, Globe, Github, Linkedin, Upload, Edit3, Bell, FileText, ExternalLink } from "lucide-react";
 import { NotificationPreferences } from "@/components/notification-preferences";
-import { ObjectUploader } from "@/components/ObjectUploader";
+import { AvatarUploader } from "@/components/avatar-uploader";
 import { SkillsInput } from "@/components/skills-input";
 import { useState, useEffect } from "react";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -28,6 +28,22 @@ export default function Profile() {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [profileType, setProfileType] = useState<"professional" | "company">("professional");
+
+  const handleAvatarUpdate = async (avatarUrl: string) => {
+    try {
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({
+        title: "Success",
+        description: "Avatar updated successfully!",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update avatar. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -256,23 +272,12 @@ export default function Profile() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="relative">
-                {user?.profileImageUrl ? (
-                  <img 
-                    src={user.profileImageUrl} 
-                    alt="Profile"
-                    className="w-20 h-20 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-                    {profileType === "company" ? (
-                      <Building className="w-10 h-10 text-primary" />
-                    ) : (
-                      <User className="w-10 h-10 text-primary" />
-                    )}
-                  </div>
-                )}
-              </div>
+              <AvatarUploader
+                currentAvatar={user?.profileImageUrl}
+                userName={companyProfile?.companyName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'User'}
+                onAvatarUpdate={handleAvatarUpdate}
+                size="lg"
+              />
               <div>
                 <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
                   {companyProfile?.companyName || `${user?.firstName} ${user?.lastName}` || "Your Profile"}

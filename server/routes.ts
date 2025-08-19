@@ -721,6 +721,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Avatar upload routes
+  app.put('/api/profile/avatar', isAuthenticated, async (req: any, res) => {
+    try {
+      const { avatarUrl } = req.body;
+      if (!avatarUrl) {
+        return res.status(400).json({ message: "Avatar URL is required" });
+      }
+
+      const userId = req.session.userId;
+      await storage.updateUser(userId, { profileImageUrl: avatarUrl });
+      
+      res.json({ message: "Avatar updated successfully", avatarUrl });
+    } catch (error) {
+      console.error("Error updating avatar:", error);
+      res.status(500).json({ message: "Failed to update avatar" });
+    }
+  });
+
   // Job import routes
   app.post('/api/admin/import-jobs', isAuthenticated, async (req: any, res) => {
     try {
