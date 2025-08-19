@@ -4,8 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/header";
 import { Star, Code, Users, Briefcase, MessageSquare, ArrowRight, CheckCircle, User, Zap, Shield, Rocket } from "lucide-react";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 
 export default function Landing() {
+  const { t } = useTranslation();
   const featuredProfessionals = [
     {
       name: "Sarah Chen",
@@ -113,11 +115,11 @@ export default function Landing() {
   const getAvailabilityText = (availability: string) => {
     switch (availability) {
       case 'available':
-        return 'Available';
+        return t('professionals.available');
       case 'partially_available':
-        return 'Partially Available';
+        return t('professionals.partiallyAvailable');
       default:
-        return 'Unavailable';
+        return t('professionals.unavailable');
     }
   };
 
@@ -131,11 +133,10 @@ export default function Landing() {
             <div className="space-y-8">
               <div className="space-y-4">
                 <h1 className="text-4xl lg:text-6xl font-bold text-slate-900 dark:text-white leading-tight">
-                  Where IT talent{" "}
-                  <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">meets opportunity</span>
+                  {t('home.heroTitle')}
                 </h1>
                 <p className="text-xl text-slate-700 dark:text-slate-200 leading-relaxed">
-                  Connect with top IT professionals and innovative companies. Real-time collaboration, video calls, and smart project matching - all in one platform.
+                  {t('home.heroSubtitle')}
                 </p>
               </div>
               
@@ -146,7 +147,7 @@ export default function Landing() {
                   onClick={() => window.location.href = "/api/login"}
                 >
                   <User className="mr-2 h-5 w-5" />
-                  I'm a Professional
+                  {t('home.professionalButton')}
                 </Button>
                 <Button 
                   size="lg" 
@@ -155,22 +156,22 @@ export default function Landing() {
                   onClick={() => window.location.href = "/api/login"}
                 >
                   <Briefcase className="mr-2 h-5 w-5" />
-                  I'm a Company
+                  {t('home.companyButton')}
                 </Button>
               </div>
 
               <div className="flex items-center space-x-8 pt-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-slate-900 dark:text-white">50K+</div>
-                  <div className="text-sm text-slate-700 dark:text-slate-300">IT Professionals</div>
+                  <div className="text-sm text-slate-700 dark:text-slate-300">{t('home.professionalsCount')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-slate-900 dark:text-white">12K+</div>
-                  <div className="text-sm text-slate-700 dark:text-slate-300">Companies</div>
+                  <div className="text-sm text-slate-700 dark:text-slate-300">{t('home.companiesCount')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-slate-900 dark:text-white">25K+</div>
-                  <div className="text-sm text-slate-700 dark:text-slate-300">Projects Completed</div>
+                  <div className="text-sm text-slate-700 dark:text-slate-300">{t('home.projectsCount')}</div>
                 </div>
               </div>
             </div>
@@ -184,7 +185,7 @@ export default function Landing() {
               <div className="absolute -bottom-6 -left-6 bg-white dark:bg-slate-800 p-6 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700">
                 <div className="flex items-center space-x-3">
                   <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200">2,847 professionals online</span>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200">2,847 {t('home.onlineStatus')}</span>
                 </div>
               </div>
             </div>
@@ -196,8 +197,8 @@ export default function Landing() {
       <section className="py-20 bg-white dark:bg-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4 mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white">Meet Top IT Professionals</h2>
-            <p className="text-lg text-slate-700 dark:text-slate-200 max-w-2xl mx-auto">Connect with skilled developers, designers, and tech experts ready to bring your projects to life</p>
+            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white">{t('home.meetTopProfessionals')}</h2>
+            <p className="text-lg text-slate-700 dark:text-slate-200 max-w-2xl mx-auto">{t('home.connectWithExperts')}</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">

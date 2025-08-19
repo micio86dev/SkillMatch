@@ -1,12 +1,15 @@
 import { Code, User, Briefcase, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
 import { useState } from "react";
 
 export function Header() {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const { t } = useTranslation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -27,25 +30,25 @@ export function Header() {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
           <Link href="/professionals" className="text-sm font-medium transition-colors hover:text-primary">
-            Professionals
+            {t('nav.professionals')}
           </Link>
           <Link href="/projects" className="text-sm font-medium transition-colors hover:text-primary">
-            Projects
+            {t('nav.projects')}
           </Link>
           {isAuthenticated && (
             <>
               <Link href="/messages" className="text-sm font-medium transition-colors hover:text-primary">
-                Messages
+                {t('nav.messages')}
               </Link>
               <Link href="/profile" className="text-sm font-medium transition-colors hover:text-primary">
-                Profile
+                {t('nav.profile')}
               </Link>
               <Link href="/preventives" className="text-sm font-medium transition-colors hover:text-primary">
-                Preventives
+                {t('nav.preventives')}
               </Link>
               {user?.userType === 'company' && (
                 <Link href="/my-projects" className="text-sm font-medium transition-colors hover:text-primary">
-                  My Projects
+                  {t('nav.myProjects')}
                 </Link>
               )}
             </>
@@ -54,6 +57,7 @@ export function Header() {
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center space-x-4">
+          <LanguageSwitcher />
           <ThemeToggle />
           {!isLoading && !isAuthenticated && (
             <div className="flex items-center space-x-2">
@@ -62,14 +66,14 @@ export function Header() {
                 size="sm"
                 onClick={() => window.location.href = "/api/login"}
               >
-                Log in
+                {t('auth.login')}
               </Button>
               <Button 
                 size="sm"
                 onClick={() => window.location.href = "/api/login"}
               >
                 <User className="mr-2 h-4 w-4" />
-                Sign up
+                {t('auth.signup')}
               </Button>
             </div>
           )}
@@ -79,13 +83,14 @@ export function Header() {
               size="sm"
               onClick={() => window.location.href = "/api/logout"}
             >
-              Logout
+              {t('auth.logout')}
             </Button>
           )}
         </div>
 
         {/* Mobile Menu Button */}
         <div className="flex md:hidden items-center space-x-2">
+          <LanguageSwitcher className="w-8" />
           <ThemeToggle />
           <Button
             variant="ghost"
@@ -94,7 +99,7 @@ export function Header() {
             className="h-9 w-9"
           >
             {isMobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-            <span className="sr-only">Toggle menu</span>
+            <span className="sr-only">{t('common.toggleMenu')}</span>
           </Button>
         </div>
       </div>
@@ -109,14 +114,14 @@ export function Header() {
                 className="text-sm font-medium transition-colors hover:text-primary"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Professionals
+                {t('nav.professionals')}
               </Link>
               <Link 
                 href="/projects" 
                 className="text-sm font-medium transition-colors hover:text-primary"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Projects
+                {t('nav.projects')}
               </Link>
               {isAuthenticated && (
                 <>
@@ -125,14 +130,14 @@ export function Header() {
                     className="text-sm font-medium transition-colors hover:text-primary"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    Messages
+                    {t('nav.messages')}
                   </Link>
                   <Link 
                     href="/profile" 
                     className="text-sm font-medium transition-colors hover:text-primary"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    Profile
+                    {t('nav.profile')}
                   </Link>
                 </>
               )}
@@ -150,7 +155,7 @@ export function Header() {
                       setIsMobileMenuOpen(false);
                     }}
                   >
-                    Log in
+                    {t('auth.login')}
                   </Button>
                   <Button 
                     className="w-full justify-start"
@@ -160,7 +165,7 @@ export function Header() {
                     }}
                   >
                     <User className="mr-2 h-4 w-4" />
-                    Sign up
+                    {t('auth.signup')}
                   </Button>
                 </>
               )}

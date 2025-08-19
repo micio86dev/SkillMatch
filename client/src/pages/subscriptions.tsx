@@ -6,11 +6,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { Bell, Inbox } from "lucide-react";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { Project, User } from "@shared/schema";
 
 export default function Subscriptions() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -40,10 +42,9 @@ export default function Subscriptions() {
           <Card>
             <CardContent className="p-8 text-center">
               <Bell className="h-12 w-12 mx-auto mb-4 text-slate-400" />
-              <h2 className="text-xl font-semibold mb-2">Project Subscriptions</h2>
+              <h2 className="text-xl font-semibold mb-2">{t('subscriptions.title')}</h2>
               <p className="text-slate-600 dark:text-slate-400">
-                This feature is available for professional users only. 
-                Switch to a professional account to subscribe to projects.
+                {t('subscriptions.onlyForProfessionals')}
               </p>
             </CardContent>
           </Card>
@@ -58,7 +59,7 @@ export default function Subscriptions() {
         <div className="container mx-auto px-4 py-8">
           <h1 className="text-3xl font-bold mb-6 flex items-center">
             <Bell className="h-8 w-8 mr-3" />
-            My Subscriptions
+            {t('subscriptions.title')}
           </h1>
           <div className="grid gap-6">
             {Array.from({ length: 3 }).map((_, i) => (

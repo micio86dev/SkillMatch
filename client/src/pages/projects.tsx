@@ -19,9 +19,11 @@ import { Plus, Filter, Briefcase, Search } from "lucide-react";
 import { useState } from "react";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { PreventivesButton } from "@/components/preventives-button";
+import { useTranslation } from "react-i18next";
 
 export default function Projects() {
   const { user, isAuthenticated } = useAuth();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -71,8 +73,8 @@ export default function Projects() {
       setShowCreateDialog(false);
       createProjectForm.reset();
       toast({
-        title: "Success",
-        description: "Project posted successfully!",
+        title: t('common.success'),
+        description: t('projects.postSuccess'),
       });
     },
     onError: (error) => {
