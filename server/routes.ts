@@ -626,7 +626,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       origin: "*",
       methods: ["GET", "POST"]
     },
-    path: "/socket.io"
+    path: "/ws",
+    transports: ['websocket']
   });
   
   // Connect notification service to Socket.IO
@@ -638,10 +639,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
     
-    // Handle user authentication for notifications
+    // Handle user authentication for notifications and calls
     socket.on('authenticate', (userId: string) => {
+      socket.data.userId = userId;
       socket.join(`user-${userId}`);
-      console.log(`User ${userId} authenticated for notifications`);
+      console.log(`User ${userId} authenticated for notifications and calls`);
     });
 
     // Handle joining a video call room
@@ -665,7 +667,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       socket.emit('existing-users', existingUsers);
     });
 
-    // Handle WebRTC signaling
+    // Handle P2P WebRTC signaling for direct calls
+    socket.on('call-offer', (data: { offer: any, to: string, callId: string }) => {
+      console.log(`Call offer from ${socket.id} to ${data.to}`);
+      socket.to(`user-${data.to}`).emit('call-offer', {
+        offer: data.offer,
+        from: socket.data.userId,
+        callId: data.callId
+      });
+    });
+
+    socket.on('call-answer', (data: { answer: any, to: string, callId: string }) => {
+      console.log(`Call answer from ${socket.id} to ${data.to}`);
+      socket.to(`user-${data.to}`).emit('call-answer', {
+        answer: data.answer,
+        from: socket.data.userId,
+        callId: data.callId
+      });
+    });
+
+    socket.on('ice-candidate', (data: { candidate: any, to: string, callId: string }) => {
+      socket.to(`user-${data.to}`).emit('ice-candidate', {
+        candidate: data.candidate,
+        from: socket.data.userId,
+        callId: data.callId
+      });
+    });
+
+    socket.on('call-end', (data: { to: string, callId: string }) => {
+      console.log(`Call ended by ${socket.id}`);
+      socket.to(`user-${data.to}`).emit('call-end', {
+        from: socket.data.userId,
+        callId: data.callId
+      });
+    });
+
+    // Handle WebRTC signaling for room-based calls
     socket.on('offer', (data: { to: string, offer: any, roomId: string }) => {
       socket.to(data.to).emit('offer', {
         from: socket.id,

@@ -178,6 +178,9 @@ export default function Messages() {
                     </Button>
                   </div>
                   <VideoCallButton 
+                    recipientId={selectedConversation.contact.id}
+                    recipientName={selectedConversation.contact.name}
+                    recipientImageUrl={selectedConversation.contact.profileImageUrl}
                     size="sm"
                     className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-none"
                   />

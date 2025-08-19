@@ -1,80 +1,90 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Video, Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useLocation } from 'wouter';
+import { Video } from 'lucide-react';
+import { VideoCall } from '@/components/video-call';
+import { IncomingCallModal } from '@/components/incoming-call-modal';
+import { useAuth } from '@/hooks/useAuth';
 
 interface VideoCallButtonProps {
+  recipientId?: string;
+  recipientName?: string;
+  recipientImageUrl?: string;
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   size?: "default" | "sm" | "lg" | "icon";
   className?: string;
 }
 
 export function VideoCallButton({ 
+  recipientId,
+  recipientName,
+  recipientImageUrl,
   variant = "default", 
   size = "default", 
   className = "" 
 }: VideoCallButtonProps) {
-  const [isCreating, setIsCreating] = useState(false);
-  const { toast } = useToast();
-  const [, setLocation] = useLocation();
+  const { user } = useAuth();
+  const [isCallActive, setIsCallActive] = useState(false);
+  const [incomingCall, setIncomingCall] = useState<{
+    callerId: string;
+    callerName: string;
+    callerImageUrl?: string;
+    callId: string;
+  } | null>(null);
 
-  const startCall = async () => {
-    try {
-      setIsCreating(true);
-      
-      const response = await fetch('/api/calls/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+  const handleStartCall = () => {
+    if (!recipientId || !recipientName) {
+      console.error('Recipient information missing');
+      return;
+    }
+    setIsCallActive(true);
+  };
 
-      if (!response.ok) {
-        throw new Error('Failed to create call');
-      }
+  const handleEndCall = () => {
+    setIsCallActive(false);
+  };
 
-      const { roomId, callUrl } = await response.json();
-      
-      toast({
-        title: "Call Created!",
-        description: "Redirecting to your video call...",
-      });
-
-      // Navigate to the call page
-      setLocation(`/call/${roomId}`);
-      
-    } catch (error) {
-      console.error('Error creating call:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create video call. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsCreating(false);
+  const handleAcceptIncomingCall = () => {
+    if (incomingCall) {
+      setIsCallActive(true);
+      setIncomingCall(null);
     }
   };
 
+  const handleDeclineIncomingCall = () => {
+    setIncomingCall(null);
+  };
+
   return (
-    <Button
-      onClick={startCall}
-      disabled={isCreating}
-      variant={variant}
-      size={size}
-      className={`${className} font-medium shadow-sm transition-all`}
-    >
-      {isCreating ? (
-        <>
-          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          Creating Call...
-        </>
-      ) : (
-        <>
-          <Video className="h-4 w-4 mr-2" />
-          Start Call
-        </>
+    <>
+      <Button
+        onClick={handleStartCall}
+        disabled={!recipientId || !recipientName}
+        variant={variant}
+        size={size}
+        className={`${className} font-medium shadow-sm transition-all`}
+      >
+        <Video className="h-4 w-4 mr-2" />
+        {size !== "sm" ? "Video Call" : ""}
+      </Button>
+
+      {/* Active Video Call */}
+      {isCallActive && recipientId && recipientName && (
+        <VideoCall
+          recipientId={recipientId}
+          recipientName={recipientName}
+          onClose={handleEndCall}
+        />
       )}
-    </Button>
+
+      {/* Incoming Call Modal */}
+      {incomingCall && (
+        <IncomingCallModal
+          callerName={incomingCall.callerName}
+          callerImageUrl={incomingCall.callerImageUrl}
+          onAccept={handleAcceptIncomingCall}
+          onDecline={handleDeclineIncomingCall}
+        />
+      )}
+    </>
   );
 }

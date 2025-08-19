@@ -47,6 +47,9 @@ export function ConversationHeader({ contact, onStartCall }: ConversationHeaderP
         
         <div className="flex items-center space-x-2">
           <VideoCallButton 
+            recipientId={contact.id}
+            recipientName={contact.name}
+            recipientImageUrl={contact.profileImageUrl}
             size="sm"
             variant="outline"
             className="text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-600"
