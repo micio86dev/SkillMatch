@@ -51,6 +51,31 @@ export default function Messages() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
+  // Handle starting a conversation from the professionals page
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) return;
+    
+    const startConversationData = sessionStorage.getItem('startConversation');
+    if (startConversationData) {
+      try {
+        const conversationInfo = JSON.parse(startConversationData);
+        sessionStorage.removeItem('startConversation'); // Clean up
+        
+        // Join the conversation with the professional
+        if (conversationInfo.userId && conversationInfo.userId !== user.id) {
+          joinConversation(conversationInfo.userId);
+          toast({
+            title: "Chat Started",
+            description: `You can now chat with ${conversationInfo.name || 'this professional'}`,
+          });
+        }
+      } catch (error) {
+        console.error('Error parsing conversation data:', error);
+        sessionStorage.removeItem('startConversation'); // Clean up on error
+      }
+    }
+  }, [isAuthenticated, user?.id, joinConversation, toast]);
+
   if (isLoading || (!isAuthenticated && !isLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -94,6 +119,13 @@ export default function Messages() {
   // Handle conversation selection
   const handleSelectConversation = (conversationId: string) => {
     joinConversation(conversationId);
+  };
+
+  // Start a new conversation with a user
+  const handleStartNewConversation = (userId: string) => {
+    if (userId && userId !== user?.id) {
+      joinConversation(userId);
+    }
   };
 
   return (

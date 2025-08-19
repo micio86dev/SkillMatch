@@ -9,9 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Filter, Users } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "wouter";
+import { isUnauthorizedError } from "@/lib/authUtils";
 
 export default function Professionals() {
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
   const [filters, setFilters] = useState({
     skills: "",
     availability: "any",
@@ -43,17 +48,72 @@ export default function Professionals() {
   });
 
   const handleConnect = (professionalId: string) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to connect with professionals.",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 1000);
+      return;
+    }
+    
     toast({
       title: "Connection Request Sent",
       description: "Your connection request has been sent successfully!",
     });
   };
 
-  const handleMessage = (professionalId: string) => {
-    toast({
-      title: "Message Feature",
-      description: "Messaging feature will be available soon!",
-    });
+  const handleMessage = (professional: any) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to start messaging.",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 1000);
+      return;
+    }
+
+    try {
+      // Navigate to messages page with the professional's user ID as conversation parameter
+      const professionalUserId = professional.user?.id || professional.userId;
+      if (!professionalUserId) {
+        toast({
+          title: "Error",
+          description: "Unable to start conversation. Professional information is incomplete.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Store the conversation info in sessionStorage for the messages page to pick up
+      sessionStorage.setItem('startConversation', JSON.stringify({
+        userId: professionalUserId,
+        name: `${professional.user?.firstName || ''} ${professional.user?.lastName || ''}`.trim(),
+        title: professional.title || 'Professional',
+        profileImageUrl: professional.user?.profileImageUrl
+      }));
+      
+      // Navigate to messages page
+      setLocation('/messages');
+      
+      toast({
+        title: "Starting Conversation",
+        description: `Opening chat with ${professional.user?.firstName || 'Professional'}...`,
+      });
+    } catch (error) {
+      console.error('Error starting conversation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start conversation. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const clearFilters = () => {
@@ -263,7 +323,7 @@ export default function Professionals() {
                   key={professional.id}
                   professional={professional}
                   onConnect={() => handleConnect(professional.id)}
-                  onMessage={() => handleMessage(professional.id)}
+                  onMessage={() => handleMessage(professional)}
                 />
               ))}
             </div>
