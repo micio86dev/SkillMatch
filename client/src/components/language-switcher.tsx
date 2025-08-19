@@ -53,21 +53,24 @@ export function LanguageSwitcher({ className }: { className?: string }) {
   });
 
   const handleLanguageChange = async (language: string) => {
-    // Clear any cached language data first
-    localStorage.removeItem('i18nextLng');
+    console.log('=== LANGUAGE CHANGE START ===');
+    console.log('Requested language:', language);
+    console.log('Current i18n language before:', i18n.language);
     
-    // Change language immediately in i18n
+    // Force language change immediately
     await i18n.changeLanguage(language);
     
-    // Store in localStorage for browser persistence
-    localStorage.setItem('i18nextLng', language);
+    console.log('i18n language after change:', i18n.language);
     
-    console.log('Language changed to:', language, 'Current i18n language:', i18n.language);
+    // Store in localStorage
+    localStorage.setItem('vibesync-language', language);
     
-    // If user is authenticated, save to their profile
+    // Save to user profile
     if (isAuthenticated) {
       updateLanguageMutation.mutate(language);
     }
+    
+    console.log('=== LANGUAGE CHANGE COMPLETE ===');
   };
 
   const currentLanguage = SUPPORTED_LANGUAGES.find(lang => lang.code === i18n.language) || SUPPORTED_LANGUAGES[0];

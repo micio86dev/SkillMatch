@@ -29,27 +29,26 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  // Initialize language based on user preference or browser locale
+  // Initialize language on app start
   useEffect(() => {
     const initializeLanguage = async () => {
+      // Check for manually saved language first
+      const savedLanguage = localStorage.getItem('vibesync-language');
+      
       let targetLanguage = 'en'; // default
-
-      if (isAuthenticated && user?.language) {
-        // Use user's saved language preference
+      
+      if (savedLanguage) {
+        // Use manually selected language (highest priority)
+        targetLanguage = savedLanguage;
+        console.log('Using manually saved language:', targetLanguage);
+      } else if (isAuthenticated && user?.language) {
+        // Use user profile language as fallback
         targetLanguage = user.language;
-        console.log('Using user saved language:', targetLanguage);
-      } else {
-        // Clear any conflicting localStorage data
-        localStorage.removeItem('i18nextLng');
-        // Default to English for non-authenticated users to avoid detection issues
-        targetLanguage = 'en';
-        console.log('Using default language for non-authenticated user:', targetLanguage);
+        console.log('Using user profile language:', targetLanguage);
       }
-
-      if (i18n.language !== targetLanguage) {
-        console.log('Changing language from', i18n.language, 'to', targetLanguage);
-        await i18n.changeLanguage(targetLanguage);
-      }
+      
+      console.log('Initializing language to:', targetLanguage);
+      await i18n.changeLanguage(targetLanguage);
     };
 
     initializeLanguage();
