@@ -69,8 +69,7 @@ export default function Home() {
             </div>
             <div className="flex space-x-3">
               <VideoCallButton 
-                variant="outline" 
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white border-none hover:from-blue-700 hover:to-purple-700" 
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-none shadow-md font-medium" 
               />
             </div>
           </div>
@@ -173,7 +172,7 @@ export default function Home() {
                 </Card>
               ))}
             </div>
-          ) : posts && posts.length > 0 ? (
+          ) : posts && Array.isArray(posts) && posts.length > 0 ? (
             <div className="space-y-6">
               {posts.map((post: any) => (
                 <PostCard key={post.id} post={post} />

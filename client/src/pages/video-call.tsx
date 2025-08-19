@@ -273,23 +273,23 @@ export function VideoCall({}: VideoCallProps) {
 
   if (isConnecting) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center text-white">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold mb-2">Connecting to call...</h2>
-          <p className="text-gray-300">Please allow camera and microphone access</p>
+      <div className="min-h-screen bg-slate-900 dark:bg-slate-950 flex items-center justify-center">
+        <div className="text-center text-slate-100 dark:text-slate-50">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold mb-2 text-slate-100 dark:text-slate-50">Connecting to call...</h2>
+          <p className="text-slate-300 dark:text-slate-400">Please allow camera and microphone access</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-slate-900 dark:bg-slate-950 flex flex-col">
       {/* Header */}
-      <div className="bg-gray-800 p-4 flex justify-between items-center">
+      <div className="bg-slate-800 dark:bg-slate-900 p-4 flex justify-between items-center border-b border-slate-700 dark:border-slate-800">
         <div className="flex items-center space-x-4">
-          <h1 className="text-white text-lg font-semibold">Video Call</h1>
-          <span className="text-gray-300 text-sm">Room: {roomId}</span>
+          <h1 className="text-slate-100 dark:text-slate-50 text-lg font-semibold">Video Call</h1>
+          <span className="text-slate-300 dark:text-slate-400 text-sm">Room: {roomId}</span>
         </div>
         
         <div className="flex items-center space-x-2">
@@ -297,7 +297,7 @@ export function VideoCall({}: VideoCallProps) {
             variant="outline"
             size="sm"
             onClick={copyCallUrl}
-            className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
+            className="bg-slate-700 border-slate-600 text-slate-100 hover:bg-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700"
           >
             <Copy className="h-4 w-4 mr-2" />
             Copy Link
@@ -306,7 +306,7 @@ export function VideoCall({}: VideoCallProps) {
             variant="outline"
             size="sm"
             onClick={shareCall}
-            className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
+            className="bg-slate-700 border-slate-600 text-slate-100 hover:bg-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700"
           >
             <Share2 className="h-4 w-4 mr-2" />
             Share
@@ -326,24 +326,24 @@ export function VideoCall({}: VideoCallProps) {
         
         {/* Waiting for others */}
         {!remoteUserConnected && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-            <div className="text-center text-white">
+          <div className="absolute inset-0 flex items-center justify-center bg-slate-800 dark:bg-slate-900">
+            <div className="text-center text-slate-100 dark:text-slate-50">
               <div className="mb-4">
-                <div className="w-24 h-24 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Video className="h-12 w-12 text-gray-400" />
+                <div className="w-24 h-24 bg-slate-700 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Video className="h-12 w-12 text-slate-400 dark:text-slate-500" />
                 </div>
               </div>
               <h2 className="text-xl font-semibold mb-2">Waiting for others to join</h2>
-              <p className="text-gray-300 mb-6">Share the link to invite others to this call</p>
+              <p className="text-slate-300 dark:text-slate-400 mb-6">Share the link to invite others to this call</p>
               
-              <div className="bg-gray-700 rounded-lg p-4 max-w-md mx-auto">
-                <p className="text-sm text-gray-300 mb-2">Call Link:</p>
+              <div className="bg-slate-700 dark:bg-slate-800 rounded-lg p-4 max-w-md mx-auto">
+                <p className="text-sm text-slate-300 dark:text-slate-400 mb-2">Call Link:</p>
                 <div className="flex items-center space-x-2">
                   <input
                     type="text"
                     value={callUrl}
                     readOnly
-                    className="flex-1 bg-gray-600 text-white text-sm p-2 rounded border-none"
+                    className="flex-1 bg-slate-600 dark:bg-slate-700 text-slate-100 dark:text-slate-200 text-sm p-2 rounded border-none"
                   />
                   <Button size="sm" onClick={copyCallUrl} className="bg-blue-600 hover:bg-blue-700">
                     <Copy className="h-4 w-4" />
@@ -355,7 +355,7 @@ export function VideoCall({}: VideoCallProps) {
         )}
 
         {/* Local Video (picture-in-picture) */}
-        <div className="absolute top-4 right-4 w-48 h-36 bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-600">
+        <div className="absolute top-4 right-4 w-48 h-36 bg-slate-800 dark:bg-slate-900 rounded-lg overflow-hidden border-2 border-slate-600 dark:border-slate-700">
           <video
             ref={localVideoRef}
             autoPlay
@@ -364,15 +364,15 @@ export function VideoCall({}: VideoCallProps) {
             className="w-full h-full object-cover"
           />
           {!isVideoEnabled && (
-            <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
-              <VideoOff className="h-8 w-8 text-gray-400" />
+            <div className="absolute inset-0 bg-slate-800 dark:bg-slate-900 flex items-center justify-center">
+              <VideoOff className="h-8 w-8 text-slate-400 dark:text-slate-500" />
             </div>
           )}
         </div>
       </div>
 
       {/* Controls */}
-      <div className="bg-gray-800 p-6">
+      <div className="bg-slate-800 dark:bg-slate-900 p-6 border-t border-slate-700 dark:border-slate-800">
         <div className="flex justify-center items-center space-x-4">
           <Button
             variant={isAudioEnabled ? "default" : "destructive"}

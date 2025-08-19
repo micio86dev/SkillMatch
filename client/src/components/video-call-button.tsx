@@ -62,7 +62,7 @@ export function VideoCallButton({
       disabled={isCreating}
       variant={variant}
       size={size}
-      className={className}
+      className={`${className} font-medium shadow-sm transition-all`}
     >
       {isCreating ? (
         <>

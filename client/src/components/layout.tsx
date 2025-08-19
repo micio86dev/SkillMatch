@@ -86,8 +86,8 @@ export function Layout({ children }: LayoutProps) {
                   className={cn(
                     "font-medium transition-colors",
                     location === item.href
-                      ? "text-primary"
-                      : "text-slate-600 dark:text-slate-300 hover:text-primary"
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400"
                   )}
                 >
                   {item.name}
@@ -102,7 +102,7 @@ export function Layout({ children }: LayoutProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-                className="p-2 text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700"
+                className="p-2 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
               >
                 {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
@@ -113,7 +113,7 @@ export function Layout({ children }: LayoutProps) {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="p-2 text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700"
+                  className="p-2 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                   aria-label="Notifications"
                 >
                   <Bell className="h-4 w-4" />
@@ -127,7 +127,7 @@ export function Layout({ children }: LayoutProps) {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="flex items-center space-x-2 text-slate-700 dark:text-slate-200 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700"
+                      className="flex items-center space-x-2 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                     >
                       {user?.profileImageUrl ? (
                         <img 
@@ -147,7 +147,7 @@ export function Layout({ children }: LayoutProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => window.location.href = "/api/logout"}
-                    className="text-slate-700 dark:text-slate-200 hover:text-red-600 dark:hover:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium"
+                    className="text-slate-700 dark:text-slate-200 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
                   >
                     Sign Out
                   </Button>
@@ -158,14 +158,14 @@ export function Layout({ children }: LayoutProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => window.location.href = "/api/login"}
-                    className="text-slate-700 dark:text-slate-200 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 font-medium"
+                    className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium transition-colors"
                   >
                     Sign In
                   </Button>
                   <Button
                     size="sm"
                     onClick={() => window.location.href = "/api/login"}
-                    className="bg-primary text-white hover:bg-primary/90 font-medium"
+                    className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 font-medium shadow-sm transition-colors"
                   >
                     Get Started
                   </Button>
@@ -176,7 +176,7 @@ export function Layout({ children }: LayoutProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700"
+                className="md:hidden p-2 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 aria-label="Toggle mobile menu"
               >
@@ -197,8 +197,8 @@ export function Layout({ children }: LayoutProps) {
                     className={cn(
                       "block px-4 py-2 font-medium transition-colors rounded-lg",
                       location === item.href
-                        ? "text-primary bg-primary/10"
-                        : "text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700"
+                        ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20"
+                        : "text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700"
                     )}
                   >
                     {item.name}
