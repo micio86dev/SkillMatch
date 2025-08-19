@@ -74,7 +74,7 @@ export function PostCard({ post }: PostCardProps) {
               {formatDistanceToNow(new Date(post.createdAt || ''))} ago
             </p>
           </div>
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700" aria-label="More options">
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </div>
@@ -91,7 +91,7 @@ export function PostCard({ post }: PostCardProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="flex items-center space-x-2 hover:text-red-500 transition-colors"
+            className="flex items-center space-x-2 text-slate-600 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-medium"
             onClick={handleLike}
             disabled={likeMutation.isPending}
           >
@@ -104,7 +104,7 @@ export function PostCard({ post }: PostCardProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="flex items-center space-x-2 hover:text-primary transition-colors"
+            className="flex items-center space-x-2 text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-medium"
             onClick={() => setShowComments(!showComments)}
           >
             <MessageSquare className="h-4 w-4" />
@@ -114,7 +114,7 @@ export function PostCard({ post }: PostCardProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="flex items-center space-x-2 hover:text-primary transition-colors"
+            className="flex items-center space-x-2 text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-medium"
           >
             <Share className="h-4 w-4" />
             <span>Share</span>

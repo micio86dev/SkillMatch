@@ -74,14 +74,20 @@ export function Layout({ children }: LayoutProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-                className="p-2"
+                className="p-2 text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700"
+                aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
               >
                 {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
               </Button>
 
               {/* Notifications (only for authenticated users) */}
               {isAuthenticated && (
-                <Button variant="ghost" size="sm" className="p-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="p-2 text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700"
+                  aria-label="Notifications"
+                >
                   <Bell className="h-4 w-4" />
                 </Button>
               )}
@@ -90,7 +96,11 @@ export function Layout({ children }: LayoutProps) {
               {isAuthenticated ? (
                 <div className="flex items-center space-x-3">
                   <Link href="/profile">
-                    <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="flex items-center space-x-2 text-slate-700 dark:text-slate-200 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700"
+                    >
                       {user?.profileImageUrl ? (
                         <img 
                           src={user.profileImageUrl} 
@@ -100,7 +110,7 @@ export function Layout({ children }: LayoutProps) {
                       ) : (
                         <User className="h-4 w-4" />
                       )}
-                      <span className="hidden sm:inline">
+                      <span className="hidden sm:inline font-medium">
                         {user?.firstName || user?.email}
                       </span>
                     </Button>
@@ -109,6 +119,7 @@ export function Layout({ children }: LayoutProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => window.location.href = "/api/logout"}
+                    className="text-slate-700 dark:text-slate-200 hover:text-red-600 dark:hover:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium"
                   >
                     Sign Out
                   </Button>
@@ -119,12 +130,14 @@ export function Layout({ children }: LayoutProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => window.location.href = "/api/login"}
+                    className="text-slate-700 dark:text-slate-200 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 font-medium"
                   >
                     Sign In
                   </Button>
                   <Button
                     size="sm"
                     onClick={() => window.location.href = "/api/login"}
+                    className="bg-primary text-white hover:bg-primary/90 font-medium"
                   >
                     Get Started
                   </Button>
@@ -135,8 +148,9 @@ export function Layout({ children }: LayoutProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="md:hidden p-2"
+                className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label="Toggle mobile menu"
               >
                 {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
               </Button>
