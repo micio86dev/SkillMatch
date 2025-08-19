@@ -36,6 +36,7 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   userType: varchar("user_type", { enum: ["professional", "company"] }).notNull().default("professional"),
   isEmailVerified: boolean("is_email_verified").default(false),
+  isBot: boolean("is_bot").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -442,6 +443,18 @@ export type UpsertUser = z.infer<typeof insertUserSchema>;
 export type RegisterUser = z.infer<typeof registerUserSchema>;
 export type LoginUser = z.infer<typeof loginUserSchema>;
 export type User = typeof users.$inferSelect;
+
+// Job imports tracking table
+export const jobImports = pgTable("job_imports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  companyName: varchar("company_name"),
+  sourceUrl: varchar("source_url").notNull(),
+  importedAt: timestamp("imported_at").defaultNow(),
+});
+
+export type JobImport = typeof jobImports.$inferSelect;
+export type InsertJobImport = typeof jobImports.$inferInsert;
 export type ProfessionalProfile = typeof professionalProfiles.$inferSelect;
 export type InsertProfessionalProfile = z.infer<typeof insertProfessionalProfileSchema>;
 export type CompanyProfile = typeof companyProfiles.$inferSelect;

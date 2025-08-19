@@ -721,6 +721,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Job import routes
+  app.post('/api/admin/import-jobs', isAuthenticated, async (req: any, res) => {
+    try {
+      const { JobImportService } = await import('./job-import-service');
+      const jobImportService = new JobImportService();
+      const results = await jobImportService.importJobsFromWeb();
+      res.json(results);
+    } catch (error) {
+      console.error("Error importing jobs:", error);
+      res.status(500).json({ message: "Failed to import jobs" });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // Setup Socket.IO for video calling signaling and notifications
