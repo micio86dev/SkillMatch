@@ -341,7 +341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Not authorized to update this project" });
       }
 
-      const updateData = insertProjectSchema.partial().parse(req.body);
+      const updateData = req.body;
       const updatedProject = await storage.updateProject(id, updateData);
       res.json(updatedProject);
     } catch (error) {

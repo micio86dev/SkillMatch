@@ -46,7 +46,7 @@ export default function Projects() {
   });
 
   const createProjectForm = useForm({
-    resolver: zodResolver(insertProjectSchema.omit({ companyUserId: true })),
+    resolver: zodResolver(insertProjectSchema),
     defaultValues: {
       title: "",
       description: "",
