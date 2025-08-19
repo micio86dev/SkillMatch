@@ -12,10 +12,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { insertProfessionalProfileSchema, insertCompanyProfileSchema, type ProfessionalProfile, type CompanyProfile } from "@shared/schema";
+import { insertProfessionalProfileSchema, insertCompanyProfileSchema, type ProfessionalProfile, type CompanyProfile, type User as UserType } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { User as UserIcon, Building, Star, MapPin, Globe, Github, Linkedin, Upload, Edit3, Bell, FileText, ExternalLink } from "lucide-react";
+import { User, Building, Star, MapPin, Globe, Github, Linkedin, Upload, Edit3, Bell, FileText, ExternalLink } from "lucide-react";
+import { ObjectUploader } from "@/components/ObjectUploader";
 import { NotificationPreferences } from "@/components/notification-preferences";
 import { AvatarUploader } from "@/components/avatar-uploader";
 import { SkillsInput } from "@/components/skills-input";
@@ -111,7 +112,7 @@ export default function Profile() {
       professionalForm.reset({
         title: professionalProfile.title || "",
         bio: professionalProfile.bio || "",
-        skills: (professionalProfile.skills as string[]) || [],
+        skills: [...(professionalProfile?.skills || [])],
         seniorityLevel: professionalProfile.seniorityLevel || "mid",
         hourlyRate: professionalProfile.hourlyRate || "",
         availability: professionalProfile.availability || "available",
@@ -273,7 +274,7 @@ export default function Profile() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <AvatarUploader
-                currentAvatar={user?.profileImageUrl}
+                currentAvatar={user?.profileImageUrl || undefined}
                 userName={companyProfile?.companyName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'User'}
                 onAvatarUpdate={handleAvatarUpdate}
                 size="lg"

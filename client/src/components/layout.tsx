@@ -36,6 +36,7 @@ export function Layout({ children }: LayoutProps) {
     { name: 'Professionals', href: '/professionals', icon: Users },
     { name: 'Projects', href: '/projects', icon: Briefcase },
     { name: 'Companies', href: '/companies', icon: Building2 },
+    { name: 'Career Insights', href: '/career-insights', icon: Code },
     { name: 'Messages', href: '/messages', icon: MessageSquare },
   ] : [
     { name: 'Browse Talent', href: '/professionals' },
