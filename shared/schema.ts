@@ -87,6 +87,7 @@ export const projects = pgTable("projects", {
   status: varchar("status", { enum: ["open", "in_review", "assigned", "completed", "cancelled"] }).default("open"),
   location: varchar("location"),
   isRemote: boolean("is_remote").default(true),
+  likesCount: integer("likes_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -111,12 +112,29 @@ export const postLikes = pgTable("post_likes", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Comment likes
+export const commentLikes = pgTable("comment_likes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  commentId: varchar("comment_id").references(() => postComments.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Project likes
+export const projectLikes = pgTable("project_likes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").references(() => projects.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Post comments
 export const postComments = pgTable("post_comments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   postId: varchar("post_id").references(() => posts.id).notNull(),
   userId: varchar("user_id").references(() => users.id).notNull(),
   content: text("content").notNull(),
+  likesCount: integer("likes_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -223,11 +241,12 @@ export const companyProfilesRelations = relations(companyProfiles, ({ one }) => 
   }),
 }));
 
-export const projectsRelations = relations(projects, ({ one }) => ({
+export const projectsRelations = relations(projects, ({ one, many }) => ({
   company: one(users, {
     fields: [projects.companyUserId],
     references: [users.id],
   }),
+  likes: many(projectLikes),
 }));
 
 export const postsRelations = relations(posts, ({ one, many }) => ({
@@ -250,7 +269,29 @@ export const postLikesRelations = relations(postLikes, ({ one }) => ({
   }),
 }));
 
-export const postCommentsRelations = relations(postComments, ({ one }) => ({
+export const commentLikesRelations = relations(commentLikes, ({ one }) => ({
+  comment: one(postComments, {
+    fields: [commentLikes.commentId],
+    references: [postComments.id],
+  }),
+  user: one(users, {
+    fields: [commentLikes.userId],
+    references: [users.id],
+  }),
+}));
+
+export const projectLikesRelations = relations(projectLikes, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectLikes.projectId],
+    references: [projects.id],
+  }),
+  user: one(users, {
+    fields: [projectLikes.userId],
+    references: [users.id],
+  }),
+}));
+
+export const postCommentsRelations = relations(postComments, ({ one, many }) => ({
   post: one(posts, {
     fields: [postComments.postId],
     references: [posts.id],
@@ -259,6 +300,7 @@ export const postCommentsRelations = relations(postComments, ({ one }) => ({
     fields: [postComments.userId],
     references: [users.id],
   }),
+  likes: many(commentLikes),
 }));
 
 export const connectionsRelations = relations(connections, ({ one }) => ({

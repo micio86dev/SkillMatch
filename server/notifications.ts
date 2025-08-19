@@ -27,18 +27,18 @@ class NotificationServiceImpl implements NotificationService {
       const preferences = await storage.getNotificationPreferences(notification.userId);
       
       // Send real-time notification if enabled
-      if (this.shouldSendInApp(notification.type, preferences)) {
+      if (this.shouldSendInApp(notification.type, preferences || null)) {
         const fullNotification = await storage.getNotification(notification.userId, notification.title);
         this.sendRealTimeNotification(notification.userId, fullNotification);
       }
       
       // Send email notification if enabled
-      if (this.shouldSendEmail(notification.type, preferences)) {
+      if (this.shouldSendEmail(notification.type, preferences || null)) {
         await this.sendEmailNotification(notification.userId, notification);
       }
       
       // Send push notification if enabled
-      if (this.shouldSendPush(notification.type, preferences)) {
+      if (this.shouldSendPush(notification.type, preferences || null)) {
         await this.sendPushNotification(notification.userId, notification);
       }
     } catch (error) {
@@ -181,6 +181,11 @@ class NotificationServiceImpl implements NotificationService {
     const likeCount = notifications.filter(n => n.type === 'like').length;
     const commentCount = notifications.filter(n => n.type === 'comment').length;
     const feedbackCount = notifications.filter(n => n.type === 'feedback').length;
+    
+    // Group likes by type for better summary
+    const postLikes = notifications.filter(n => n.type === 'like' && n.title === 'Post Liked').length;
+    const commentLikes = notifications.filter(n => n.type === 'like' && n.title === 'Comment Liked').length;
+    const projectLikes = notifications.filter(n => n.type === 'like' && n.title === 'Project Liked').length;
 
     return `
       <!DOCTYPE html>
@@ -268,6 +273,30 @@ export async function createLikeNotification(postOwnerId: string, likerId: strin
     title: 'Post Liked',
     message: `${liker?.firstName || 'Someone'} liked your post`,
     relatedId: postId,
+    relatedUserId: likerId,
+  });
+}
+
+export async function createCommentLikeNotification(commentOwnerId: string, likerId: string, commentId: string) {
+  const liker = await storage.getUser(likerId);
+  await notificationService.createNotification({
+    userId: commentOwnerId,
+    type: 'like',
+    title: 'Comment Liked',
+    message: `${liker?.firstName || 'Someone'} liked your comment`,
+    relatedId: commentId,
+    relatedUserId: likerId,
+  });
+}
+
+export async function createProjectLikeNotification(projectOwnerId: string, likerId: string, projectId: string) {
+  const liker = await storage.getUser(likerId);
+  await notificationService.createNotification({
+    userId: projectOwnerId,
+    type: 'like',
+    title: 'Project Liked',
+    message: `${liker?.firstName || 'Someone'} liked your project`,
+    relatedId: projectId,
     relatedUserId: likerId,
   });
 }

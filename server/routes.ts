@@ -248,6 +248,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Comment like routes
+  app.post('/api/comments/:commentId/like', isAuthenticated, async (req: any, res) => {
+    try {
+      const { commentId } = req.params;
+      const userId = req.user.claims.sub;
+      await storage.likeComment(commentId, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error liking comment:", error);
+      res.status(500).json({ message: "Failed to like comment" });
+    }
+  });
+
+  app.delete('/api/comments/:commentId/like', isAuthenticated, async (req: any, res) => {
+    try {
+      const { commentId } = req.params;
+      const userId = req.user.claims.sub;
+      await storage.unlikeComment(commentId, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error unliking comment:", error);
+      res.status(500).json({ message: "Failed to unlike comment" });
+    }
+  });
+
+  // Project like routes
+  app.post('/api/projects/:projectId/like', isAuthenticated, async (req: any, res) => {
+    try {
+      const { projectId } = req.params;
+      const userId = req.user.claims.sub;
+      await storage.likeProject(projectId, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error liking project:", error);
+      res.status(500).json({ message: "Failed to like project" });
+    }
+  });
+
+  app.delete('/api/projects/:projectId/like', isAuthenticated, async (req: any, res) => {
+    try {
+      const { projectId } = req.params;
+      const userId = req.user.claims.sub;
+      await storage.unlikeProject(projectId, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error unliking project:", error);
+      res.status(500).json({ message: "Failed to unlike project" });
+    }
+  });
+
   app.post('/api/posts/:postId/comments', isAuthenticated, async (req: any, res) => {
     try {
       const { postId } = req.params;
@@ -410,7 +460,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/notifications', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { limit } = req.query;
+      const { limit } = req.query as { limit?: string };
       const notifications = await storage.getNotifications(userId, limit ? parseInt(limit) : undefined);
       res.json(notifications);
     } catch (error) {

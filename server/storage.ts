@@ -5,6 +5,8 @@ import {
   projects,
   posts,
   postLikes,
+  commentLikes,
+  projectLikes,
   postComments,
   messages,
   feedback,
@@ -69,6 +71,13 @@ export interface IStorage {
   likePost(postId: string, userId: string): Promise<void>;
   unlikePost(postId: string, userId: string): Promise<void>;
   addComment(postId: string, userId: string, content: string): Promise<void>;
+  likeComment(commentId: string, userId: string): Promise<void>;
+  unlikeComment(commentId: string, userId: string): Promise<void>;
+  likeProject(projectId: string, userId: string): Promise<void>;
+  unlikeProject(projectId: string, userId: string): Promise<void>;
+  isPostLikedByUser(postId: string, userId: string): Promise<boolean>;
+  isCommentLikedByUser(commentId: string, userId: string): Promise<boolean>;
+  isProjectLikedByUser(projectId: string, userId: string): Promise<boolean>;
   
   // Message operations
   getConversation(userId1: string, userId2: string): Promise<(Message & { sender: User; receiver: User })[]>;
@@ -341,6 +350,77 @@ export class DatabaseStorage implements IStorage {
         .set({ commentsCount: sql`${posts.commentsCount} + 1` })
         .where(eq(posts.id, postId));
     });
+  }
+
+  async likeComment(commentId: string, userId: string): Promise<void> {
+    await db.transaction(async (tx) => {
+      await tx.insert(commentLikes).values({ commentId, userId });
+      await tx
+        .update(postComments)
+        .set({ likesCount: sql`${postComments.likesCount} + 1` })
+        .where(eq(postComments.id, commentId));
+    });
+  }
+
+  async unlikeComment(commentId: string, userId: string): Promise<void> {
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(commentLikes)
+        .where(and(eq(commentLikes.commentId, commentId), eq(commentLikes.userId, userId)));
+      await tx
+        .update(postComments)
+        .set({ likesCount: sql`${postComments.likesCount} - 1` })
+        .where(eq(postComments.id, commentId));
+    });
+  }
+
+  async likeProject(projectId: string, userId: string): Promise<void> {
+    await db.transaction(async (tx) => {
+      await tx.insert(projectLikes).values({ projectId, userId });
+      await tx
+        .update(projects)
+        .set({ likesCount: sql`${projects.likesCount} + 1` })
+        .where(eq(projects.id, projectId));
+    });
+  }
+
+  async unlikeProject(projectId: string, userId: string): Promise<void> {
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(projectLikes)
+        .where(and(eq(projectLikes.projectId, projectId), eq(projectLikes.userId, userId)));
+      await tx
+        .update(projects)
+        .set({ likesCount: sql`${projects.likesCount} - 1` })
+        .where(eq(projects.id, projectId));
+    });
+  }
+
+  async isPostLikedByUser(postId: string, userId: string): Promise<boolean> {
+    const [like] = await db
+      .select()
+      .from(postLikes)
+      .where(and(eq(postLikes.postId, postId), eq(postLikes.userId, userId)))
+      .limit(1);
+    return !!like;
+  }
+
+  async isCommentLikedByUser(commentId: string, userId: string): Promise<boolean> {
+    const [like] = await db
+      .select()
+      .from(commentLikes)
+      .where(and(eq(commentLikes.commentId, commentId), eq(commentLikes.userId, userId)))
+      .limit(1);
+    return !!like;
+  }
+
+  async isProjectLikedByUser(projectId: string, userId: string): Promise<boolean> {
+    const [like] = await db
+      .select()
+      .from(projectLikes)
+      .where(and(eq(projectLikes.projectId, projectId), eq(projectLikes.userId, userId)))
+      .limit(1);
+    return !!like;
   }
 
   // Message operations

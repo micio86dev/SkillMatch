@@ -1,13 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageSquare, Share, MoreHorizontal, User } from "lucide-react";
+import { MessageSquare, Share, MoreHorizontal, User } from "lucide-react";
 import { Post, User as UserType } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { LikeButton } from "@/components/like-button";
 
 interface PostCardProps {
   post: Post & { user: UserType };
@@ -15,40 +12,7 @@ interface PostCardProps {
 
 export function PostCard({ post }: PostCardProps) {
   const { user } = post;
-  const { user: currentUser, isAuthenticated } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [isLiked, setIsLiked] = useState(false); // TODO: Get actual like status
   const [showComments, setShowComments] = useState(false);
-
-  const likeMutation = useMutation({
-    mutationFn: async () => {
-      if (isLiked) {
-        await apiRequest('DELETE', `/api/posts/${post.id}/like`);
-      } else {
-        await apiRequest('POST', `/api/posts/${post.id}/like`);
-      }
-    },
-    onSuccess: () => {
-      setIsLiked(!isLiked);
-      queryClient.invalidateQueries({ queryKey: ['/api/posts'] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to update like status",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleLike = () => {
-    if (!isAuthenticated) {
-      window.location.href = "/api/login";
-      return;
-    }
-    likeMutation.mutate();
-  };
 
   return (
     <Card>
@@ -88,18 +52,11 @@ export function PostCard({ post }: PostCardProps) {
 
         {/* Post actions */}
         <div className="flex items-center space-x-6 text-sm text-slate-600 dark:text-slate-400">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex items-center space-x-2 text-slate-600 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-medium"
-            onClick={handleLike}
-            disabled={likeMutation.isPending}
-          >
-            <Heart 
-              className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} 
-            />
-            <span>{post.likesCount || 0} likes</span>
-          </Button>
+          <LikeButton
+            itemType="posts"
+            itemId={post.id}
+            initialLikeCount={post.likesCount || 0}
+          />
 
           <Button
             variant="ghost"

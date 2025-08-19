@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, Building, DollarSign } from "lucide-react";
 import { Project, User } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
+import { LikeButton } from "@/components/like-button";
 
 interface ProjectCardProps {
   project: Project & { company: User };
@@ -149,6 +150,15 @@ export function ProjectCard({ project }: ProjectCardProps) {
               </div>
             </Badge>
           </div>
+        </div>
+        
+        {/* Like button for projects */}
+        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+          <LikeButton
+            itemType="projects"
+            itemId={project.id}
+            initialLikeCount={project.likesCount || 0}
+          />
         </div>
       </CardContent>
     </Card>
