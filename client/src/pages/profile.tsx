@@ -317,7 +317,7 @@ export default function Profile() {
                       credentials: 'include',
                     });
                     if (response.ok) {
-                      window.location.href = '/auth/login';
+                      window.location.href = '/api/login';
                     }
                   } catch (error) {
                     console.error('Logout failed:', error);

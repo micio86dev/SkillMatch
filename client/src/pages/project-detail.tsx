@@ -1,5 +1,5 @@
 import { useParams, Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,11 +16,16 @@ import {
   Star,
   Calendar,
   User,
-  Share
+  Share,
+  Bell,
+  BellOff
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Project, User as UserType } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { apiRequest } from "@/lib/queryClient";
+import { isUnauthorizedError } from "@/lib/authUtils";
 
 interface ProjectWithCompany extends Project {
   company: UserType;
@@ -30,9 +35,17 @@ interface ProjectWithCompany extends Project {
 export default function ProjectDetail() {
   const { id } = useParams();
   const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: project, isLoading, error } = useQuery<ProjectWithCompany>({
     queryKey: [`/api/projects/${id}`],
+  });
+
+  const { data: subscriptionStatus } = useQuery<{ isSubscribed: boolean }>({
+    queryKey: [`/api/projects/${id}/subscription-status`],
+    enabled: !!isAuthenticated && !!id,
+    retry: false,
   });
 
   const getStatusColor = (status: string) => {
@@ -50,6 +63,61 @@ export default function ProjectDetail() {
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
     }
+  };
+
+  const subscriptionMutation = useMutation({
+    mutationFn: async ({ projectId, action }: { projectId: string; action: 'subscribe' | 'unsubscribe' }) => {
+      if (action === 'subscribe') {
+        await apiRequest('POST', `/api/projects/${projectId}/subscribe`, {});
+      } else {
+        await apiRequest('DELETE', `/api/projects/${projectId}/subscribe`, {});
+      }
+    },
+    onSuccess: (_, { action }) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${id}/subscription-status`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/user/subscriptions'] });
+      toast({
+        title: "Success",
+        description: action === 'subscribe' 
+          ? "Successfully subscribed to project updates!" 
+          : "Successfully unsubscribed from project updates!",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to update subscription. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubscription = () => {
+    if (!isAuthenticated || !project?.id) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to subscribe to project updates.",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 1000);
+      return;
+    }
+
+    const action = subscriptionStatus?.isSubscribed ? 'unsubscribe' : 'subscribe';
+    subscriptionMutation.mutate({ projectId: project.id, action });
   };
 
   const handleShareProject = async () => {
@@ -130,6 +198,27 @@ export default function ProjectDetail() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
+              {/* Only show subscribe button for open projects and authenticated users */}
+              {project.status === 'open' && isAuthenticated && (
+                <Button
+                  variant={subscriptionStatus?.isSubscribed ? "default" : "outline"}
+                  size="sm"
+                  onClick={handleSubscription}
+                  disabled={subscriptionMutation.isPending}
+                  className={subscriptionStatus?.isSubscribed 
+                    ? "bg-blue-600 text-white hover:bg-blue-700" 
+                    : ""}
+                >
+                  {subscriptionMutation.isPending ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                  ) : subscriptionStatus?.isSubscribed ? (
+                    <Bell className="h-4 w-4 mr-2" />
+                  ) : (
+                    <BellOff className="h-4 w-4 mr-2" />
+                  )}
+                  {subscriptionStatus?.isSubscribed ? "Subscribed" : "Subscribe"}
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
