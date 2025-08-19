@@ -13,6 +13,7 @@ import {
   insertNotificationPreferencesSchema,
 } from "@shared/schema";
 import { notificationService, createMessageNotification, createLikeNotification, createCommentLikeNotification, createProjectLikeNotification, createCommentNotification, createFeedbackNotification } from "./notifications";
+import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -566,6 +567,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating notification preferences:", error);
       res.status(500).json({ message: "Failed to update notification preferences" });
+    }
+  });
+
+  // Object storage routes for CV/file uploads
+  app.post('/api/objects/upload', isAuthenticated, async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error getting upload URL:", error);
+      res.status(500).json({ message: "Failed to get upload URL" });
+    }
+  });
+
+  app.get('/objects/:objectPath(*)', isAuthenticated, async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("Error downloading object:", error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.sendStatus(404);
+      }
+      return res.sendStatus(500);
+    }
+  });
+
+  app.put('/api/profile/cv', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { cvUrl } = req.body;
+      
+      if (!cvUrl) {
+        return res.status(400).json({ error: "cvUrl is required" });
+      }
+
+      const objectStorageService = new ObjectStorageService();
+      const normalizedPath = objectStorageService.normalizeObjectEntityPath(cvUrl);
+      
+      // Update the professional profile with the CV URL
+      await storage.updateProfessionalProfile(userId, { cvUrl: normalizedPath });
+      
+      res.json({ cvUrl: normalizedPath });
+    } catch (error) {
+      console.error("Error updating CV:", error);
+      res.status(500).json({ message: "Failed to update CV" });
     }
   });
 

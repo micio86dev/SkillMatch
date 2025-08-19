@@ -15,8 +15,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { insertProfessionalProfileSchema, insertCompanyProfileSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { User, Building, Star, MapPin, Globe, Github, Linkedin, Upload, Edit3, Bell } from "lucide-react";
+import { User, Building, Star, MapPin, Globe, Github, Linkedin, Upload, Edit3, Bell, FileText, ExternalLink } from "lucide-react";
 import { NotificationPreferences } from "@/components/notification-preferences";
+import { ObjectUploader } from "@/components/ObjectUploader";
+import { SkillsInput } from "@/components/skills-input";
 import { useState, useEffect } from "react";
 import { isUnauthorizedError } from "@/lib/authUtils";
 
@@ -71,6 +73,7 @@ export default function Profile() {
       portfolioUrl: "",
       githubUrl: "",
       linkedinUrl: "",
+      cvUrl: "",
     },
   });
 
@@ -99,6 +102,7 @@ export default function Profile() {
         portfolioUrl: professionalProfile.portfolioUrl || "",
         githubUrl: professionalProfile.githubUrl || "",
         linkedinUrl: professionalProfile.linkedinUrl || "",
+        cvUrl: professionalProfile.cvUrl || "",
       });
       setProfileType("professional");
     } else if (companyProfile) {
@@ -181,12 +185,57 @@ export default function Profile() {
     },
   });
 
+  const cvUploadMutation = useMutation({
+    mutationFn: async (cvUrl: string) => {
+      await apiRequest('PUT', "/api/profile/cv", { cvUrl });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/profile/professional"] });
+      toast({
+        title: "Success",
+        description: "CV uploaded successfully!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to upload CV. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleProfessionalSubmit = (data: any) => {
     createProfessionalMutation.mutate(data);
   };
 
   const handleCompanySubmit = (data: any) => {
     createCompanyMutation.mutate(data);
+  };
+
+  const handleCVUpload = async () => {
+    try {
+      const response = await fetch('/api/objects/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await response.json();
+      return {
+        method: 'PUT' as const,
+        url: data.uploadURL,
+      };
+    } catch (error) {
+      throw new Error('Failed to get upload URL');
+    }
+  };
+
+  const handleCVUploadComplete = (result: any) => {
+    if (result.successful && result.successful.length > 0) {
+      const uploadURL = result.successful[0].uploadURL;
+      cvUploadMutation.mutate(uploadURL);
+    }
   };
 
   if (isLoading || (!isAuthenticated && !isLoading)) {
@@ -261,7 +310,7 @@ export default function Profile() {
             <CardContent className="p-12 text-center">
               <User className="w-16 h-16 text-slate-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-                Welcome to DevConnect!
+                Welcome to VibeSync!
               </h3>
               <p className="text-slate-600 dark:text-slate-400 mb-6">
                 Complete your profile to start connecting with opportunities and other professionals.
@@ -368,6 +417,24 @@ export default function Profile() {
                             )}
                           />
 
+                          <FormField
+                            control={professionalForm.control}
+                            name="skills"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Skills</FormLabel>
+                                <FormControl>
+                                  <SkillsInput
+                                    value={field.value || []}
+                                    onChange={field.onChange}
+                                    placeholder="Add your technical skills..."
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <FormField
                               control={professionalForm.control}
@@ -404,6 +471,36 @@ export default function Profile() {
                                 </FormItem>
                               )}
                             />
+                          </div>
+
+                          {/* CV Upload Section */}
+                          <div className="space-y-4">
+                            <Label>Resume/CV</Label>
+                            <div className="flex items-center space-x-4">
+                              <ObjectUploader
+                                maxNumberOfFiles={1}
+                                maxFileSize={5 * 1024 * 1024} // 5MB
+                                onGetUploadParameters={handleCVUpload}
+                                onComplete={handleCVUploadComplete}
+                                buttonClassName="w-fit"
+                              >
+                                <Upload className="mr-2 h-4 w-4" />
+                                Upload CV
+                              </ObjectUploader>
+                              {professionalForm.watch("cvUrl") && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  asChild
+                                >
+                                  <a href={professionalForm.watch("cvUrl")} target="_blank" rel="noopener noreferrer">
+                                    <FileText className="mr-2 h-4 w-4" />
+                                    View Current CV
+                                  </a>
+                                </Button>
+                              )}
+                            </div>
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -545,14 +642,15 @@ export default function Profile() {
                                   <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                       <SelectTrigger>
-                                        <SelectValue placeholder="Select company size" />
+                                        <SelectValue placeholder="Select size" />
                                       </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
                                       <SelectItem value="1-10">1-10 employees</SelectItem>
                                       <SelectItem value="11-50">11-50 employees</SelectItem>
                                       <SelectItem value="51-200">51-200 employees</SelectItem>
-                                      <SelectItem value="201-1000">201-1000 employees</SelectItem>
+                                      <SelectItem value="201-500">201-500 employees</SelectItem>
+                                      <SelectItem value="501-1000">501-1000 employees</SelectItem>
                                       <SelectItem value="1000+">1000+ employees</SelectItem>
                                     </SelectContent>
                                   </Select>
@@ -613,188 +711,242 @@ export default function Profile() {
                 )
               ) : (
                 /* View Mode */
-                <div className="space-y-6">
-                  {/* Profile Info */}
-                  <Card>
-                    <CardContent className="p-6">
-                      {professionalProfile ? (
-                        <div className="space-y-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                              <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Seniority Level</h3>
-                              <Badge variant="secondary" className="capitalize">
-                                {professionalProfile.seniorityLevel}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* Main Profile Content */}
+                  <div className="lg:col-span-2 space-y-6">
+                    {/* About Section */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>
+                          {profileType === "professional" ? "About Me" : "About Company"}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                          {professionalProfile?.bio || companyProfile?.description || "No description available."}
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    {/* Skills Section - Professional Only */}
+                    {professionalProfile?.skills && professionalProfile.skills.length > 0 && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Skills</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex flex-wrap gap-2">
+                            {professionalProfile.skills.map((skill) => (
+                              <Badge key={skill} variant="secondary">
+                                {skill}
                               </Badge>
-                            </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* Social Links */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Links</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {(professionalProfile?.portfolioUrl || companyProfile?.websiteUrl) && (
+                            <a
+                              href={professionalProfile?.portfolioUrl || companyProfile?.websiteUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center text-primary hover:underline"
+                            >
+                              <Globe className="h-4 w-4 mr-2" />
+                              {profileType === "professional" ? "Portfolio" : "Website"}
+                              <ExternalLink className="h-3 w-3 ml-1" />
+                            </a>
+                          )}
+                          {professionalProfile?.githubUrl && (
+                            <a
+                              href={professionalProfile.githubUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center text-primary hover:underline"
+                            >
+                              <Github className="h-4 w-4 mr-2" />
+                              GitHub
+                              <ExternalLink className="h-3 w-3 ml-1" />
+                            </a>
+                          )}
+                          {(professionalProfile?.linkedinUrl || companyProfile?.linkedinUrl) && (
+                            <a
+                              href={professionalProfile?.linkedinUrl || companyProfile?.linkedinUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center text-primary hover:underline"
+                            >
+                              <Linkedin className="h-4 w-4 mr-2" />
+                              LinkedIn
+                              <ExternalLink className="h-3 w-3 ml-1" />
+                            </a>
+                          )}
+                          {professionalProfile?.cvUrl && (
+                            <a
+                              href={professionalProfile.cvUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center text-primary hover:underline"
+                            >
+                              <FileText className="h-4 w-4 mr-2" />
+                              Resume/CV
+                              <ExternalLink className="h-3 w-3 ml-1" />
+                            </a>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Sidebar */}
+                  <div className="space-y-6">
+                    {/* Professional Info */}
+                    {professionalProfile && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Professional Info</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {professionalProfile.seniorityLevel && (
                             <div>
-                              <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Hourly Rate</h3>
-                              <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                              <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                                Experience Level
+                              </Label>
+                              <p className="text-slate-900 dark:text-white capitalize">
+                                {professionalProfile.seniorityLevel.replace('_', ' ')}
+                              </p>
+                            </div>
+                          )}
+                          {professionalProfile.hourlyRate && (
+                            <div>
+                              <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                                Hourly Rate
+                              </Label>
+                              <p className="text-slate-900 dark:text-white font-semibold">
                                 ${professionalProfile.hourlyRate}/hr
                               </p>
                             </div>
-                          </div>
-
-                          {professionalProfile.bio && (
-                            <div>
-                              <h3 className="font-semibold text-slate-900 dark:text-white mb-2">About</h3>
-                              <p className="text-slate-600 dark:text-slate-400">{professionalProfile.bio}</p>
-                            </div>
                           )}
-
-                          {professionalProfile.skills && professionalProfile.skills.length > 0 && (
+                          {professionalProfile.availability && (
                             <div>
-                              <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Skills</h3>
-                              <div className="flex flex-wrap gap-2">
-                                {professionalProfile.skills.map((skill) => (
-                                  <Badge key={skill} variant="secondary">
-                                    {skill}
-                                  </Badge>
-                                ))}
+                              <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                                Availability
+                              </Label>
+                              <div className="flex items-center space-x-2">
+                                <div 
+                                  className={`w-2 h-2 rounded-full ${
+                                    professionalProfile.availability === 'available' ? 'bg-green-400' :
+                                    professionalProfile.availability === 'partially_available' ? 'bg-yellow-400' :
+                                    'bg-red-400'
+                                  }`} 
+                                />
+                                <span className="text-slate-900 dark:text-white capitalize">
+                                  {professionalProfile.availability.replace('_', ' ')}
+                                </span>
                               </div>
                             </div>
                           )}
+                        </CardContent>
+                      </Card>
+                    )}
 
-                          <div className="flex flex-wrap gap-4">
-                            {professionalProfile.portfolioUrl && (
-                              <a 
-                                href={professionalProfile.portfolioUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center space-x-2 text-primary hover:underline"
-                              >
-                                <Globe className="h-4 w-4" />
-                                <span>Portfolio</span>
-                              </a>
-                            )}
-                            {professionalProfile.githubUrl && (
-                              <a 
-                                href={professionalProfile.githubUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center space-x-2 text-primary hover:underline"
-                              >
-                                <Github className="h-4 w-4" />
-                                <span>GitHub</span>
-                              </a>
-                            )}
-                            {professionalProfile.linkedinUrl && (
-                              <a 
-                                href={professionalProfile.linkedinUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center space-x-2 text-primary hover:underline"
-                              >
-                                <Linkedin className="h-4 w-4" />
-                                <span>LinkedIn</span>
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      ) : companyProfile ? (
-                        <div className="space-y-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Company Info */}
+                    {companyProfile && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Company Info</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {companyProfile.industry && (
                             <div>
-                              <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Industry</h3>
-                              <p className="text-slate-600 dark:text-slate-400">{companyProfile.industry}</p>
+                              <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                                Industry
+                              </Label>
+                              <p className="text-slate-900 dark:text-white">
+                                {companyProfile.industry}
+                              </p>
                             </div>
+                          )}
+                          {companyProfile.companySize && (
                             <div>
-                              <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Company Size</h3>
-                              <Badge variant="secondary">
+                              <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                                Company Size
+                              </Label>
+                              <p className="text-slate-900 dark:text-white">
                                 {companyProfile.companySize} employees
-                              </Badge>
+                              </p>
                             </div>
-                          </div>
-
+                          )}
                           {companyProfile.location && (
                             <div>
-                              <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Location</h3>
-                              <p className="text-slate-600 dark:text-slate-400 flex items-center">
+                              <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                                Location
+                              </Label>
+                              <p className="text-slate-900 dark:text-white flex items-center">
                                 <MapPin className="h-4 w-4 mr-1" />
                                 {companyProfile.location}
                               </p>
                             </div>
                           )}
-
-                          {companyProfile.description && (
-                            <div>
-                              <h3 className="font-semibold text-slate-900 dark:text-white mb-2">About</h3>
-                              <p className="text-slate-600 dark:text-slate-400">{companyProfile.description}</p>
-                            </div>
-                          )}
-
-                          <div className="flex flex-wrap gap-4">
-                            {companyProfile.websiteUrl && (
-                              <a 
-                                href={companyProfile.websiteUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center space-x-2 text-primary hover:underline"
-                              >
-                                <Globe className="h-4 w-4" />
-                                <span>Website</span>
-                              </a>
-                            )}
-                            {companyProfile.linkedinUrl && (
-                              <a 
-                                href={companyProfile.linkedinUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center space-x-2 text-primary hover:underline"
-                              >
-                                <Linkedin className="h-4 w-4" />
-                                <span>LinkedIn</span>
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      ) : null}
-                    </CardContent>
-                  </Card>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
                 </div>
               )}
             </TabsContent>
 
             <TabsContent value="feedback" className="space-y-6">
-              {feedback && feedback.length > 0 ? (
-                <div className="space-y-4">
-                  {feedback.map((review: any) => (
-                    <Card key={review.id}>
-                      <CardContent className="p-6">
-                        <div className="flex items-start space-x-4">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <h4 className="font-semibold text-slate-900 dark:text-white">
-                                {review.fromUser.firstName} {review.fromUser.lastName}
-                              </h4>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Reviews & Feedback</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {feedback && feedback.length > 0 ? (
+                    <div className="space-y-6">
+                      {feedback.map((review: any) => (
+                        <div key={review.id} className="border-b border-slate-200 dark:border-slate-700 last:border-0 pb-6 last:pb-0">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center space-x-1">
                               <div className="flex text-yellow-400">
                                 {[1, 2, 3, 4, 5].map((star) => (
-                                  <Star 
-                                    key={star} 
-                                    className={`h-4 w-4 ${star <= review.rating ? 'fill-current' : ''}`} 
-                                  />
+                                  <Star key={star} className="h-4 w-4 fill-current" />
                                 ))}
                               </div>
+                              <span className="text-sm text-slate-600 dark:text-slate-400">
+                                {review.rating}/5
+                              </span>
                             </div>
-                            <p className="text-slate-600 dark:text-slate-400">{review.comment}</p>
+                            <span className="text-sm text-slate-500 dark:text-slate-400">
+                              {new Date(review.createdAt).toLocaleDateString()}
+                            </span>
                           </div>
+                          {review.comment && (
+                            <p className="text-slate-700 dark:text-slate-300 mb-2">
+                              "{review.comment}"
+                            </p>
+                          )}
+                          <p className="text-sm text-slate-600 dark:text-slate-400">
+                            by {review.fromUser?.firstName || 'Anonymous'}
+                          </p>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <Card>
-                  <CardContent className="p-12 text-center">
-                    <Star className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-                      No reviews yet
-                    </h3>
-                    <p className="text-slate-600 dark:text-slate-400">
-                      Complete projects and collaborate with others to receive feedback and build your reputation.
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-slate-600 dark:text-slate-400 text-center py-8">
+                      No reviews yet. Start collaborating to receive feedback!
                     </p>
-                  </CardContent>
-                </Card>
-              )}
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="notifications" className="space-y-6">

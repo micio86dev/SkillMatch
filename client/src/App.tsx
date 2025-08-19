@@ -14,6 +14,7 @@ import Projects from "@/pages/projects";
 import Professionals from "@/pages/professionals";
 import Messages from "@/pages/messages";
 import { VideoCall } from "@/pages/video-call";
+import PublicProfile from "@/pages/public-profile";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -38,6 +39,7 @@ function Router() {
       {/* Public routes available to everyone */}
       <Route path="/professionals" component={Professionals} />
       <Route path="/projects" component={Projects} />
+      <Route path="/profile/:userId" component={PublicProfile} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>
