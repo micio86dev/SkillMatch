@@ -18,6 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Plus, Filter, Briefcase, Search } from "lucide-react";
 import { useState } from "react";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { PreventivesButton } from "@/components/preventives-button";
 
 export default function Projects() {
   const { user, isAuthenticated } = useAuth();

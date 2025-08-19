@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
-import { Moon, Sun, Code, Menu, X, Bell, MessageSquare, User, Briefcase, Users, Home, Building2, ChevronDown } from "lucide-react";
+import { Moon, Sun, Code, Menu, X, Bell, MessageSquare, User, Briefcase, Users, Home, Building2, ChevronDown, Shield } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
   DropdownMenu,
@@ -53,6 +53,7 @@ export function Layout({ children }: LayoutProps) {
     { name: 'Professionals', href: '/professionals', icon: Users },
     { name: 'Projects', href: '/projects', icon: Briefcase },
     ...(user?.userType === 'professional' ? [{ name: 'Subscriptions', href: '/subscriptions', icon: Bell }] : []),
+    { name: 'Preventives', href: '/preventives', icon: Shield },
     { name: 'Companies', href: '/companies', icon: Building2 },
     { name: 'Career Insights', href: '/career-insights', icon: Code },
     { name: 'Messages', href: '/messages', icon: MessageSquare },

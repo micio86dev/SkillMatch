@@ -23,6 +23,7 @@ import CompanyDetail from "@/pages/company-detail";
 import ProjectDetail from "@/pages/project-detail";
 import CareerInsights from "@/pages/career-insights";
 import Subscriptions from "@/pages/subscriptions";
+import Preventives from "@/pages/preventives";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -49,6 +50,7 @@ function Router() {
           <Route path="/projects/:id" component={ProjectDetail} />
           <Route path="/career-insights" component={CareerInsights} />
           <Route path="/subscriptions" component={Subscriptions} />
+          <Route path="/preventives" component={Preventives} />
           <Route path="/messages" component={Messages} />
           <Route path="/call/:roomId" component={VideoCall} />
           <Route path="/professionals/:id" component={ProfessionalProfile} />

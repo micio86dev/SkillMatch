@@ -8,6 +8,7 @@ import {
   commentLikes,
   projectLikes,
   projectSubscriptions,
+  projectPreventives,
   postComments,
   messages,
   feedback,
@@ -37,6 +38,8 @@ import {
   type InsertNotificationPreferences,
   type ProjectSubscription,
   type InsertProjectSubscription,
+  type ProjectPreventive,
+  type InsertProjectPreventive,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, ilike, sql, ne } from "drizzle-orm";
@@ -676,6 +679,88 @@ export class DatabaseStorage implements IStorage {
       ...result.projects,
       company: result.users,
     }));
+  }
+
+  // Project preventives CRUD operations
+  async createProjectPreventive(preventiveData: InsertProjectPreventive): Promise<ProjectPreventive> {
+    const [preventive] = await db
+      .insert(projectPreventives)
+      .values(preventiveData)
+      .returning();
+    return preventive;
+  }
+
+  async getProjectPreventives(userId: string): Promise<ProjectPreventive[]> {
+    const userPreventives = await db
+      .select()
+      .from(projectPreventives)
+      .where(and(eq(projectPreventives.userId, userId), eq(projectPreventives.isActive, true)))
+      .orderBy(desc(projectPreventives.createdAt));
+    
+    const globalPreventives = await db
+      .select()
+      .from(projectPreventives)
+      .where(and(eq(projectPreventives.isGlobal, true), eq(projectPreventives.isActive, true)))
+      .orderBy(desc(projectPreventives.createdAt));
+    
+    return [...userPreventives, ...globalPreventives];
+  }
+
+  async getProjectPreventive(id: string, userId: string): Promise<ProjectPreventive | undefined> {
+    const [preventive] = await db
+      .select()
+      .from(projectPreventives)
+      .where(
+        and(
+          eq(projectPreventives.id, id),
+          or(
+            eq(projectPreventives.userId, userId),
+            eq(projectPreventives.isGlobal, true)
+          )
+        )
+      );
+    return preventive;
+  }
+
+  async updateProjectPreventive(id: string, userId: string, updates: Partial<InsertProjectPreventive>): Promise<ProjectPreventive | undefined> {
+    const [preventive] = await db
+      .update(projectPreventives)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(projectPreventives.id, id), eq(projectPreventives.userId, userId)))
+      .returning();
+    return preventive;
+  }
+
+  async deleteProjectPreventive(id: string, userId: string): Promise<void> {
+    await db
+      .delete(projectPreventives)
+      .where(and(eq(projectPreventives.id, id), eq(projectPreventives.userId, userId)));
+  }
+
+  async getProjectPreventivesByCategory(userId: string, category: string): Promise<ProjectPreventive[]> {
+    const userPreventives = await db
+      .select()
+      .from(projectPreventives)
+      .where(
+        and(
+          eq(projectPreventives.userId, userId),
+          eq(projectPreventives.category, category),
+          eq(projectPreventives.isActive, true)
+        )
+      );
+    
+    const globalPreventives = await db
+      .select()
+      .from(projectPreventives)
+      .where(
+        and(
+          eq(projectPreventives.isGlobal, true),
+          eq(projectPreventives.category, category),
+          eq(projectPreventives.isActive, true)
+        )
+      );
+    
+    return [...userPreventives, ...globalPreventives];
   }
 
   async isPostLikedByUser(postId: string, userId: string): Promise<boolean> {

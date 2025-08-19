@@ -426,6 +426,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Project preventives routes
+  app.get('/api/preventives', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { category } = req.query;
+      
+      let preventives;
+      if (category) {
+        preventives = await storage.getProjectPreventivesByCategory(userId, category as string);
+      } else {
+        preventives = await storage.getProjectPreventives(userId);
+      }
+      
+      res.json(preventives);
+    } catch (error) {
+      console.error("Error fetching preventives:", error);
+      res.status(500).json({ message: "Failed to fetch preventives" });
+    }
+  });
+
+  app.post('/api/preventives', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId!;
+      const preventiveData = {
+        ...req.body,
+        userId,
+      };
+      
+      const preventive = await storage.createProjectPreventive(preventiveData);
+      res.json(preventive);
+    } catch (error) {
+      console.error("Error creating preventive:", error);
+      res.status(500).json({ message: "Failed to create preventive" });
+    }
+  });
+
+  app.get('/api/preventives/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.session.userId!;
+      
+      const preventive = await storage.getProjectPreventive(id, userId);
+      if (!preventive) {
+        return res.status(404).json({ message: "Preventive not found" });
+      }
+      
+      res.json(preventive);
+    } catch (error) {
+      console.error("Error fetching preventive:", error);
+      res.status(500).json({ message: "Failed to fetch preventive" });
+    }
+  });
+
+  app.put('/api/preventives/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.session.userId!;
+      
+      const preventive = await storage.updateProjectPreventive(id, userId, req.body);
+      if (!preventive) {
+        return res.status(404).json({ message: "Preventive not found or not authorized" });
+      }
+      
+      res.json(preventive);
+    } catch (error) {
+      console.error("Error updating preventive:", error);
+      res.status(500).json({ message: "Failed to update preventive" });
+    }
+  });
+
+  app.delete('/api/preventives/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.session.userId!;
+      
+      await storage.deleteProjectPreventive(id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting preventive:", error);
+      res.status(500).json({ message: "Failed to delete preventive" });
+    }
+  });
+
+  // Generate new preventive using AI
+  app.post('/api/preventives/generate', isAuthenticated, async (req: any, res) => {
+    try {
+      const { category, projectContext } = req.body;
+      const userId = req.session.userId!;
+      
+      // Use OpenAI to generate a new preventive
+      const openai = new (await import('openai')).default({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+
+      const prompt = `Generate a project validation preventive measure for the "${category}" category.
+      
+Project context: ${projectContext || 'General project management'}
+
+Return a JSON object with:
+- title: Short descriptive title (max 50 chars)
+- description: Detailed explanation of why this preventive is important
+- validationRule: JSON object describing the validation logic
+- errorMessage: User-friendly error message when validation fails
+- category: "${category}"
+
+Example validation rules:
+- For budget: {"field": "budgetMax", "operator": "lessThan", "value": 500000, "message": "Budget exceeds company limit"}
+- For timeline: {"field": "estimatedHours", "operator": "greaterThan", "value": 40, "condition": "teamSize === 1", "message": "Single developer projects over 40 hours need approval"}
+- For team: {"field": "teamSize", "operator": "lessThanOrEqual", "value": 10, "message": "Team size cannot exceed 10 members"}
+
+Make the preventive specific, practical, and helpful for project management.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+      });
+
+      const generatedPreventive = JSON.parse(response.choices[0].message.content || '{}');
+      
+      // Create the preventive in database
+      const preventiveData = {
+        userId,
+        title: generatedPreventive.title,
+        description: generatedPreventive.description,
+        validationRule: JSON.stringify(generatedPreventive.validationRule),
+        errorMessage: generatedPreventive.errorMessage,
+        category: category,
+        isActive: true,
+        isGlobal: false,
+      };
+
+      const preventive = await storage.createProjectPreventive(preventiveData);
+      res.json(preventive);
+    } catch (error) {
+      console.error("Error generating preventive:", error);
+      res.status(500).json({ message: "Failed to generate preventive" });
+    }
+  });
+
   // Post routes
   app.get('/api/posts', async (req, res) => {
     try {

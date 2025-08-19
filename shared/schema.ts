@@ -143,6 +143,21 @@ export const projectSubscriptions = pgTable("project_subscriptions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Project preventives - custom validation rules for projects
+export const projectPreventives = pgTable("project_preventives", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  validationRule: text("validation_rule").notNull(), // JSON string with validation logic
+  errorMessage: text("error_message").notNull(),
+  category: varchar("category", { enum: ["budget", "timeline", "team", "skills", "general"] }).default("general"),
+  isActive: boolean("is_active").default(true),
+  isGlobal: boolean("is_global").default(false), // Global preventives apply to all users
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Post comments
 export const postComments = pgTable("post_comments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -241,6 +256,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     references: [notificationPreferences.userId],
   }),
   projectSubscriptions: many(projectSubscriptions),
+  projectPreventives: many(projectPreventives),
 }));
 
 export const professionalProfilesRelations = relations(professionalProfiles, ({ one }) => ({
@@ -315,6 +331,13 @@ export const projectSubscriptionsRelations = relations(projectSubscriptions, ({ 
   }),
   user: one(users, {
     fields: [projectSubscriptions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const projectPreventivesRelations = relations(projectPreventives, ({ one }) => ({
+  user: one(users, {
+    fields: [projectPreventives.userId],
     references: [users.id],
   }),
 }));
@@ -554,9 +577,18 @@ export type NotificationPreferences = typeof notificationPreferences.$inferSelec
 export type InsertNotificationPreferences = z.infer<typeof insertNotificationPreferencesSchema>;
 export type ProjectSubscription = typeof projectSubscriptions.$inferSelect;
 export type InsertProjectSubscription = typeof projectSubscriptions.$inferInsert;
+export type ProjectPreventive = typeof projectPreventives.$inferSelect;
+export type InsertProjectPreventive = typeof projectPreventives.$inferInsert;
 
 // Schemas for project subscriptions
 export const insertProjectSubscriptionSchema = createInsertSchema(projectSubscriptions).omit({
   id: true,
   createdAt: true,
+});
+
+// Schemas for project preventives
+export const insertProjectPreventiveSchema = createInsertSchema(projectPreventives).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
