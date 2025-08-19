@@ -53,11 +53,16 @@ export function LanguageSwitcher({ className }: { className?: string }) {
   });
 
   const handleLanguageChange = async (language: string) => {
+    // Clear any cached language data first
+    localStorage.removeItem('i18nextLng');
+    
     // Change language immediately in i18n
     await i18n.changeLanguage(language);
     
     // Store in localStorage for browser persistence
     localStorage.setItem('i18nextLng', language);
+    
+    console.log('Language changed to:', language, 'Current i18n language:', i18n.language);
     
     // If user is authenticated, save to their profile
     if (isAuthenticated) {

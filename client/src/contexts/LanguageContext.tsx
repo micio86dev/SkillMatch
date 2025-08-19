@@ -37,14 +37,17 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       if (isAuthenticated && user?.language) {
         // Use user's saved language preference
         targetLanguage = user.language;
+        console.log('Using user saved language:', targetLanguage);
       } else {
-        // Use browser locale for non-authenticated users
-        const browserLanguage = navigator.language.split('-')[0];
-        const supportedLanguages = ['en', 'es', 'fr', 'de', 'pt', 'it', 'ja', 'ko', 'zh', 'ru', 'ar', 'hi'];
-        targetLanguage = supportedLanguages.includes(browserLanguage) ? browserLanguage : 'en';
+        // Clear any conflicting localStorage data
+        localStorage.removeItem('i18nextLng');
+        // Default to English for non-authenticated users to avoid detection issues
+        targetLanguage = 'en';
+        console.log('Using default language for non-authenticated user:', targetLanguage);
       }
 
       if (i18n.language !== targetLanguage) {
+        console.log('Changing language from', i18n.language, 'to', targetLanguage);
         await i18n.changeLanguage(targetLanguage);
       }
     };
