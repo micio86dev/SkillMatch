@@ -281,7 +281,7 @@ export default function Projects() {
                                   type="number" 
                                   placeholder="5000"
                                   {...field}
-                                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                  onChange={(e) => field.onChange(e.target.value)}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -300,7 +300,7 @@ export default function Projects() {
                                   type="number" 
                                   placeholder="10000"
                                   {...field}
-                                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                  onChange={(e) => field.onChange(e.target.value)}
                                 />
                               </FormControl>
                               <FormMessage />
