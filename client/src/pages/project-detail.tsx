@@ -80,7 +80,7 @@ export default function ProjectDetail() {
     );
   }
 
-  if (error || !project) {
+  if (error || !project || !project.company) {
     return (
       <Layout>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -88,6 +88,9 @@ export default function ProjectDetail() {
             <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
               Project Not Found
             </h1>
+            <p className="text-slate-600 dark:text-slate-400 mb-6">
+              The project you're looking for doesn't exist or has been removed.
+            </p>
             <Link href="/projects">
               <Button variant="outline">
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -228,29 +231,45 @@ export default function ProjectDetail() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Link href={`/companies/${project.company.id}`}>
-                  <div className="flex items-center space-x-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors">
-                    {project.company.profileImageUrl ? (
-                      <img 
-                        src={project.company.profileImageUrl} 
-                        alt={project.company.firstName}
-                        className="w-12 h-12 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Building className="w-6 h-6 text-primary" />
+                {project.company?.id ? (
+                  <Link href={`/companies/${project.company.id}`}>
+                    <div className="flex items-center space-x-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors">
+                      {project.company.profileImageUrl ? (
+                        <img 
+                          src={project.company.profileImageUrl} 
+                          alt={project.company.firstName || 'Company'}
+                          className="w-12 h-12 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Building className="w-6 h-6 text-primary" />
+                        </div>
+                      )}
+                      <div>
+                        <h4 className="font-medium text-slate-900 dark:text-slate-100">
+                          {project.company.firstName || 'Company'}
+                        </h4>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          View company profile
+                        </p>
                       </div>
-                    )}
+                    </div>
+                  </Link>
+                ) : (
+                  <div className="flex items-center space-x-3 p-3">
+                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Building className="w-6 h-6 text-primary" />
+                    </div>
                     <div>
                       <h4 className="font-medium text-slate-900 dark:text-slate-100">
-                        {project.company.firstName}
+                        {project.company?.firstName || 'Company'}
                       </h4>
                       <p className="text-sm text-slate-500 dark:text-slate-400">
-                        View company profile
+                        Company information unavailable
                       </p>
                     </div>
                   </div>
-                </Link>
+                )}
               </CardContent>
             </Card>
 
@@ -283,7 +302,14 @@ export default function ProjectDetail() {
                   <div className="flex items-center text-sm">
                     <DollarSign className="h-4 w-4 mr-3 text-slate-400" />
                     <span className="text-slate-600 dark:text-slate-400">
-                      ${project.budgetMin?.toLocaleString()} - ${project.budgetMax?.toLocaleString()}
+                      {project.budgetMin && project.budgetMax 
+                        ? `$${project.budgetMin.toLocaleString()} - $${project.budgetMax.toLocaleString()}`
+                        : project.budgetMin 
+                        ? `$${project.budgetMin.toLocaleString()}+`
+                        : project.budgetMax 
+                        ? `Up to $${project.budgetMax.toLocaleString()}`
+                        : 'Budget to be discussed'
+                      }
                     </span>
                   </div>
                 )}
