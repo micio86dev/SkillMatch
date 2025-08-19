@@ -301,13 +301,34 @@ export default function Profile() {
                 )}
               </div>
             </div>
-            <Button
-              onClick={() => setIsEditing(!isEditing)}
-              variant={isEditing ? "outline" : "default"}
-            >
-              <Edit3 className="mr-2 h-4 w-4" />
-              {isEditing ? "Cancel" : "Edit Profile"}
-            </Button>
+            <div className="flex items-center space-x-3">
+              <Button
+                onClick={() => setIsEditing(!isEditing)}
+                variant={isEditing ? "outline" : "default"}
+              >
+                <Edit3 className="mr-2 h-4 w-4" />
+                {isEditing ? "Cancel" : "Edit Profile"}
+              </Button>
+              <Button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/auth/logout', {
+                      method: 'POST',
+                      credentials: 'include',
+                    });
+                    if (response.ok) {
+                      window.location.href = '/auth/login';
+                    }
+                  } catch (error) {
+                    console.error('Logout failed:', error);
+                  }
+                }}
+                variant="outline"
+                className="text-red-600 dark:text-red-400 border-red-300 dark:border-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+              >
+                Sign Out
+              </Button>
+            </div>
           </div>
         </div>
 
