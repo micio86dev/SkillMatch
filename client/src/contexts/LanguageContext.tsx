@@ -19,7 +19,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const updateLanguageMutation = useMutation({
     mutationFn: async (language: string) => {
       if (isAuthenticated) {
-        await apiRequest('PUT', '/api/user/language', { language });
+        await apiRequest('PUT', '/api/auth/user/language', { language });
       }
     },
     onSuccess: () => {

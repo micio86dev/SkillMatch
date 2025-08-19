@@ -33,7 +33,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
     mutationFn: async (language: string) => {
       if (isAuthenticated) {
         // Update user preference in database
-        await apiRequest("PUT", "/api/user/language", { language });
+        await apiRequest("PUT", "/api/auth/user/language", { language });
       }
     },
     onSuccess: () => {
