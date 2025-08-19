@@ -10,6 +10,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { formatDistanceToNow } from 'date-fns';
 import io from 'socket.io-client';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocation } from 'wouter';
 
 interface Notification {
   id: string;
@@ -31,6 +32,7 @@ export function NotificationBell() {
   const [socket, setSocket] = useState<any>(null);
   const [hasNewNotification, setHasNewNotification] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [location] = useLocation();
 
   // Get unread count
   const { data: unreadData } = useQuery({
@@ -61,10 +63,16 @@ export function NotificationBell() {
       setTimeout(() => setHasNewNotification(false), 2000);
       
       // Show toast for real-time notification
-      toast({
-        title: notification.title,
-        description: notification.message,
-      });
+      // Don't show toast for message notifications when on Messages page
+      const isOnMessagesPage = location === '/messages';
+      const isMessageNotification = notification.type === 'message';
+      
+      if (!(isOnMessagesPage && isMessageNotification)) {
+        toast({
+          title: notification.title,
+          description: notification.message,
+        });
+      }
     });
 
     setSocket(newSocket);

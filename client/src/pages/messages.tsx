@@ -107,10 +107,8 @@ export default function Messages() {
     if (!newMessage.trim() || !selectedConversationId) return;
     
     // In a real app, this would send the message via API
-    toast({
-      title: "Message sent!",
-      description: "Your message has been delivered.",
-    });
+    // Don't show toast for message sending since we're in the chat interface
+    // User can see the message appear in the conversation directly
     
     setNewMessage("");
   };
