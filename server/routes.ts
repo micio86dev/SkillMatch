@@ -903,6 +903,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Force import specific roles from InfoJobs and Indeed
+  app.post('/api/admin/import-specific-roles', async (req: any, res) => {
+    try {
+      const { designersCount = 5, projectManagersCount = 5 } = req.body;
+      console.log(`Starting forced import: ${designersCount} designers, ${projectManagersCount} project managers from InfoJobs and Indeed`);
+      
+      const { JobImportService } = await import('./job-import-service');
+      const jobImportService = new JobImportService();
+      const results = await jobImportService.importSpecificRoles(designersCount, projectManagersCount);
+      
+      res.json({
+        message: `Import completed: ${results.imported} jobs imported, ${results.skipped} skipped, ${results.errors} errors`,
+        ...results,
+        breakdown: {
+          requestedDesigners: designersCount,
+          requestedProjectManagers: projectManagersCount,
+          totalRequested: designersCount + projectManagersCount
+        }
+      });
+    } catch (error) {
+      console.error("Error importing specific roles:", error);
+      res.status(500).json({ message: "Failed to import specific roles" });
+    }
+  });
+
+  // Seed professional users
+  app.post('/api/admin/seed-professional-users', async (req: any, res) => {
+    try {
+      const { count = 120 } = req.body;
+      console.log(`Starting professional users seeding with ${count} users...`);
+      
+      const { professionalUsersSeeder } = await import('./seeders/professional-users-seeder');
+      await professionalUsersSeeder.seed(count);
+      
+      res.json({
+        message: `Successfully seeded ${count} professional users`,
+        count
+      });
+    } catch (error) {
+      console.error("Error seeding professional users:", error);
+      res.status(500).json({ message: "Failed to seed professional users" });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // Setup Socket.IO for video calling signaling and notifications

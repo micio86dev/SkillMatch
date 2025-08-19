@@ -14,6 +14,85 @@ export class JobImportService {
     this.scraper = new JobScraper();
   }
 
+  async importSpecificRoles(designersCount: number = 5, projectManagersCount: number = 5): Promise<{ imported: number; skipped: number; errors: number }> {
+    console.log(`Starting targeted import: ${designersCount} designers and ${projectManagersCount} project managers...`);
+    
+    let imported = 0;
+    let skipped = 0;
+    let errors = 0;
+
+    try {
+      // Scrape specific roles from InfoJobs and Indeed
+      const rawJobs = await this.scraper.scrapeSpecificRoles(designersCount, projectManagersCount);
+      console.log(`Found ${rawJobs.length} raw job postings for designers and project managers`);
+
+      for (const rawJob of rawJobs.slice(0, designersCount + projectManagersCount)) {
+        try {
+          // Check if we already imported this job (by URL or title+company)
+          if (await this.isDuplicateJob(rawJob.title, rawJob.companyName, rawJob.sourceUrl)) {
+            skipped++;
+            continue;
+          }
+
+          // Get detailed job content if needed
+          let fullContent = rawJob.content;
+          if (fullContent.length < 200) {
+            const detailedContent = await this.scraper.scrapeJobDetail(rawJob.sourceUrl);
+            if (detailedContent && detailedContent.length > fullContent.length) {
+              fullContent = detailedContent;
+            }
+          }
+
+          // Parse job with AI
+          const parsedJob = await this.aiParser.parseJobPosting(fullContent, rawJob.sourceUrl);
+          if (!parsedJob) {
+            errors++;
+            console.error(`Failed to parse job: ${rawJob.title}`);
+            continue;
+          }
+
+          // Create or find company user
+          const companyUser = await this.createOrFindCompanyUser(parsedJob.companyName, parsedJob.companyDescription);
+          
+          // Create project
+          const projectData = {
+            companyUserId: companyUser.id,
+            title: parsedJob.title,
+            description: parsedJob.description,
+            requiredSkills: parsedJob.requiredSkills,
+            seniorityLevel: parsedJob.seniorityLevel,
+            contractType: parsedJob.contractType,
+            teamSize: parsedJob.teamSize,
+            estimatedHours: parsedJob.estimatedHours,
+            budgetMin: parsedJob.budgetMin?.toString(),
+            budgetMax: parsedJob.budgetMax?.toString(),
+            location: parsedJob.location,
+            isRemote: parsedJob.isRemote,
+          } as any;
+          await storage.createProject(projectData);
+          imported++;
+          
+          console.log(`Imported job: ${parsedJob.title} from ${parsedJob.companyName}`);
+          await this.recordJobImport(parsedJob.title, parsedJob.companyName, rawJob.sourceUrl);
+          
+          if (imported >= designersCount + projectManagersCount) {
+            break;
+          }
+        } catch (error) {
+          errors++;
+          console.error(`Error processing job ${rawJob.title}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error("Error in job import process:", error);
+      errors++;
+    }
+
+    const result = { imported, skipped, errors };
+    console.log(`Targeted import completed: ${imported} imported, ${skipped} skipped, ${errors} errors`);
+    return result;
+  }
+
   async importJobsFromWeb(maxJobs: number = 5): Promise<{ imported: number; skipped: number; errors: number }> {
     console.log("Starting automated job import...");
     
@@ -132,8 +211,8 @@ export class JobImportService {
         companySize: companyProfile.companySize as any,
         industry: companyProfile.industry,
         description: companyProfile.description,
-        website: `https://www.${companyName.toLowerCase().replace(/\s+/g, '')}.com`,
-        founded: new Date().getFullYear() - Math.floor(Math.random() * 20), // Random founding year
+        websiteUrl: `https://www.${companyName.toLowerCase().replace(/\s+/g, '')}.com`,
+        // founded: new Date().getFullYear() - Math.floor(Math.random() * 20), // Not available in schema
       });
     } catch (error) {
       console.log("Company profile creation skipped (may already exist)");

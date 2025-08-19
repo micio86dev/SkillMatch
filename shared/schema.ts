@@ -35,6 +35,7 @@ export const users = pgTable("users", {
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
   userType: varchar("user_type", { enum: ["professional", "company"] }).notNull().default("professional"),
+  language: varchar("language", { length: 5 }).default("en"),
   isEmailVerified: boolean("is_email_verified").default(false),
   isBot: boolean("is_bot").default(false),
   createdAt: timestamp("created_at").defaultNow(),
@@ -47,6 +48,7 @@ export const professionalProfiles = pgTable("professional_profiles", {
   userId: varchar("user_id").references(() => users.id).notNull(),
   title: varchar("title"),
   bio: text("bio"),
+  cv: text("cv"),
   skills: text("skills").array(),
   seniorityLevel: varchar("seniority_level", { enum: ["junior", "mid", "senior", "lead", "principal"] }),
   hourlyRate: decimal("hourly_rate", { precision: 10, scale: 2 }),
@@ -55,6 +57,8 @@ export const professionalProfiles = pgTable("professional_profiles", {
   portfolioUrl: varchar("portfolio_url"),
   githubUrl: varchar("github_url"),
   linkedinUrl: varchar("linkedin_url"),
+  twitterUrl: varchar("twitter_url"),
+  websiteUrl: varchar("website_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -367,6 +371,8 @@ export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
   updatedAt: true,
   isEmailVerified: true,
+}).extend({
+  language: z.string().optional(),
 });
 
 // Authentication schemas
@@ -391,6 +397,10 @@ export const insertProfessionalProfileSchema = createInsertSchema(professionalPr
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  cv: z.string().optional(),
+  twitterUrl: z.string().optional(),
+  websiteUrl: z.string().optional(),
 });
 
 export const insertCompanyProfileSchema = createInsertSchema(companyProfiles).omit({
