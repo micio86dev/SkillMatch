@@ -35,7 +35,7 @@ import {
   type InsertNotificationPreferences,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, or, ilike, sql } from "drizzle-orm";
+import { eq, desc, and, or, ilike, sql, ne } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
@@ -55,13 +55,14 @@ export interface IStorage {
     seniorityLevel?: string;
     minRate?: number;
     maxRate?: number;
+    excludeUserId?: string;
   }): Promise<(ProfessionalProfile & { user: User })[]>;
   
   // Company profile operations
   getCompanyProfile(userId: string): Promise<CompanyProfile | undefined>;
   createCompanyProfile(profile: InsertCompanyProfile): Promise<CompanyProfile>;
   updateCompanyProfile(userId: string, profile: Partial<InsertCompanyProfile>): Promise<CompanyProfile>;
-  getCompanies(): Promise<(CompanyProfile & { user: User; projectsCount: number })[]>;
+  getCompanies(excludeUserId?: string): Promise<(CompanyProfile & { user: User; projectsCount: number })[]>;
   getCompanyWithProjects(id: string): Promise<(CompanyProfile & { user: User; projects: Project[] }) | undefined>;
   
   // Project operations
@@ -185,6 +186,7 @@ export class DatabaseStorage implements IStorage {
     seniorityLevel?: string;
     minRate?: number;
     maxRate?: number;
+    excludeUserId?: string;
   }): Promise<(ProfessionalProfile & { user: User })[]> {
     let query = db
       .select()
@@ -192,6 +194,11 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(users, eq(professionalProfiles.userId, users.id));
 
     const conditions = [];
+
+    // Exclude current user if specified
+    if (filters.excludeUserId) {
+      conditions.push(ne(users.id, filters.excludeUserId));
+    }
 
     if (filters.skills && filters.skills.length > 0) {
       conditions.push(
@@ -254,7 +261,15 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async getCompanies(): Promise<(CompanyProfile & { user: User; projectsCount: number })[]> {
+  async getCompanies(excludeUserId?: string): Promise<(CompanyProfile & { user: User; projectsCount: number })[]> {
+    // Build where conditions
+    let whereConditions = [eq(users.userType, 'company')];
+    
+    // Exclude current user if specified
+    if (excludeUserId) {
+      whereConditions.push(ne(users.id, excludeUserId));
+    }
+    
     const companiesWithProjects = await db
       .select({
         id: companyProfiles.id,
@@ -274,7 +289,7 @@ export class DatabaseStorage implements IStorage {
       .from(companyProfiles)
       .innerJoin(users, eq(companyProfiles.userId, users.id))
       .leftJoin(projects, and(eq(projects.companyUserId, users.id), eq(projects.status, 'open')))
-      .where(eq(users.userType, 'company'))
+      .where(and(...whereConditions))
       .groupBy(companyProfiles.id, users.id)
       .orderBy(desc(companyProfiles.createdAt));
 
@@ -472,7 +487,7 @@ export class DatabaseStorage implements IStorage {
 
     await db
       .update(postComments)
-      .set({ content, updatedAt: new Date() })
+      .set({ content })
       .where(eq(postComments.id, commentId));
   }
 

@@ -188,9 +188,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Company listing and detail routes
-  app.get('/api/companies', async (req, res) => {
+  app.get('/api/companies', async (req: any, res) => {
     try {
-      const companies = await storage.getCompanies();
+      // Exclude current user's company if authenticated
+      const excludeUserId = req.session?.userId;
+      const companies = await storage.getCompanies(excludeUserId);
       res.json(companies);
     } catch (error) {
       console.error("Error fetching companies:", error);
@@ -213,7 +215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Professional search routes
-  app.get('/api/professionals/search', async (req, res) => {
+  app.get('/api/professionals/search', async (req: any, res) => {
     try {
       const { skills, availability, seniorityLevel, minRate, maxRate } = req.query;
       
@@ -223,6 +225,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (seniorityLevel) filters.seniorityLevel = seniorityLevel as string;
       if (minRate) filters.minRate = parseFloat(minRate as string);
       if (maxRate) filters.maxRate = parseFloat(maxRate as string);
+      
+      // Exclude current user if authenticated
+      if (req.session?.userId) {
+        filters.excludeUserId = req.session.userId;
+      }
 
       const professionals = await storage.searchProfessionals(filters);
       res.json(professionals);
@@ -347,7 +354,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedPost);
     } catch (error) {
       console.error("Error updating post:", error);
-      if (error.message?.includes("not authorized")) {
+      if ((error as Error).message?.includes("not authorized")) {
         return res.status(403).json({ message: "Not authorized to edit this post" });
       }
       res.status(500).json({ message: "Failed to update post" });
@@ -363,7 +370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting post:", error);
-      if (error.message?.includes("not authorized")) {
+      if ((error as Error).message?.includes("not authorized")) {
         return res.status(403).json({ message: "Not authorized to delete this post" });
       }
       res.status(500).json({ message: "Failed to delete post" });
@@ -538,7 +545,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       console.error("Error updating comment:", error);
-      if (error.message?.includes("not authorized")) {
+      if ((error as Error).message?.includes("not authorized")) {
         return res.status(403).json({ message: "Not authorized to edit this comment" });
       }
       res.status(500).json({ message: "Failed to update comment" });
@@ -554,7 +561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting comment:", error);
-      if (error.message?.includes("not authorized")) {
+      if ((error as Error).message?.includes("not authorized")) {
         return res.status(403).json({ message: "Not authorized to delete this comment" });
       }
       res.status(500).json({ message: "Failed to delete comment" });

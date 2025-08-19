@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "wouter";
 import { Clock, MapPin, Building, DollarSign, Users } from "lucide-react";
 import { Project, User } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
@@ -58,8 +59,9 @@ export function ProjectCard({ project }: ProjectCardProps) {
   };
 
   return (
-    <Card className="hover:shadow-xl transition-all duration-200 hover:-translate-y-1">
-      <CardContent className="p-6">
+    <Link href={`/projects/${project.id}`}>
+      <Card className="hover:shadow-xl transition-all duration-200 hover:-translate-y-1 cursor-pointer">
+        <CardContent className="p-6">
         {/* Company header */}
         <div className="flex items-center space-x-3 mb-4">
           <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
@@ -177,7 +179,8 @@ export function ProjectCard({ project }: ProjectCardProps) {
             initialLikeCount={project.likesCount || 0}
           />
         </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </Link>
   );
 }

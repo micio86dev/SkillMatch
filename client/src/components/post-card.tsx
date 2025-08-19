@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageSquare, Share, MoreHorizontal, User, Send, Edit, Trash2 } from "lucide-react";
+import { MessageSquare, Share, MoreHorizontal, User, Send, Edit, Trash2, Link, Copy } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -109,6 +109,23 @@ export function PostCard({ post }: PostCardProps) {
     setShowDeleteDialog(false);
   };
 
+  const handleSharePost = async () => {
+    const postUrl = `${window.location.origin}/?post=${post.id}`;
+    try {
+      await navigator.clipboard.writeText(postUrl);
+      toast({
+        title: "Success",
+        description: "Post link copied to clipboard!",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to copy link. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Card>
       <CardContent className="p-6">
@@ -214,6 +231,7 @@ export function PostCard({ post }: PostCardProps) {
             variant="ghost"
             size="sm"
             className="flex items-center space-x-2 text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-medium"
+            onClick={handleSharePost}
           >
             <Share className="h-4 w-4" />
             <span>Share</span>
