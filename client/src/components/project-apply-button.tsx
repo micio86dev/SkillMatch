@@ -24,6 +24,16 @@ interface ProjectApplyButtonProps {
   isProjectFull?: boolean;
 }
 
+interface UserApplication {
+  id: string;
+  projectId: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  appliedAt: string;
+  project: {
+    title: string;
+  };
+}
+
 export function ProjectApplyButton({ projectId, projectTitle, isProjectFull }: ProjectApplyButtonProps) {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -31,7 +41,7 @@ export function ProjectApplyButton({ projectId, projectTitle, isProjectFull }: P
   const [showDialog, setShowDialog] = useState(false);
 
   // Check if user has already applied
-  const { data: userApplications = [] } = useQuery({
+  const { data: userApplications = [] } = useQuery<any[]>({
     queryKey: ["/api/user/applications"],
     enabled: isAuthenticated && user?.userType === 'professional',
   });
@@ -68,8 +78,24 @@ export function ProjectApplyButton({ projectId, projectTitle, isProjectFull }: P
     },
   });
 
-  if (!isAuthenticated || user?.userType !== 'professional') {
-    return null;
+  // Show different UI for different user states
+  if (!isAuthenticated) {
+    return (
+      <Button 
+        variant="outline" 
+        className="flex items-center gap-2"
+        onClick={() => {
+          window.location.href = "/api/login";
+        }}
+      >
+        <Send className="h-4 w-4" />
+        Login to Apply
+      </Button>
+    );
+  }
+
+  if (user?.userType !== 'professional') {
+    return null; // Company users don't see apply button
   }
 
   if (isProjectFull) {

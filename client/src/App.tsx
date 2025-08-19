@@ -24,6 +24,7 @@ import ProjectDetail from "@/pages/project-detail";
 import CareerInsights from "@/pages/career-insights";
 import Subscriptions from "@/pages/subscriptions";
 import Preventives from "@/pages/preventives";
+import MyProjects from "@/pages/my-projects";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -37,7 +38,15 @@ function Router() {
         <>
           <Route path="/auth/login" component={Login} />
           <Route path="/auth/signup" component={Signup} />
-          <Route path="/" component={Login} />
+          <Route path="/" component={Landing} />
+          {/* Allow access to public pages when not logged in */}
+          <Route path="/professionals" component={Professionals} />
+          <Route path="/projects" component={Projects} />
+          <Route path="/companies" component={Companies} />
+          <Route path="/companies/:id" component={CompanyDetail} />
+          <Route path="/projects/:id" component={ProjectDetail} />
+          <Route path="/professionals/:id" component={ProfessionalProfile} />
+          <Route path="/profile/:userId" component={PublicProfile} />
         </>
       ) : (
         <>
@@ -51,15 +60,13 @@ function Router() {
           <Route path="/career-insights" component={CareerInsights} />
           <Route path="/subscriptions" component={Subscriptions} />
           <Route path="/preventives" component={Preventives} />
+          <Route path="/my-projects" component={MyProjects} />
           <Route path="/messages" component={Messages} />
           <Route path="/call/:roomId" component={VideoCall} />
           <Route path="/professionals/:id" component={ProfessionalProfile} />
         </>
       )}
-      {/* Public routes available to everyone */}
-      <Route path="/professionals" component={Professionals} />
-      <Route path="/projects" component={Projects} />
-      <Route path="/profile/:userId" component={PublicProfile} />
+      {/* These routes are handled above based on auth state */}
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>

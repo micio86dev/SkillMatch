@@ -6,7 +6,7 @@ import { Link } from "wouter";
 import { useState } from "react";
 
 export function Header() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -40,6 +40,14 @@ export function Header() {
               <Link href="/profile" className="text-sm font-medium transition-colors hover:text-primary">
                 Profile
               </Link>
+              <Link href="/preventives" className="text-sm font-medium transition-colors hover:text-primary">
+                Preventives
+              </Link>
+              {user?.userType === 'company' && (
+                <Link href="/my-projects" className="text-sm font-medium transition-colors hover:text-primary">
+                  My Projects
+                </Link>
+              )}
             </>
           )}
         </nav>
