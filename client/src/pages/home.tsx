@@ -82,7 +82,9 @@ export default function Home() {
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Users className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">50K+</h3>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                {stats?.activeProfessionals || 0}
+              </h3>
               <p className="text-sm text-slate-700 dark:text-slate-300">Active Professionals</p>
             </CardContent>
           </Card>
@@ -92,7 +94,9 @@ export default function Home() {
               <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Briefcase className="h-6 w-6 text-green-600 dark:text-green-400" />
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">1.2K</h3>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                {stats?.openProjects || 0}
+              </h3>
               <p className="text-sm text-slate-700 dark:text-slate-300">Open Projects</p>
             </CardContent>
           </Card>
@@ -102,7 +106,9 @@ export default function Home() {
               <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <MessageSquare className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">24</h3>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                {stats?.unreadMessages || 0}
+              </h3>
               <p className="text-sm text-slate-700 dark:text-slate-300">Unread Messages</p>
             </CardContent>
           </Card>
@@ -112,7 +118,9 @@ export default function Home() {
               <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <TrendingUp className="h-6 w-6 text-orange-600 dark:text-orange-400" />
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">+15%</h3>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                {stats?.profileViews || 0}
+              </h3>
               <p className="text-sm text-slate-700 dark:text-slate-300">Profile Views</p>
             </CardContent>
           </Card>

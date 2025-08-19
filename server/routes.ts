@@ -671,6 +671,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Stats endpoint
+  app.get('/api/stats', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId!;
+      const [activeProfessionals, openProjects, unreadMessages] = await Promise.all([
+        storage.getActiveProfessionalsCount(),
+        storage.getOpenProjectsCount(),
+        storage.getUnreadMessagesCount(userId)
+      ]);
+
+      res.json({
+        activeProfessionals,
+        openProjects,
+        unreadMessages,
+        profileViews: 0 // Placeholder - profile views tracking not implemented yet
+      });
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+      res.status(500).json({ message: "Failed to fetch stats" });
+    }
+  });
+
   // Notification preferences routes
   app.get('/api/notification-preferences', isAuthenticated, async (req: any, res) => {
     try {

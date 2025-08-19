@@ -92,6 +92,10 @@ export interface IStorage {
   markMessageAsRead(messageId: string): Promise<void>;
   getUnreadMessagesCount(userId: string): Promise<number>;
   
+  // Stats operations
+  getActiveProfessionalsCount(): Promise<number>;
+  getOpenProjectsCount(): Promise<number>;
+  
   // Feedback operations
   getFeedbackForUser(userId: string): Promise<(Feedback & { fromUser: User })[]>;
   createFeedback(feedback: InsertFeedback): Promise<Feedback>;
@@ -559,6 +563,23 @@ export class DatabaseStorage implements IStorage {
       .from(messages)
       .where(and(eq(messages.receiverId, userId), eq(messages.isRead, false)));
     return Number(result.count) || 0;
+  }
+
+  async getActiveProfessionalsCount(): Promise<number> {
+    const [result] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(professionalProfiles)
+      .innerJoin(users, eq(professionalProfiles.userId, users.id))
+      .where(eq(users.userType, 'professional'));
+    return result.count || 0;
+  }
+
+  async getOpenProjectsCount(): Promise<number> {
+    const [result] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(projects)
+      .where(eq(projects.status, 'open'));
+    return result.count || 0;
   }
 
   // Feedback operations
