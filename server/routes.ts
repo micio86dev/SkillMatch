@@ -333,6 +333,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put('/api/posts/:postId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { postId } = req.params;
+      const { content } = req.body;
+      const userId = req.session.userId!;
+      
+      if (!content || typeof content !== 'string') {
+        return res.status(400).json({ message: "Content is required" });
+      }
+
+      const updatedPost = await storage.updatePost(postId, userId, content);
+      res.json(updatedPost);
+    } catch (error) {
+      console.error("Error updating post:", error);
+      if (error.message?.includes("not authorized")) {
+        return res.status(403).json({ message: "Not authorized to edit this post" });
+      }
+      res.status(500).json({ message: "Failed to update post" });
+    }
+  });
+
+  app.delete('/api/posts/:postId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { postId } = req.params;
+      const userId = req.session.userId!;
+      
+      await storage.deletePost(postId, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      if (error.message?.includes("not authorized")) {
+        return res.status(403).json({ message: "Not authorized to delete this post" });
+      }
+      res.status(500).json({ message: "Failed to delete post" });
+    }
+  });
+
   app.post('/api/posts/:postId/like', isAuthenticated, async (req: any, res) => {
     try {
       const { postId } = req.params;
@@ -484,6 +521,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error adding comment:", error);
       res.status(500).json({ message: "Failed to add comment" });
+    }
+  });
+
+  app.put('/api/comments/:commentId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { commentId } = req.params;
+      const { content } = req.body;
+      const userId = req.session.userId!;
+      
+      if (!content || typeof content !== 'string') {
+        return res.status(400).json({ message: "Content is required" });
+      }
+
+      await storage.updateComment(commentId, userId, content);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating comment:", error);
+      if (error.message?.includes("not authorized")) {
+        return res.status(403).json({ message: "Not authorized to edit this comment" });
+      }
+      res.status(500).json({ message: "Failed to update comment" });
+    }
+  });
+
+  app.delete('/api/comments/:commentId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { commentId } = req.params;
+      const userId = req.session.userId!;
+      
+      await storage.deleteComment(commentId, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      if (error.message?.includes("not authorized")) {
+        return res.status(403).json({ message: "Not authorized to delete this comment" });
+      }
+      res.status(500).json({ message: "Failed to delete comment" });
     }
   });
 

@@ -73,9 +73,13 @@ export interface IStorage {
   // Post operations
   getPosts(filters?: { userId?: string; isPublic?: boolean }): Promise<(Post & { user: User })[]>;
   createPost(post: InsertPost): Promise<Post>;
+  updatePost(postId: string, userId: string, content: string): Promise<Post>;
+  deletePost(postId: string, userId: string): Promise<void>;
   likePost(postId: string, userId: string): Promise<void>;
   unlikePost(postId: string, userId: string): Promise<void>;
   addComment(postId: string, userId: string, content: string): Promise<void>;
+  updateComment(commentId: string, userId: string, content: string): Promise<void>;
+  deleteComment(commentId: string, userId: string): Promise<void>;
   getPostComments(postId: string): Promise<Array<{ id: string; content: string; createdAt: string; user: User; likesCount: number }>>;
   getComment(commentId: string): Promise<{ id: string; userId: string; content: string } | undefined>;
   likeComment(commentId: string, userId: string): Promise<void>;
@@ -389,6 +393,44 @@ export class DatabaseStorage implements IStorage {
     return newPost;
   }
 
+  async updatePost(postId: string, userId: string, content: string): Promise<Post> {
+    // First verify the user owns the post
+    const [existingPost] = await db.select().from(posts).where(eq(posts.id, postId));
+    if (!existingPost || existingPost.userId !== userId) {
+      throw new Error("Post not found or user not authorized to edit");
+    }
+
+    const [updatedPost] = await db
+      .update(posts)
+      .set({ content, updatedAt: new Date() })
+      .where(eq(posts.id, postId))
+      .returning();
+    return updatedPost;
+  }
+
+  async deletePost(postId: string, userId: string): Promise<void> {
+    // First verify the user owns the post
+    const [existingPost] = await db.select().from(posts).where(eq(posts.id, postId));
+    if (!existingPost || existingPost.userId !== userId) {
+      throw new Error("Post not found or user not authorized to delete");
+    }
+
+    // Delete in transaction to maintain consistency
+    await db.transaction(async (tx) => {
+      // Delete all comments and their likes
+      await tx.delete(commentLikes).where(
+        sql`${commentLikes.commentId} IN (SELECT id FROM ${postComments} WHERE ${postComments.postId} = ${postId})`
+      );
+      await tx.delete(postComments).where(eq(postComments.postId, postId));
+      
+      // Delete post likes
+      await tx.delete(postLikes).where(eq(postLikes.postId, postId));
+      
+      // Delete the post
+      await tx.delete(posts).where(eq(posts.id, postId));
+    });
+  }
+
   async likePost(postId: string, userId: string): Promise<void> {
     await db.transaction(async (tx) => {
       await tx.insert(postLikes).values({ postId, userId });
@@ -418,6 +460,41 @@ export class DatabaseStorage implements IStorage {
         .update(posts)
         .set({ commentsCount: sql`${posts.commentsCount} + 1` })
         .where(eq(posts.id, postId));
+    });
+  }
+
+  async updateComment(commentId: string, userId: string, content: string): Promise<void> {
+    // First verify the user owns the comment
+    const [existingComment] = await db.select().from(postComments).where(eq(postComments.id, commentId));
+    if (!existingComment || existingComment.userId !== userId) {
+      throw new Error("Comment not found or user not authorized to edit");
+    }
+
+    await db
+      .update(postComments)
+      .set({ content, updatedAt: new Date() })
+      .where(eq(postComments.id, commentId));
+  }
+
+  async deleteComment(commentId: string, userId: string): Promise<void> {
+    // First verify the user owns the comment
+    const [existingComment] = await db.select().from(postComments).where(eq(postComments.id, commentId));
+    if (!existingComment || existingComment.userId !== userId) {
+      throw new Error("Comment not found or user not authorized to delete");
+    }
+
+    await db.transaction(async (tx) => {
+      // Delete comment likes
+      await tx.delete(commentLikes).where(eq(commentLikes.commentId, commentId));
+      
+      // Delete the comment
+      await tx.delete(postComments).where(eq(postComments.id, commentId));
+      
+      // Decrease comment count on the post
+      await tx
+        .update(posts)
+        .set({ commentsCount: sql`${posts.commentsCount} - 1` })
+        .where(eq(posts.id, existingComment.postId));
     });
   }
 
