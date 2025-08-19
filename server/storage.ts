@@ -73,6 +73,7 @@ export interface IStorage {
   likePost(postId: string, userId: string): Promise<void>;
   unlikePost(postId: string, userId: string): Promise<void>;
   addComment(postId: string, userId: string, content: string): Promise<void>;
+  getPostComments(postId: string): Promise<Array<{ id: string; content: string; createdAt: string; user: User; likesCount: number }>>;
   getComment(commentId: string): Promise<{ id: string; userId: string; content: string } | undefined>;
   likeComment(commentId: string, userId: string): Promise<void>;
   unlikeComment(commentId: string, userId: string): Promise<void>;
@@ -351,6 +352,23 @@ export class DatabaseStorage implements IStorage {
         .set({ commentsCount: sql`${posts.commentsCount} + 1` })
         .where(eq(posts.id, postId));
     });
+  }
+
+  async getPostComments(postId: string): Promise<Array<{ id: string; content: string; createdAt: string; user: User; likesCount: number }>> {
+    const results = await db
+      .select()
+      .from(postComments)
+      .innerJoin(users, eq(postComments.userId, users.id))
+      .where(eq(postComments.postId, postId))
+      .orderBy(desc(postComments.createdAt));
+    
+    return results.map(result => ({
+      id: result.post_comments.id,
+      content: result.post_comments.content,
+      createdAt: result.post_comments.createdAt?.toISOString() || new Date().toISOString(),
+      likesCount: result.post_comments.likesCount || 0,
+      user: result.users
+    }));
   }
 
   async getComment(commentId: string): Promise<{ id: string; userId: string; content: string } | undefined> {
