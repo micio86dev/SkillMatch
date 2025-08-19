@@ -61,6 +61,8 @@ export interface IStorage {
   getCompanyProfile(userId: string): Promise<CompanyProfile | undefined>;
   createCompanyProfile(profile: InsertCompanyProfile): Promise<CompanyProfile>;
   updateCompanyProfile(userId: string, profile: Partial<InsertCompanyProfile>): Promise<CompanyProfile>;
+  getCompanies(): Promise<(CompanyProfile & { user: User; projectsCount: number })[]>;
+  getCompanyWithProjects(id: string): Promise<(CompanyProfile & { user: User; projects: Project[] }) | undefined>;
   
   // Project operations
   getProject(id: string): Promise<Project | undefined>;
@@ -242,6 +244,57 @@ export class DatabaseStorage implements IStorage {
       .where(eq(companyProfiles.userId, userId))
       .returning();
     return updated;
+  }
+
+  async getCompanies(): Promise<(CompanyProfile & { user: User; projectsCount: number })[]> {
+    const companiesWithProjects = await db
+      .select({
+        id: companyProfiles.id,
+        userId: companyProfiles.userId,
+        companyName: companyProfiles.companyName,
+        description: companyProfiles.description,
+        industry: companyProfiles.industry,
+        websiteUrl: companyProfiles.websiteUrl,
+        linkedinUrl: companyProfiles.linkedinUrl,
+        location: companyProfiles.location,
+        companySize: companyProfiles.companySize,
+        createdAt: companyProfiles.createdAt,
+        updatedAt: companyProfiles.updatedAt,
+        user: users,
+        projectsCount: sql<number>`count(${projects.id})::int`
+      })
+      .from(companyProfiles)
+      .innerJoin(users, eq(companyProfiles.userId, users.id))
+      .leftJoin(projects, and(eq(projects.companyUserId, users.id), eq(projects.status, 'open')))
+      .where(eq(users.userType, 'company'))
+      .groupBy(companyProfiles.id, users.id)
+      .orderBy(desc(companyProfiles.createdAt));
+
+    return companiesWithProjects;
+  }
+
+  async getCompanyWithProjects(id: string): Promise<(CompanyProfile & { user: User; projects: Project[] }) | undefined> {
+    const [company] = await db
+      .select()
+      .from(companyProfiles)
+      .innerJoin(users, eq(companyProfiles.userId, users.id))
+      .where(eq(companyProfiles.id, id));
+
+    if (!company) {
+      return undefined;
+    }
+
+    const companyProjects = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.companyUserId, company.users.id))
+      .orderBy(desc(projects.createdAt));
+
+    return {
+      ...company.company_profiles,
+      user: company.users,
+      projects: companyProjects
+    };
   }
 
   // Project operations

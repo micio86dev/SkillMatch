@@ -187,6 +187,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Company listing and detail routes
+  app.get('/api/companies', async (req, res) => {
+    try {
+      const companies = await storage.getCompanies();
+      res.json(companies);
+    } catch (error) {
+      console.error("Error fetching companies:", error);
+      res.status(500).json({ message: "Failed to fetch companies" });
+    }
+  });
+
+  app.get('/api/companies/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const company = await storage.getCompanyWithProjects(id);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      res.json(company);
+    } catch (error) {
+      console.error("Error fetching company details:", error);
+      res.status(500).json({ message: "Failed to fetch company details" });
+    }
+  });
+
   // Professional search routes
   app.get('/api/professionals/search', async (req, res) => {
     try {

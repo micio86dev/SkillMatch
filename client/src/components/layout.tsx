@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
-import { Moon, Sun, Code, Menu, X, Bell, MessageSquare, User, Briefcase, Users, Home } from "lucide-react";
+import { Moon, Sun, Code, Menu, X, Bell, MessageSquare, User, Briefcase, Users, Home, Building2 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { NotificationBell } from "@/components/notifications";
@@ -29,6 +29,7 @@ export function Layout({ children }: LayoutProps) {
     { name: 'Home', href: '/', icon: Home },
     { name: 'Professionals', href: '/professionals', icon: Users },
     { name: 'Projects', href: '/projects', icon: Briefcase },
+    { name: 'Companies', href: '/companies', icon: Building2 },
     { name: 'Messages', href: '/messages', icon: MessageSquare },
   ] : [
     { name: 'Browse Talent', href: '/professionals' },
