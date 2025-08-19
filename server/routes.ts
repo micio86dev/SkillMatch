@@ -1,0 +1,369 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { setupAuth, isAuthenticated } from "./replitAuth";
+import {
+  insertProfessionalProfileSchema,
+  insertCompanyProfileSchema,
+  insertProjectSchema,
+  insertPostSchema,
+  insertMessageSchema,
+  insertFeedbackSchema,
+} from "@shared/schema";
+import { z } from "zod";
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Auth middleware
+  await setupAuth(app);
+
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Profile routes
+  app.get('/api/profile/professional/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const profile = await storage.getProfessionalProfile(userId);
+      if (!profile) {
+        return res.status(404).json({ message: "Professional profile not found" });
+      }
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching professional profile:", error);
+      res.status(500).json({ message: "Failed to fetch professional profile" });
+    }
+  });
+
+  app.post('/api/profile/professional', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const profileData = insertProfessionalProfileSchema.parse({
+        ...req.body,
+        userId,
+      });
+      const profile = await storage.createProfessionalProfile(profileData);
+      res.json(profile);
+    } catch (error) {
+      console.error("Error creating professional profile:", error);
+      res.status(500).json({ message: "Failed to create professional profile" });
+    }
+  });
+
+  app.put('/api/profile/professional', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const profileData = insertProfessionalProfileSchema.partial().parse(req.body);
+      const profile = await storage.updateProfessionalProfile(userId, profileData);
+      res.json(profile);
+    } catch (error) {
+      console.error("Error updating professional profile:", error);
+      res.status(500).json({ message: "Failed to update professional profile" });
+    }
+  });
+
+  app.get('/api/profile/company/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const profile = await storage.getCompanyProfile(userId);
+      if (!profile) {
+        return res.status(404).json({ message: "Company profile not found" });
+      }
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching company profile:", error);
+      res.status(500).json({ message: "Failed to fetch company profile" });
+    }
+  });
+
+  app.post('/api/profile/company', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const profileData = insertCompanyProfileSchema.parse({
+        ...req.body,
+        userId,
+      });
+      const profile = await storage.createCompanyProfile(profileData);
+      res.json(profile);
+    } catch (error) {
+      console.error("Error creating company profile:", error);
+      res.status(500).json({ message: "Failed to create company profile" });
+    }
+  });
+
+  // Professional search routes
+  app.get('/api/professionals/search', async (req, res) => {
+    try {
+      const { skills, availability, seniorityLevel, minRate, maxRate } = req.query;
+      
+      const filters: any = {};
+      if (skills) filters.skills = Array.isArray(skills) ? skills : [skills];
+      if (availability) filters.availability = availability as string;
+      if (seniorityLevel) filters.seniorityLevel = seniorityLevel as string;
+      if (minRate) filters.minRate = parseFloat(minRate as string);
+      if (maxRate) filters.maxRate = parseFloat(maxRate as string);
+
+      const professionals = await storage.searchProfessionals(filters);
+      res.json(professionals);
+    } catch (error) {
+      console.error("Error searching professionals:", error);
+      res.status(500).json({ message: "Failed to search professionals" });
+    }
+  });
+
+  // Project routes
+  app.get('/api/projects', async (req, res) => {
+    try {
+      const { status, companyUserId } = req.query;
+      const projects = await storage.getProjects({
+        status: status as string,
+        companyUserId: companyUserId as string,
+      });
+      res.json(projects);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+      res.status(500).json({ message: "Failed to fetch projects" });
+    }
+  });
+
+  app.get('/api/projects/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const project = await storage.getProject(id);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      res.json(project);
+    } catch (error) {
+      console.error("Error fetching project:", error);
+      res.status(500).json({ message: "Failed to fetch project" });
+    }
+  });
+
+  app.post('/api/projects', isAuthenticated, async (req: any, res) => {
+    try {
+      const companyUserId = req.user.claims.sub;
+      const projectData = insertProjectSchema.parse({
+        ...req.body,
+        companyUserId,
+      });
+      const project = await storage.createProject(projectData);
+      res.json(project);
+    } catch (error) {
+      console.error("Error creating project:", error);
+      res.status(500).json({ message: "Failed to create project" });
+    }
+  });
+
+  app.put('/api/projects/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.claims.sub;
+      
+      // Verify project ownership
+      const project = await storage.getProject(id);
+      if (!project || project.companyUserId !== userId) {
+        return res.status(403).json({ message: "Not authorized to update this project" });
+      }
+
+      const updateData = insertProjectSchema.partial().parse(req.body);
+      const updatedProject = await storage.updateProject(id, updateData);
+      res.json(updatedProject);
+    } catch (error) {
+      console.error("Error updating project:", error);
+      res.status(500).json({ message: "Failed to update project" });
+    }
+  });
+
+  // Post routes
+  app.get('/api/posts', async (req, res) => {
+    try {
+      const { userId, isPublic } = req.query;
+      const posts = await storage.getPosts({
+        userId: userId as string,
+        isPublic: isPublic === 'true',
+      });
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      res.status(500).json({ message: "Failed to fetch posts" });
+    }
+  });
+
+  app.post('/api/posts', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const postData = insertPostSchema.parse({
+        ...req.body,
+        userId,
+      });
+      const post = await storage.createPost(postData);
+      res.json(post);
+    } catch (error) {
+      console.error("Error creating post:", error);
+      res.status(500).json({ message: "Failed to create post" });
+    }
+  });
+
+  app.post('/api/posts/:postId/like', isAuthenticated, async (req: any, res) => {
+    try {
+      const { postId } = req.params;
+      const userId = req.user.claims.sub;
+      await storage.likePost(postId, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error liking post:", error);
+      res.status(500).json({ message: "Failed to like post" });
+    }
+  });
+
+  app.delete('/api/posts/:postId/like', isAuthenticated, async (req: any, res) => {
+    try {
+      const { postId } = req.params;
+      const userId = req.user.claims.sub;
+      await storage.unlikePost(postId, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error unliking post:", error);
+      res.status(500).json({ message: "Failed to unlike post" });
+    }
+  });
+
+  app.post('/api/posts/:postId/comments', isAuthenticated, async (req: any, res) => {
+    try {
+      const { postId } = req.params;
+      const userId = req.user.claims.sub;
+      const { content } = z.object({ content: z.string() }).parse(req.body);
+      await storage.addComment(postId, userId, content);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      res.status(500).json({ message: "Failed to add comment" });
+    }
+  });
+
+  // Message routes
+  app.get('/api/messages/conversation/:userId', isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUserId = req.user.claims.sub;
+      const { userId } = req.params;
+      const conversation = await storage.getConversation(currentUserId, userId);
+      res.json(conversation);
+    } catch (error) {
+      console.error("Error fetching conversation:", error);
+      res.status(500).json({ message: "Failed to fetch conversation" });
+    }
+  });
+
+  app.post('/api/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const senderId = req.user.claims.sub;
+      const messageData = insertMessageSchema.parse({
+        ...req.body,
+        senderId,
+      });
+      const message = await storage.sendMessage(messageData);
+      res.json(message);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  app.put('/api/messages/:messageId/read', isAuthenticated, async (req, res) => {
+    try {
+      const { messageId } = req.params;
+      await storage.markMessageAsRead(messageId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+      res.status(500).json({ message: "Failed to mark message as read" });
+    }
+  });
+
+  app.get('/api/messages/unread-count', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const count = await storage.getUnreadMessagesCount(userId);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching unread messages count:", error);
+      res.status(500).json({ message: "Failed to fetch unread messages count" });
+    }
+  });
+
+  // Feedback routes
+  app.get('/api/feedback/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const feedbackList = await storage.getFeedbackForUser(userId);
+      res.json(feedbackList);
+    } catch (error) {
+      console.error("Error fetching feedback:", error);
+      res.status(500).json({ message: "Failed to fetch feedback" });
+    }
+  });
+
+  app.post('/api/feedback', isAuthenticated, async (req: any, res) => {
+    try {
+      const fromUserId = req.user.claims.sub;
+      const feedbackData = insertFeedbackSchema.parse({
+        ...req.body,
+        fromUserId,
+      });
+      const feedback = await storage.createFeedback(feedbackData);
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error creating feedback:", error);
+      res.status(500).json({ message: "Failed to create feedback" });
+    }
+  });
+
+  // Connection routes
+  app.get('/api/connections', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { status } = req.query;
+      const connections = await storage.getConnections(userId, status as string);
+      res.json(connections);
+    } catch (error) {
+      console.error("Error fetching connections:", error);
+      res.status(500).json({ message: "Failed to fetch connections" });
+    }
+  });
+
+  app.post('/api/connections', isAuthenticated, async (req: any, res) => {
+    try {
+      const requesterId = req.user.claims.sub;
+      const { addresseeId } = z.object({ addresseeId: z.string() }).parse(req.body);
+      const connection = await storage.createConnection(requesterId, addresseeId);
+      res.json(connection);
+    } catch (error) {
+      console.error("Error creating connection:", error);
+      res.status(500).json({ message: "Failed to create connection" });
+    }
+  });
+
+  app.put('/api/connections/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = z.object({ status: z.string() }).parse(req.body);
+      const connection = await storage.updateConnectionStatus(id, status);
+      res.json(connection);
+    } catch (error) {
+      console.error("Error updating connection:", error);
+      res.status(500).json({ message: "Failed to update connection" });
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}
