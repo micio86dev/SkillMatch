@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { insertProfessionalProfileSchema, insertCompanyProfileSchema } from "@shared/schema";
+import { insertProfessionalProfileSchema, insertCompanyProfileSchema, type ProfessionalProfile, type CompanyProfile } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { User, Building, Star, MapPin, Globe, Github, Linkedin, Upload, Edit3, Bell, FileText, ExternalLink } from "lucide-react";
@@ -44,19 +44,19 @@ export default function Profile() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: professionalProfile, isLoading: professionalLoading } = useQuery({
+  const { data: professionalProfile, isLoading: professionalLoading } = useQuery<ProfessionalProfile>({
     queryKey: ["/api/profile/professional", user?.id],
     enabled: !!user?.id,
     retry: false,
   });
 
-  const { data: companyProfile, isLoading: companyLoading } = useQuery({
+  const { data: companyProfile, isLoading: companyLoading } = useQuery<CompanyProfile>({
     queryKey: ["/api/profile/company", user?.id],
     enabled: !!user?.id,
     retry: false,
   });
 
-  const { data: feedback } = useQuery({
+  const { data: feedback } = useQuery<any[]>({
     queryKey: ["/api/feedback", user?.id],
     enabled: !!user?.id,
   });
@@ -95,7 +95,7 @@ export default function Profile() {
       professionalForm.reset({
         title: professionalProfile.title || "",
         bio: professionalProfile.bio || "",
-        skills: professionalProfile.skills || [],
+        skills: (professionalProfile.skills as string[]) || [],
         seniorityLevel: professionalProfile.seniorityLevel || "mid",
         hourlyRate: professionalProfile.hourlyRate || "",
         availability: professionalProfile.availability || "available",
@@ -755,7 +755,7 @@ export default function Profile() {
                         <div className="space-y-2">
                           {(professionalProfile?.portfolioUrl || companyProfile?.websiteUrl) && (
                             <a
-                              href={professionalProfile?.portfolioUrl || companyProfile?.websiteUrl}
+                              href={professionalProfile?.portfolioUrl || companyProfile?.websiteUrl || '#'}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="flex items-center text-primary hover:underline"
@@ -779,7 +779,7 @@ export default function Profile() {
                           )}
                           {(professionalProfile?.linkedinUrl || companyProfile?.linkedinUrl) && (
                             <a
-                              href={professionalProfile?.linkedinUrl || companyProfile?.linkedinUrl}
+                              href={professionalProfile?.linkedinUrl || companyProfile?.linkedinUrl || '#'}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="flex items-center text-primary hover:underline"
