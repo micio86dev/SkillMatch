@@ -88,7 +88,7 @@ export function Layout({ children }: LayoutProps) {
                     "font-medium transition-colors",
                     location === item.href
                       ? "text-blue-600 dark:text-blue-400"
-                      : "text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400"
+                      : "text-slate-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
                   )}
                 >
                   {item.name}
@@ -183,7 +183,7 @@ export function Layout({ children }: LayoutProps) {
                       "block px-4 py-2 font-medium transition-colors rounded-lg",
                       location === item.href
                         ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20"
-                        : "text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700"
+                        : "text-slate-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700"
                     )}
                   >
                     {item.name}
