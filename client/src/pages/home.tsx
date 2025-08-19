@@ -1,5 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { PostCard } from "@/components/post-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +15,7 @@ import { VideoCallButton } from "@/components/video-call-button";
 
 export default function Home() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [newPostContent, setNewPostContent] = useState("");
@@ -35,14 +37,14 @@ export default function Home() {
       setNewPostContent("");
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
       toast({
-        title: "Success",
-        description: "Your post has been shared!",
+        title: t("common.success"),
+        description: t("home.postShared"),
       });
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: "Failed to create post. Please try again.",
+        title: t("common.error"),
+        description: t("home.postError"),
         variant: "destructive",
       });
     },
@@ -61,10 +63,10 @@ export default function Home() {
           <div className="flex justify-between items-start">
             <div>
               <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-                Welcome back, {user?.firstName || "Professional"}!
+                {t("home.welcomeBack", { name: user?.firstName || t("common.professional") })}
               </h1>
               <p className="text-slate-700 dark:text-slate-300">
-                Stay connected with the IT community and discover new opportunities.
+                {t("home.welcomeSubtitle")}
               </p>
             </div>
             <div className="flex space-x-3">
@@ -85,7 +87,7 @@ export default function Home() {
               <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
                 {stats?.activeProfessionals || 0}
               </h3>
-              <p className="text-sm text-slate-700 dark:text-slate-300">Active Professionals</p>
+              <p className="text-sm text-slate-700 dark:text-slate-300">{t("home.activeProfessionals")}</p>
             </CardContent>
           </Card>
 
@@ -97,7 +99,7 @@ export default function Home() {
               <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
                 {stats?.openProjects || 0}
               </h3>
-              <p className="text-sm text-slate-700 dark:text-slate-300">Open Projects</p>
+              <p className="text-sm text-slate-700 dark:text-slate-300">{t("home.openProjects")}</p>
             </CardContent>
           </Card>
 
@@ -109,7 +111,7 @@ export default function Home() {
               <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
                 {stats?.unreadMessages || 0}
               </h3>
-              <p className="text-sm text-slate-700 dark:text-slate-300">Unread Messages</p>
+              <p className="text-sm text-slate-700 dark:text-slate-300">{t("home.unreadMessages")}</p>
             </CardContent>
           </Card>
 
@@ -121,7 +123,7 @@ export default function Home() {
               <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
                 {stats?.profileViews || 0}
               </h3>
-              <p className="text-sm text-slate-700 dark:text-slate-300">Profile Views</p>
+              <p className="text-sm text-slate-700 dark:text-slate-300">{t("home.profileViews")}</p>
             </CardContent>
           </Card>
         </div>
@@ -131,10 +133,10 @@ export default function Home() {
           <CardContent className="p-6">
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                Share with the community
+                {t("home.shareWithCommunity")}
               </h3>
               <Textarea
-                placeholder="What's on your mind? Share your latest project, ask for advice, or discuss tech trends..."
+                placeholder={t("home.postPlaceholder")}
                 value={newPostContent}
                 onChange={(e) => setNewPostContent(e.target.value)}
                 className="min-h-[120px] resize-none"
@@ -145,7 +147,7 @@ export default function Home() {
                   disabled={!newPostContent.trim() || createPostMutation.isPending}
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  {createPostMutation.isPending ? "Posting..." : "Share Post"}
+                  {createPostMutation.isPending ? t("home.posting") : t("home.sharePost")}
                 </Button>
               </div>
             </div>
@@ -155,7 +157,7 @@ export default function Home() {
         {/* Feed */}
         <div className="space-y-6">
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Community Feed
+            {t("home.communityFeed")}
           </h2>
           
           {postsLoading ? (
@@ -191,13 +193,13 @@ export default function Home() {
               <CardContent className="p-12 text-center">
                 <MessageSquare className="w-16 h-16 text-slate-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-                  No posts yet
+                  {t("home.noPostsYet")}
                 </h3>
                 <p className="text-slate-600 dark:text-slate-400 mb-4">
-                  Be the first to share something with the community!
+                  {t("home.beFirstToShare")}
                 </p>
                 <Button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-                  Create Your First Post
+                  {t("home.createFirstPost")}
                 </Button>
               </CardContent>
             </Card>
