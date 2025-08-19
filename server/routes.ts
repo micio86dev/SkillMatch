@@ -275,10 +275,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/posts', async (req, res) => {
     try {
       const { userId, isPublic } = req.query;
-      const posts = await storage.getPosts({
-        userId: userId as string,
-        isPublic: isPublic === 'true',
-      });
+      const filters: { userId?: string; isPublic?: boolean } = {};
+      
+      if (userId) {
+        filters.userId = userId as string;
+      }
+      
+      if (isPublic !== undefined) {
+        filters.isPublic = isPublic === 'true';
+      }
+      
+      const posts = await storage.getPosts(filters);
       res.json(posts);
     } catch (error) {
       console.error("Error fetching posts:", error);
