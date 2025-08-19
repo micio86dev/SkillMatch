@@ -625,7 +625,7 @@ export class DatabaseStorage implements IStorage {
           and(eq(messages.senderId, userId2), eq(messages.receiverId, userId1))
         )
       )
-      .orderBy(desc(messages.createdAt));
+      .orderBy(messages.createdAt); // Changed to ascending order for proper chat display
 
     return results.map(result => ({
       ...result.message,
@@ -655,6 +655,89 @@ export class DatabaseStorage implements IStorage {
       .from(messages)
       .where(and(eq(messages.receiverId, userId), eq(messages.isRead, false)));
     return Number(result.count) || 0;
+  }
+
+  async getConversations(userId: string): Promise<any[]> {
+    // Get all conversations where the user is either sender or receiver
+    const latestMessages = await db
+      .select({
+        messageId: messages.id,
+        senderId: messages.senderId,
+        receiverId: messages.receiverId,
+        content: messages.content,
+        createdAt: messages.createdAt,
+        isRead: messages.isRead,
+        otherUserId: sql<string>`CASE WHEN ${messages.senderId} = ${userId} THEN ${messages.receiverId} ELSE ${messages.senderId} END`,
+      })
+      .from(messages)
+      .where(
+        or(
+          eq(messages.senderId, userId),
+          eq(messages.receiverId, userId)
+        )
+      )
+      .orderBy(desc(messages.createdAt));
+
+    // Group by other user and get the latest message for each conversation
+    const conversationMap = new Map();
+    for (const msg of latestMessages) {
+      if (!conversationMap.has(msg.otherUserId)) {
+        conversationMap.set(msg.otherUserId, msg);
+      }
+    }
+
+    // Get user details for each conversation partner
+    const conversations = [];
+    for (const [otherUserId, lastMessage] of conversationMap) {
+      const otherUser = await this.getUser(otherUserId);
+      if (otherUser) {
+        // Count unread messages from this user
+        const [unreadResult] = await db
+          .select({ count: sql`count(*)` })
+          .from(messages)
+          .where(
+            and(
+              eq(messages.senderId, otherUserId),
+              eq(messages.receiverId, userId),
+              eq(messages.isRead, false)
+            )
+          );
+        
+        conversations.push({
+          id: otherUserId,
+          contact: {
+            id: otherUser.id,
+            name: `${otherUser.firstName || ''} ${otherUser.lastName || ''}`.trim() || 'User',
+            title: 'Professional', // Could be enhanced with profile data
+            profileImageUrl: otherUser.profileImageUrl,
+            isOnline: false // Could be enhanced with real-time status
+          },
+          lastMessage: {
+            content: lastMessage.content,
+            timestamp: lastMessage.createdAt,
+            senderId: lastMessage.senderId
+          },
+          unreadCount: Number(unreadResult.count) || 0
+        });
+      }
+    }
+
+    return conversations.sort((a, b) => 
+      new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime()
+    );
+  }
+
+  async markConversationAsRead(currentUserId: string, otherUserId: string): Promise<void> {
+    await db
+      .update(messages)
+      .set({ isRead: true })
+      .where(
+        and(
+          eq(messages.senderId, otherUserId),
+          eq(messages.receiverId, currentUserId),
+          eq(messages.isRead, false)
+        )
+      );
   }
 
   async getActiveProfessionalsCount(): Promise<number> {

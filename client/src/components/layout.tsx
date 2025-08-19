@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
 import { Moon, Sun, Code, Menu, X, Bell, MessageSquare, User, Briefcase, Users, Home, Building2, ChevronDown } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +17,22 @@ import { NotificationBell } from "@/components/notifications";
 
 interface LayoutProps {
   children: React.ReactNode;
+}
+
+// Unread messages badge component
+function UnreadMessagesBadge() {
+  const { data: unreadCount } = useQuery({
+    queryKey: ['/api/messages/unread-count'],
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  if (!unreadCount?.count || unreadCount.count === 0) return null;
+
+  return (
+    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center min-w-[20px] px-1">
+      {unreadCount.count > 99 ? '99+' : unreadCount.count}
+    </span>
+  );
 }
 
 export function Layout({ children }: LayoutProps) {
@@ -92,13 +109,14 @@ export function Layout({ children }: LayoutProps) {
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "font-medium transition-colors",
+                    "font-medium transition-colors relative",
                     location === item.href
                       ? "text-blue-600 dark:text-blue-400"
                       : "text-slate-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
                   )}
                 >
                   {item.name}
+                  {item.href === '/messages' && <UnreadMessagesBadge />}
                 </Link>
               ))}
             </div>
@@ -211,13 +229,14 @@ export function Layout({ children }: LayoutProps) {
                     href={item.href}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
-                      "block px-4 py-2 font-medium transition-colors rounded-lg",
+                      "block px-4 py-2 font-medium transition-colors rounded-lg relative",
                       location === item.href
                         ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20"
                         : "text-slate-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700"
                     )}
                   >
                     {item.name}
+                    {item.href === '/messages' && <UnreadMessagesBadge />}
                   </Link>
                 ))}
                 {isAuthenticated && (

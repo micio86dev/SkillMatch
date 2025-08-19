@@ -582,6 +582,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Message routes
+  // Get all conversations for a user
+  app.get('/api/conversations', isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUserId = req.session.userId!;
+      const conversations = await storage.getConversations(currentUserId);
+      res.json(conversations);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      res.status(500).json({ message: "Failed to fetch conversations" });
+    }
+  });
+
   app.get('/api/messages/conversation/:userId', isAuthenticated, async (req: any, res) => {
     try {
       const currentUserId = req.session.userId!;
@@ -602,6 +614,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         senderId,
       });
       const message = await storage.sendMessage(messageData);
+      
+      // Get sender info for the WebSocket event
+      const sender = await storage.getUser(senderId);
+      
+      // Emit the message to the receiver in real-time
+      io.to(`user-${messageData.receiverId}`).emit('new-message', {
+        ...message,
+        sender: sender
+      });
       
       // Create notification for the receiver
       await createMessageNotification(messageData.receiverId, senderId, messageData.content);
@@ -903,11 +924,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
     
-    // Handle user authentication for notifications and calls
+    // Handle user authentication for notifications, calls, and chat
     socket.on('authenticate', (userId: string) => {
       socket.data.userId = userId;
       socket.join(`user-${userId}`);
-      console.log(`User ${userId} authenticated for notifications and calls`);
+      console.log(`User ${userId} authenticated for notifications, calls, and chat`);
+    });
+
+    // Handle joining a chat conversation
+    socket.on('join-conversation', (conversationId: string, userId: string) => {
+      console.log(`User ${userId} joining conversation ${conversationId}`);
+      socket.join(`conversation-${conversationId}`);
+    });
+
+    // Handle leaving a chat conversation
+    socket.on('leave-conversation', (conversationId: string, userId: string) => {
+      console.log(`User ${userId} leaving conversation ${conversationId}`);
+      socket.leave(`conversation-${conversationId}`);
+    });
+
+    // Handle typing indicator
+    socket.on('typing', (data: { conversationId: string, userId: string, isTyping: boolean }) => {
+      socket.to(`conversation-${data.conversationId}`).emit('user-typing', data);
+    });
+
+    // Handle marking messages as read
+    socket.on('mark-messages-read', async (data: { conversationId: string, userId: string }) => {
+      try {
+        await storage.markConversationAsRead(data.userId, data.conversationId);
+        // Notify the sender that their messages were read
+        io.to(`user-${data.conversationId}`).emit('messages-read', {
+          userId: data.userId,
+          conversationId: data.conversationId
+        });
+      } catch (error) {
+        console.error('Error marking messages as read:', error);
+      }
     });
 
     // Handle joining a video call room
