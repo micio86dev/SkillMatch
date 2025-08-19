@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { Server as SocketIOServer } from "socket.io";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import {
@@ -365,5 +366,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // Setup Socket.IO for video calling signaling
+  const io = new SocketIOServer(httpServer, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"]
+    },
+    path: "/socket.io"
+  });
+
+  // Store room information
+  const rooms = new Map<string, { users: Set<string>, createdAt: Date }>();
+
+  io.on('connection', (socket) => {
+    console.log('User connected:', socket.id);
+
+    // Handle joining a video call room
+    socket.on('join-room', (roomId: string, userId: string) => {
+      console.log(`User ${userId} joining room ${roomId}`);
+      
+      if (!rooms.has(roomId)) {
+        rooms.set(roomId, { users: new Set(), createdAt: new Date() });
+      }
+      
+      const room = rooms.get(roomId)!;
+      room.users.add(socket.id);
+      
+      socket.join(roomId);
+      
+      // Notify other users in the room about the new user
+      socket.to(roomId).emit('user-joined', { userId, socketId: socket.id });
+      
+      // Send existing users to the new user
+      const existingUsers = Array.from(room.users).filter(id => id !== socket.id);
+      socket.emit('existing-users', existingUsers);
+    });
+
+    // Handle WebRTC signaling
+    socket.on('offer', (data: { to: string, offer: any, roomId: string }) => {
+      socket.to(data.to).emit('offer', {
+        from: socket.id,
+        offer: data.offer
+      });
+    });
+
+    socket.on('answer', (data: { to: string, answer: any, roomId: string }) => {
+      socket.to(data.to).emit('answer', {
+        from: socket.id,
+        answer: data.answer
+      });
+    });
+
+    socket.on('ice-candidate', (data: { to: string, candidate: any, roomId: string }) => {
+      socket.to(data.to).emit('ice-candidate', {
+        from: socket.id,
+        candidate: data.candidate
+      });
+    });
+
+    // Handle leaving room
+    socket.on('leave-room', (roomId: string) => {
+      handleUserLeaving(socket, roomId);
+    });
+
+    socket.on('disconnect', () => {
+      console.log('User disconnected:', socket.id);
+      // Clean up user from all rooms
+      rooms.forEach((room, roomId) => {
+        if (room.users.has(socket.id)) {
+          handleUserLeaving(socket, roomId);
+        }
+      });
+    });
+  });
+
+  function handleUserLeaving(socket: any, roomId: string) {
+    const room = rooms.get(roomId);
+    if (room) {
+      room.users.delete(socket.id);
+      socket.to(roomId).emit('user-left', socket.id);
+      
+      // Clean up empty rooms
+      if (room.users.size === 0) {
+        rooms.delete(roomId);
+      }
+    }
+    socket.leave(roomId);
+  }
+
+  // API endpoint to create a new call room
+  app.post('/api/calls/create', isAuthenticated, async (req: any, res) => {
+    try {
+      const roomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      res.json({ roomId, callUrl: `/call/${roomId}` });
+    } catch (error) {
+      console.error('Error creating call room:', error);
+      res.status(500).json({ message: 'Failed to create call room' });
+    }
+  });
+
   return httpServer;
 }

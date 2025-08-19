@@ -12,6 +12,7 @@ import Profile from "@/pages/profile";
 import Projects from "@/pages/projects";
 import Professionals from "@/pages/professionals";
 import Messages from "@/pages/messages";
+import { VideoCall } from "@/pages/video-call";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -27,6 +28,7 @@ function Router() {
           <Route path="/projects" component={Projects} />
           <Route path="/professionals" component={Professionals} />
           <Route path="/messages" component={Messages} />
+          <Route path="/call/:roomId" component={VideoCall} />
         </>
       )}
       {/* Public routes available to everyone */}

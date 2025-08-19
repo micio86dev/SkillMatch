@@ -10,6 +10,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Layout } from "@/components/layout";
+import { VideoCallButton } from "@/components/video-call-button";
 
 export default function Home() {
   const { user } = useAuth();
@@ -57,12 +58,22 @@ export default function Home() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Welcome Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-            Welcome back, {user?.firstName || "Professional"}!
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400">
-            Stay connected with the IT community and discover new opportunities.
-          </p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                Welcome back, {user?.firstName || "Professional"}!
+              </h1>
+              <p className="text-slate-600 dark:text-slate-400">
+                Stay connected with the IT community and discover new opportunities.
+              </p>
+            </div>
+            <div className="flex space-x-3">
+              <VideoCallButton 
+                variant="outline" 
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white border-none hover:from-blue-700 hover:to-purple-700" 
+              />
+            </div>
+          </div>
         </div>
 
         {/* Stats Cards */}
