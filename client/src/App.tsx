@@ -17,6 +17,7 @@ import Professionals from "@/pages/professionals";
 import Messages from "@/pages/messages";
 import { VideoCall } from "@/pages/video-call";
 import PublicProfile from "@/pages/public-profile";
+import ProfessionalProfile from "@/pages/professional-profile";
 import Companies from "@/pages/companies";
 import CompanyDetail from "@/pages/company-detail";
 import ProjectDetail from "@/pages/project-detail";
@@ -48,6 +49,7 @@ function Router() {
           <Route path="/career-insights" component={CareerInsights} />
           <Route path="/messages" component={Messages} />
           <Route path="/call/:roomId" component={VideoCall} />
+          <Route path="/professionals/:id" component={ProfessionalProfile} />
         </>
       )}
       {/* Public routes available to everyone */}

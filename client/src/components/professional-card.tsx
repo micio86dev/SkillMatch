@@ -5,6 +5,9 @@ import { Star, User, MapPin, Clock, MessageSquare, CheckCircle, UserPlus } from 
 import { ProfessionalProfile, User as UserType } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { Link } from "wouter";
+import { CompactRating } from "@/components/feedback-display";
+import { FeedbackForm } from "@/components/feedback-form";
 
 interface ProfessionalCardProps {
   professional: ProfessionalProfile & { user: UserType };
@@ -70,14 +73,7 @@ export function ProfessionalCard({ professional, onConnect, onMessage }: Profess
               {user.firstName} {user.lastName}
             </h3>
             <p className="text-slate-700 dark:text-slate-300">{professional.title}</p>
-            <div className="flex items-center space-x-1 mt-1">
-              <div className="flex text-yellow-400">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star key={star} className="h-3 w-3 fill-current" />
-                ))}
-              </div>
-              <span className="text-sm text-slate-700 dark:text-slate-300">4.9 (127)</span>
-            </div>
+            <CompactRating userId={user.id} className="mt-1" />
           </div>
         </div>
 
@@ -168,6 +164,13 @@ export function ProfessionalCard({ professional, onConnect, onMessage }: Profess
             >
               <MessageSquare className="h-4 w-4" />
             </Button>
+            {connectionStatus?.status === 'accepted' && (
+              <FeedbackForm
+                professionalId={user.id}
+                professionalName={`${user.firstName} ${user.lastName}`}
+                professionalImage={user.profileImageUrl}
+              />
+            )}
           </div>
         </div>
       </CardContent>
