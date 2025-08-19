@@ -20,6 +20,7 @@ import { ObjectUploader } from "@/components/ObjectUploader";
 import { NotificationPreferences } from "@/components/notification-preferences";
 import { AvatarUploader } from "@/components/avatar-uploader";
 import { SkillsInput } from "@/components/skills-input";
+import { LanguageSelector } from "@/components/language-selector";
 import { useState, useEffect } from "react";
 import { isUnauthorizedError } from "@/lib/authUtils";
 
@@ -352,6 +353,7 @@ export default function Profile() {
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="feedback">Reviews ({feedback?.length || 0})</TabsTrigger>
               <TabsTrigger value="notifications">Notifications</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
 
             <TabsContent value="profile" className="space-y-6">
@@ -957,6 +959,10 @@ export default function Profile() {
 
             <TabsContent value="notifications" className="space-y-6">
               <NotificationPreferences />
+            </TabsContent>
+
+            <TabsContent value="settings" className="space-y-6">
+              <LanguageSelector userId={user?.id} currentLanguage={user?.language || 'en'} />
             </TabsContent>
           </Tabs>
         )}

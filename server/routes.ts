@@ -117,6 +117,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user language preference
+  app.put('/api/auth/user/language', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { language } = req.body;
+      
+      if (!language || typeof language !== 'string') {
+        return res.status(400).json({ message: "Language is required" });
+      }
+      
+      const updatedUser = await storage.updateUserLanguage(userId, language);
+      res.json({ success: true, user: updatedUser });
+    } catch (error) {
+      console.error("Error updating user language:", error);
+      res.status(500).json({ message: "Failed to update language preference" });
+    }
+  });
+
   // Profile routes
   app.get('/api/profile/professional/:userId', async (req, res) => {
     try {

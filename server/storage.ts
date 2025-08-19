@@ -44,6 +44,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: Omit<RegisterUser, 'confirmPassword'>): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
+  updateUserLanguage(id: string, language: string): Promise<User>;
   
   // Professional profile operations
   getProfessionalProfile(userId: string): Promise<ProfessionalProfile | undefined>;
@@ -152,6 +153,15 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return updatedUser;
+  }
+
+  async updateUserLanguage(id: string, language: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ language, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
   }
 
   // Professional profile operations
