@@ -59,7 +59,13 @@ export function LikeButton({ itemType, itemId, initialLikeCount, className = '',
     },
   });
 
-  const handleLike = () => {
+  const handleLike = (e?: React.MouseEvent) => {
+    // Prevent navigation when clicking like button inside a clickable parent
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     if (!isAuthenticated) {
       window.location.href = '/api/login';
       return;
