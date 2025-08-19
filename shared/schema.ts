@@ -26,15 +26,16 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table.
-// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
+// User storage table with email/password authentication
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
+  email: varchar("email").notNull().unique(),
+  password: varchar("password").notNull(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
   userType: varchar("user_type", { enum: ["professional", "company"] }).notNull().default("professional"),
+  isEmailVerified: boolean("is_email_verified").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -363,12 +364,25 @@ export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  isEmailVerified: true,
 });
 
-// Auth-specific schema that includes ID for Replit Auth OIDC
-export const authUpsertUserSchema = createInsertSchema(users).omit({
-  createdAt: true,
-  updatedAt: true,
+// Authentication schemas
+export const registerUserSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string(),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  userType: z.enum(["professional", "company"]),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+export const loginUserSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
 });
 
 export const insertProfessionalProfileSchema = createInsertSchema(professionalProfiles).omit({
@@ -424,7 +438,8 @@ export const insertNotificationPreferencesSchema = createInsertSchema(notificati
 
 // Types
 export type UpsertUser = z.infer<typeof insertUserSchema>;
-export type AuthUpsertUser = z.infer<typeof authUpsertUserSchema>;
+export type RegisterUser = z.infer<typeof registerUserSchema>;
+export type LoginUser = z.infer<typeof loginUserSchema>;
 export type User = typeof users.$inferSelect;
 export type ProfessionalProfile = typeof professionalProfiles.$inferSelect;
 export type InsertProfessionalProfile = z.infer<typeof insertProfessionalProfileSchema>;

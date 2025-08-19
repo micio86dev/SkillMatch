@@ -150,7 +150,19 @@ export function Layout({ children }: LayoutProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => window.location.href = "/api/logout"}
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/auth/logout', {
+                          method: 'POST',
+                          credentials: 'include',
+                        });
+                        if (response.ok) {
+                          window.location.href = '/auth/login';
+                        }
+                      } catch (error) {
+                        console.error('Logout failed:', error);
+                      }
+                    }}
                     className="text-slate-700 dark:text-slate-200 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
                   >
                     Sign Out
@@ -161,14 +173,14 @@ export function Layout({ children }: LayoutProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => window.location.href = "/api/login"}
+                    onClick={() => window.location.href = "/auth/login"}
                     className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium transition-colors"
                   >
                     Sign In
                   </Button>
                   <Button
                     size="sm"
-                    onClick={() => window.location.href = "/api/login"}
+                    onClick={() => window.location.href = "/auth/signup"}
                     className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 font-medium shadow-sm transition-colors"
                   >
                     Get Started

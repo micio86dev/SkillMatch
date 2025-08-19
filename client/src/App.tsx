@@ -8,6 +8,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
+import Login from "@/pages/auth/login";
+import Signup from "@/pages/auth/signup";
 import Home from "@/pages/home";
 import Profile from "@/pages/profile";
 import Projects from "@/pages/projects";
@@ -25,7 +27,11 @@ function Router() {
   return (
     <Switch>
       {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Landing} />
+        <>
+          <Route path="/auth/login" component={Login} />
+          <Route path="/auth/signup" component={Signup} />
+          <Route path="/" component={Login} />
+        </>
       ) : (
         <>
           <Route path="/" component={Home} />

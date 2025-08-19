@@ -15,7 +15,7 @@ import {
   notificationPreferences,
   type User,
   type UpsertUser,
-  type AuthUpsertUser,
+  type RegisterUser,
   type ProfessionalProfile,
   type InsertProfessionalProfile,
   type CompanyProfile,
@@ -39,9 +39,10 @@ import { eq, desc, and, or, ilike, sql } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
-  // User operations (IMPORTANT: mandatory for Replit Auth)
+  // User operations
   getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: AuthUpsertUser): Promise<User>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: Omit<RegisterUser, 'confirmPassword'>): Promise<User>;
   
   // Professional profile operations
   getProfessionalProfile(userId: string): Promise<ProfessionalProfile | undefined>;
@@ -112,23 +113,21 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // User operations (IMPORTANT: mandatory for Replit Auth)
+  // User operations
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
-  async upsertUser(userData: AuthUpsertUser): Promise<User> {
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(userData: Omit<RegisterUser, 'confirmPassword'>): Promise<User> {
     const [user] = await db
       .insert(users)
       .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
       .returning();
     return user;
   }
