@@ -10,7 +10,9 @@ import {
   insertPostSchema,
   insertMessageSchema,
   insertFeedbackSchema,
+  insertNotificationPreferencesSchema,
 } from "@shared/schema";
+import { notificationService, createMessageNotification, createLikeNotification, createCommentNotification, createFeedbackNotification } from "./notifications";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -219,6 +221,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { postId } = req.params;
       const userId = req.user.claims.sub;
       await storage.likePost(postId, userId);
+      
+      // Get post details to notify the author
+      const posts = await storage.getPosts();
+      const post = posts.find(p => p.id === postId);
+      if (post && post.userId !== userId) {
+        await createLikeNotification(post.userId, userId, postId);
+      }
+      
       res.json({ success: true });
     } catch (error) {
       console.error("Error liking post:", error);
@@ -244,6 +254,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const { content } = z.object({ content: z.string() }).parse(req.body);
       await storage.addComment(postId, userId, content);
+      
+      // Get post details to notify the author
+      const posts = await storage.getPosts();
+      const post = posts.find(p => p.id === postId);
+      if (post && post.userId !== userId) {
+        await createCommentNotification(post.userId, userId, postId, content);
+      }
+      
       res.json({ success: true });
     } catch (error) {
       console.error("Error adding comment:", error);
@@ -272,6 +290,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         senderId,
       });
       const message = await storage.sendMessage(messageData);
+      
+      // Create notification for the receiver
+      await createMessageNotification(messageData.receiverId, senderId, messageData.content);
+      
       res.json(message);
     } catch (error) {
       console.error("Error sending message:", error);
@@ -321,6 +343,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fromUserId,
       });
       const feedback = await storage.createFeedback(feedbackData);
+      
+      // Create notification for the feedback recipient
+      await createFeedbackNotification(feedbackData.toUserId, fromUserId, feedbackData.rating, feedbackData.comment);
+      
       res.json(feedback);
     } catch (error) {
       console.error("Error creating feedback:", error);
@@ -365,9 +391,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test endpoint for creating notifications (development only)
+  if (process.env.NODE_ENV === 'development') {
+    app.post('/api/test-notifications', isAuthenticated, async (req: any, res) => {
+      try {
+        const userId = req.user.claims.sub;
+        const { createTestNotifications } = await import('./weeklyDigest');
+        await createTestNotifications(userId);
+        res.json({ success: true, message: 'Test notifications created' });
+      } catch (error) {
+        console.error("Error creating test notifications:", error);
+        res.status(500).json({ message: "Failed to create test notifications" });
+      }
+    });
+  }
+
+  // Notification routes
+  app.get('/api/notifications', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { limit } = req.query;
+      const notifications = await storage.getNotifications(userId, limit ? parseInt(limit) : undefined);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  app.get('/api/notifications/unread-count', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const count = await storage.getUnreadNotificationsCount(userId);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+      res.status(500).json({ message: "Failed to fetch unread count" });
+    }
+  });
+
+  app.put('/api/notifications/:id/read', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.markNotificationAsRead(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
+  // Notification preferences routes
+  app.get('/api/notification-preferences', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const preferences = await storage.getNotificationPreferences(userId);
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error fetching notification preferences:", error);
+      res.status(500).json({ message: "Failed to fetch notification preferences" });
+    }
+  });
+
+  app.put('/api/notification-preferences', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const preferencesData = insertNotificationPreferencesSchema.parse({
+        ...req.body,
+        userId,
+      });
+      const preferences = await storage.upsertNotificationPreferences(preferencesData);
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error updating notification preferences:", error);
+      res.status(500).json({ message: "Failed to update notification preferences" });
+    }
+  });
+
   const httpServer = createServer(app);
   
-  // Setup Socket.IO for video calling signaling
+  // Setup Socket.IO for video calling signaling and notifications
   const io = new SocketIOServer(httpServer, {
     cors: {
       origin: "*",
@@ -375,12 +478,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
     path: "/socket.io"
   });
+  
+  // Connect notification service to Socket.IO
+  notificationService.setSocketIO(io);
 
   // Store room information
   const rooms = new Map<string, { users: Set<string>, createdAt: Date }>();
 
   io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
+    
+    // Handle user authentication for notifications
+    socket.on('authenticate', (userId: string) => {
+      socket.join(`user-${userId}`);
+      console.log(`User ${userId} authenticated for notifications`);
+    });
 
     // Handle joining a video call room
     socket.on('join-room', (roomId: string, userId: string) => {

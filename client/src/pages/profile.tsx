@@ -15,7 +15,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { insertProfessionalProfileSchema, insertCompanyProfileSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { User, Building, Star, MapPin, Globe, Github, Linkedin, Upload, Edit3 } from "lucide-react";
+import { User, Building, Star, MapPin, Globe, Github, Linkedin, Upload, Edit3, Bell } from "lucide-react";
+import { NotificationPreferences } from "@/components/notification-preferences";
 import { useState, useEffect } from "react";
 import { isUnauthorizedError } from "@/lib/authUtils";
 
@@ -295,6 +296,7 @@ export default function Profile() {
             <TabsList>
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="feedback">Reviews ({feedback?.length || 0})</TabsTrigger>
+              <TabsTrigger value="notifications">Notifications</TabsTrigger>
             </TabsList>
 
             <TabsContent value="profile" className="space-y-6">
@@ -793,6 +795,10 @@ export default function Profile() {
                   </CardContent>
                 </Card>
               )}
+            </TabsContent>
+
+            <TabsContent value="notifications" className="space-y-6">
+              <NotificationPreferences />
             </TabsContent>
           </Tabs>
         )}

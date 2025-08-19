@@ -9,6 +9,8 @@ import {
   messages,
   feedback,
   connections,
+  notifications,
+  notificationPreferences,
   type User,
   type UpsertUser,
   type ProfessionalProfile,
@@ -24,6 +26,10 @@ import {
   type Feedback,
   type InsertFeedback,
   type Connection,
+  type Notification,
+  type InsertNotification,
+  type NotificationPreferences,
+  type InsertNotificationPreferences,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, ilike, sql } from "drizzle-orm";
@@ -78,6 +84,20 @@ export interface IStorage {
   getConnections(userId: string, status?: string): Promise<(Connection & { requester: User; addressee: User })[]>;
   createConnection(requesterId: string, addresseeId: string): Promise<Connection>;
   updateConnectionStatus(id: string, status: string): Promise<Connection>;
+  
+  // Notification operations
+  getNotifications(userId: string, limit?: number): Promise<(Notification & { relatedUser?: User })[]>;
+  getNotification(userId: string, title: string): Promise<(Notification & { relatedUser?: User }) | undefined>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  markNotificationAsRead(notificationId: string): Promise<void>;
+  markNotificationEmailSent(userId: string, title: string): Promise<void>;
+  markNotificationPushSent(userId: string, title: string): Promise<void>;
+  getUnreadNotificationsCount(userId: string): Promise<number>;
+  getNotificationsSince(userId: string, since: Date): Promise<Notification[]>;
+  
+  // Notification preferences operations
+  getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined>;
+  upsertNotificationPreferences(preferences: InsertNotificationPreferences): Promise<NotificationPreferences>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -433,6 +453,109 @@ export class DatabaseStorage implements IStorage {
       .where(eq(connections.id, id))
       .returning();
     return updated;
+  }
+
+  // Notification operations
+  async getNotifications(userId: string, limit = 20): Promise<(Notification & { relatedUser?: User })[]> {
+    const results = await db
+      .select()
+      .from(notifications)
+      .leftJoin(users, eq(notifications.relatedUserId, users.id))
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt))
+      .limit(limit);
+
+    return results.map(result => ({
+      ...result.notifications,
+      relatedUser: result.users || undefined,
+    }));
+  }
+
+  async getNotification(userId: string, title: string): Promise<(Notification & { relatedUser?: User }) | undefined> {
+    const results = await db
+      .select()
+      .from(notifications)
+      .leftJoin(users, eq(notifications.relatedUserId, users.id))
+      .where(and(eq(notifications.userId, userId), eq(notifications.title, title)))
+      .orderBy(desc(notifications.createdAt))
+      .limit(1);
+
+    if (results.length === 0) return undefined;
+
+    const result = results[0];
+    return {
+      ...result.notifications,
+      relatedUser: result.users || undefined,
+    };
+  }
+
+  async createNotification(notificationData: InsertNotification): Promise<Notification> {
+    const [notification] = await db
+      .insert(notifications)
+      .values(notificationData)
+      .returning();
+    return notification;
+  }
+
+  async markNotificationAsRead(notificationId: string): Promise<void> {
+    await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, notificationId));
+  }
+
+  async markNotificationEmailSent(userId: string, title: string): Promise<void> {
+    await db
+      .update(notifications)
+      .set({ isEmailSent: true })
+      .where(and(eq(notifications.userId, userId), eq(notifications.title, title)));
+  }
+
+  async markNotificationPushSent(userId: string, title: string): Promise<void> {
+    await db
+      .update(notifications)
+      .set({ isPushSent: true })
+      .where(and(eq(notifications.userId, userId), eq(notifications.title, title)));
+  }
+
+  async getUnreadNotificationsCount(userId: string): Promise<number> {
+    const [result] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(notifications)
+      .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+    return result.count || 0;
+  }
+
+  async getNotificationsSince(userId: string, since: Date): Promise<Notification[]> {
+    return await db
+      .select()
+      .from(notifications)
+      .where(and(eq(notifications.userId, userId), sql`${notifications.createdAt} >= ${since}`))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  // Notification preferences operations
+  async getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined> {
+    const [preferences] = await db
+      .select()
+      .from(notificationPreferences)
+      .where(eq(notificationPreferences.userId, userId));
+    return preferences;
+  }
+
+  async upsertNotificationPreferences(preferencesData: InsertNotificationPreferences): Promise<NotificationPreferences> {
+    const [preferences] = await db
+      .insert(notificationPreferences)
+      .values(preferencesData)
+      .onConflictDoUpdate({
+        target: notificationPreferences.userId,
+        set: {
+          ...preferencesData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return preferences;
   }
 }
 

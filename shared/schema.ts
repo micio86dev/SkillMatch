@@ -151,6 +151,42 @@ export const feedback = pgTable("feedback", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Notifications
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  type: varchar("type", { enum: ["message", "like", "comment", "feedback"] }).notNull(),
+  title: varchar("title").notNull(),
+  message: text("message").notNull(),
+  relatedId: varchar("related_id"), // ID of related post, message, etc.
+  relatedUserId: varchar("related_user_id").references(() => users.id), // User who triggered the notification
+  isRead: boolean("is_read").default(false),
+  isEmailSent: boolean("is_email_sent").default(false),
+  isPushSent: boolean("is_push_sent").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User notification preferences
+export const notificationPreferences = pgTable("notification_preferences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull().unique(),
+  messageInApp: boolean("message_in_app").default(true),
+  messageEmail: boolean("message_email").default(false),
+  messagePush: boolean("message_push").default(false),
+  likeInApp: boolean("like_in_app").default(true),
+  likeEmail: boolean("like_email").default(false),
+  likePush: boolean("like_push").default(false),
+  commentInApp: boolean("comment_in_app").default(true),
+  commentEmail: boolean("comment_email").default(false),
+  commentPush: boolean("comment_push").default(false),
+  feedbackInApp: boolean("feedback_in_app").default(true),
+  feedbackEmail: boolean("feedback_email").default(false),
+  feedbackPush: boolean("feedback_push").default(false),
+  weeklyDigest: boolean("weekly_digest").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   professionalProfile: one(professionalProfiles, {
@@ -166,6 +202,11 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   receivedMessages: many(messages, { relationName: "receivedMessages" }),
   sentFeedback: many(feedback, { relationName: "sentFeedback" }),
   receivedFeedback: many(feedback, { relationName: "receivedFeedback" }),
+  notifications: many(notifications),
+  notificationPreferences: one(notificationPreferences, {
+    fields: [users.id],
+    references: [notificationPreferences.userId],
+  }),
 }));
 
 export const professionalProfilesRelations = relations(professionalProfiles, ({ one }) => ({
@@ -257,6 +298,24 @@ export const feedbackRelations = relations(feedback, ({ one }) => ({
   }),
 }));
 
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+  relatedUser: one(users, {
+    fields: [notifications.relatedUserId],
+    references: [users.id],
+  }),
+}));
+
+export const notificationPreferencesRelations = relations(notificationPreferences, ({ one }) => ({
+  user: one(users, {
+    fields: [notificationPreferences.userId],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -301,6 +360,20 @@ export const insertFeedbackSchema = createInsertSchema(feedback).omit({
   createdAt: true,
 });
 
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  isRead: true,
+  isEmailSent: true,
+  isPushSent: true,
+  createdAt: true,
+});
+
+export const insertNotificationPreferencesSchema = createInsertSchema(notificationPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -317,3 +390,7 @@ export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Feedback = typeof feedback.$inferSelect;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type Connection = typeof connections.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type NotificationPreferences = typeof notificationPreferences.$inferSelect;
+export type InsertNotificationPreferences = z.infer<typeof insertNotificationPreferencesSchema>;

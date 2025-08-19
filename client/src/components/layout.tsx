@@ -5,6 +5,7 @@ import { useTheme } from "@/components/theme-provider";
 import { Moon, Sun, Code, Menu, X, Bell, MessageSquare, User, Briefcase, Users, Home } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { NotificationBell } from "@/components/notifications";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -97,6 +98,9 @@ export function Layout({ children }: LayoutProps) {
 
             {/* Right side controls */}
             <div className="flex items-center space-x-4">
+              {/* Notifications (only for authenticated users) */}
+              {isAuthenticated && <NotificationBell />}
+              
               {/* Theme toggle */}
               <Button
                 variant="ghost"
