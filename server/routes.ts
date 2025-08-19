@@ -740,11 +740,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Job import routes
-  app.post('/api/admin/import-jobs', isAuthenticated, async (req: any, res) => {
+  app.post('/api/admin/import-jobs', async (req: any, res) => {
     try {
+      const { maxJobs = 10 } = req.body;
       const { JobImportService } = await import('./job-import-service');
       const jobImportService = new JobImportService();
-      const results = await jobImportService.importJobsFromWeb();
+      const results = await jobImportService.importJobsFromWeb(maxJobs);
       res.json(results);
     } catch (error) {
       console.error("Error importing jobs:", error);

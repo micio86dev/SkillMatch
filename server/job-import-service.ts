@@ -14,7 +14,7 @@ export class JobImportService {
     this.scraper = new JobScraper();
   }
 
-  async importJobsFromWeb(): Promise<{ imported: number; skipped: number; errors: number }> {
+  async importJobsFromWeb(maxJobs: number = 5): Promise<{ imported: number; skipped: number; errors: number }> {
     console.log("Starting automated job import...");
     
     let imported = 0;
@@ -26,7 +26,7 @@ export class JobImportService {
       const rawJobs = await this.scraper.scrapeMultipleJobBoards();
       console.log(`Found ${rawJobs.length} raw job postings`);
 
-      for (const rawJob of rawJobs) {
+      for (const rawJob of rawJobs.slice(0, maxJobs * 2)) { // Process more than needed to account for duplicates
         try {
           // Check if we already imported this job (by URL or title+company)
           if (await this.isDuplicateJob(rawJob.title, rawJob.companyName, rawJob.sourceUrl)) {
@@ -70,6 +70,12 @@ export class JobImportService {
             isRemote: parsedJob.isRemote,
           } as any;
           await storage.createProject(projectData);
+          imported++;
+          
+          // Stop if we've imported enough jobs
+          if (imported >= maxJobs) {
+            break;
+          }
 
           // Store import record to prevent duplicates
           await this.recordJobImport(parsedJob.title, parsedJob.companyName, parsedJob.originalUrl);
