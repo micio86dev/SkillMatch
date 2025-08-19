@@ -2,6 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { Server as SocketIOServer } from "socket.io";
 import { storage } from "./storage";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import { setupAuth, isAuthenticated, hashPassword, verifyPassword } from "./auth";
 import {
   insertProfessionalProfileSchema,
@@ -13,8 +15,25 @@ import {
   insertNotificationPreferencesSchema,
   registerUserSchema,
   loginUserSchema,
+  connections,
 } from "@shared/schema";
 import { notificationService, createMessageNotification, createLikeNotification, createCommentLikeNotification, createProjectLikeNotification, createCommentNotification, createFeedbackNotification } from "./notifications";
+
+// Helper function to create connection notifications
+async function createNotification(userId: string, type: string, title: string, message: string, relatedId?: string, relatedUserId?: string) {
+  try {
+    await storage.createNotification({
+      userId,
+      type: type as any,
+      title,
+      message,
+      relatedId,
+      relatedUserId,
+    });
+  } catch (error) {
+    console.error('Error creating notification:', error);
+  }
+}
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { z } from "zod";
 import OpenAI from "openai";
@@ -671,6 +690,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching unread messages count:", error);
       res.status(500).json({ message: "Failed to fetch unread messages count" });
+    }
+  });
+
+  // Connection routes
+  app.post('/api/connections/request', isAuthenticated, async (req: any, res) => {
+    try {
+      const requesterId = req.session.userId!;
+      const { addresseeId } = req.body;
+
+      if (!addresseeId) {
+        return res.status(400).json({ message: "addresseeId is required" });
+      }
+
+      if (requesterId === addresseeId) {
+        return res.status(400).json({ message: "Cannot send connection request to yourself" });
+      }
+
+      // Check if connection already exists
+      const existingConnection = await storage.getConnectionStatus(requesterId, addresseeId);
+      if (existingConnection) {
+        return res.status(400).json({ 
+          message: "Connection already exists", 
+          status: existingConnection.status 
+        });
+      }
+
+      // Create connection request
+      const connection = await storage.createConnection(requesterId, addresseeId);
+      
+      // Create notification for the addressee
+      await createNotification(addresseeId, 'connection', 'New Connection Request', 
+        `You have a new connection request`, requesterId, requesterId);
+
+      res.json(connection);
+    } catch (error) {
+      console.error("Error creating connection request:", error);
+      res.status(500).json({ message: "Failed to send connection request" });
+    }
+  });
+
+  app.get('/api/connections/status/:userId', isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUserId = req.session.userId!;
+      const { userId } = req.params;
+      
+      const connection = await storage.getConnectionStatus(currentUserId, userId);
+      res.json({ 
+        connected: !!connection, 
+        status: connection?.status || null,
+        isRequester: connection?.requesterId === currentUserId
+      });
+    } catch (error) {
+      console.error("Error checking connection status:", error);
+      res.status(500).json({ message: "Failed to check connection status" });
+    }
+  });
+
+  app.put('/api/connections/:connectionId/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const { connectionId } = req.params;
+      const { status } = req.body;
+      const currentUserId = req.session.userId!;
+
+      if (!['accepted', 'declined'].includes(status)) {
+        return res.status(400).json({ message: "Invalid status. Must be 'accepted' or 'declined'" });
+      }
+
+      // Verify the user is the addressee of this connection
+      const [connection] = await db.select().from(connections).where(eq(connections.id, connectionId));
+      if (!connection) {
+        return res.status(404).json({ message: "Connection not found" });
+      }
+
+      if (connection.addresseeId !== currentUserId) {
+        return res.status(403).json({ message: "You can only respond to connection requests sent to you" });
+      }
+
+      const updatedConnection = await storage.updateConnectionStatus(connectionId, status);
+      
+      // Create notification for the requester
+      const notificationMessage = status === 'accepted' 
+        ? 'Your connection request was accepted!' 
+        : 'Your connection request was declined';
+      
+      await createNotification(connection.requesterId, 'connection', 'Connection Request Response', 
+        notificationMessage, currentUserId, currentUserId);
+
+      res.json(updatedConnection);
+    } catch (error) {
+      console.error("Error updating connection status:", error);
+      res.status(500).json({ message: "Failed to update connection status" });
+    }
+  });
+
+  app.get('/api/connections', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { status } = req.query;
+      
+      const connections = await storage.getConnections(userId, status as string);
+      res.json(connections);
+    } catch (error) {
+      console.error("Error fetching connections:", error);
+      res.status(500).json({ message: "Failed to fetch connections" });
     }
   });
 

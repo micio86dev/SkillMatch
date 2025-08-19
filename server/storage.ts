@@ -29,6 +29,7 @@ import {
   type Feedback,
   type InsertFeedback,
   type Connection,
+  type InsertConnection,
   type Notification,
   type InsertNotification,
   type NotificationPreferences,
@@ -735,7 +736,7 @@ export class DatabaseStorage implements IStorage {
 
     // Get user details for each conversation partner
     const conversations = [];
-    for (const [otherUserId, lastMessage] of conversationMap) {
+    for (const [otherUserId, lastMessage] of Array.from(conversationMap.entries())) {
       const otherUser = await this.getUser(otherUserId);
       if (otherUser) {
         // Count unread messages from this user
@@ -837,18 +838,45 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(connections.status, status as any));
     }
 
-    const query = db
-      .select()
+    // Get connections with both requester and addressee details
+    const results = await db
+      .select({
+        connection: connections,
+        requester: users,
+      })
       .from(connections)
       .innerJoin(users, eq(connections.requesterId, users.id))
       .where(and(...conditions));
 
-    const results = await query;
-    return results.map(result => ({
-      ...result.connections,
-      requester: result.users,
-      addressee: result.users, // Note: This is simplified, in reality you'd need a more complex query
-    }));
+    // Now get addressee details for each connection
+    const connectionsWithDetails = [];
+    for (const result of results) {
+      const addressee = await this.getUser(result.connection.addresseeId);
+      if (addressee) {
+        connectionsWithDetails.push({
+          ...result.connection,
+          requester: result.requester,
+          addressee: addressee,
+        });
+      }
+    }
+
+    return connectionsWithDetails;
+  }
+
+  async getConnectionStatus(userId1: string, userId2: string): Promise<Connection | null> {
+    const [connection] = await db
+      .select()
+      .from(connections)
+      .where(
+        or(
+          and(eq(connections.requesterId, userId1), eq(connections.addresseeId, userId2)),
+          and(eq(connections.requesterId, userId2), eq(connections.addresseeId, userId1))
+        )
+      )
+      .limit(1);
+    
+    return connection || null;
   }
 
   async createConnection(requesterId: string, addresseeId: string): Promise<Connection> {

@@ -47,7 +47,7 @@ export default function Professionals() {
     refetchOnWindowFocus: false,
   });
 
-  const handleConnect = (professionalId: string) => {
+  const handleConnect = async (professional: any) => {
     if (!isAuthenticated) {
       toast({
         title: "Authentication Required",
@@ -59,11 +59,65 @@ export default function Professionals() {
       }, 1000);
       return;
     }
-    
-    toast({
-      title: "Connection Request Sent",
-      description: "Your connection request has been sent successfully!",
-    });
+
+    try {
+      const professionalUserId = professional.user?.id || professional.userId;
+      if (!professionalUserId) {
+        toast({
+          title: "Error",
+          description: "Unable to send connection request. Professional information is incomplete.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const response = await fetch('/api/connections/request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ addresseeId: professionalUserId }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        if (response.status === 400 && error.status) {
+          toast({
+            title: "Connection Status",
+            description: `Connection ${error.status}. ${error.message}`,
+            variant: error.status === 'accepted' ? 'default' : 'destructive',
+          });
+        } else {
+          throw new Error(error.message || 'Failed to send connection request');
+        }
+        return;
+      }
+
+      toast({
+        title: "Connection Request Sent",
+        description: `Your connection request has been sent to ${professional.user?.firstName || 'the professional'}!`,
+      });
+    } catch (error) {
+      if (isUnauthorizedError(error as Error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      
+      console.error('Connection request error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send connection request. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleMessage = (professional: any) => {
@@ -322,7 +376,7 @@ export default function Professionals() {
                 <ProfessionalCard
                   key={professional.id}
                   professional={professional}
-                  onConnect={() => handleConnect(professional.id)}
+                  onConnect={() => handleConnect(professional)}
                   onMessage={() => handleMessage(professional)}
                 />
               ))}

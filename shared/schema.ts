@@ -180,7 +180,7 @@ export const feedback = pgTable("feedback", {
 export const notifications = pgTable("notifications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id).notNull(),
-  type: varchar("type", { enum: ["message", "like", "comment", "feedback"] }).notNull(),
+  type: varchar("type", { enum: ["message", "like", "comment", "feedback", "connection"] }).notNull(),
   title: varchar("title").notNull(),
   message: text("message").notNull(),
   relatedId: varchar("related_id"), // ID of related post, message, etc.
@@ -442,6 +442,12 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   createdAt: true,
 });
 
+export const insertConnectionSchema = createInsertSchema(connections).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertNotificationPreferencesSchema = createInsertSchema(notificationPreferences).omit({
   id: true,
   createdAt: true,
@@ -478,6 +484,7 @@ export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Feedback = typeof feedback.$inferSelect;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type Connection = typeof connections.$inferSelect;
+export type InsertConnection = z.infer<typeof insertConnectionSchema>;
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type NotificationPreferences = typeof notificationPreferences.$inferSelect;

@@ -1,8 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, User, MapPin, Clock, MessageSquare } from "lucide-react";
+import { Star, User, MapPin, Clock, MessageSquare, CheckCircle, UserPlus } from "lucide-react";
 import { ProfessionalProfile, User as UserType } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ProfessionalCardProps {
   professional: ProfessionalProfile & { user: UserType };
@@ -12,6 +14,13 @@ interface ProfessionalCardProps {
 
 export function ProfessionalCard({ professional, onConnect, onMessage }: ProfessionalCardProps) {
   const { user } = professional;
+  const { isAuthenticated } = useAuth();
+  
+  // Check connection status with this professional
+  const { data: connectionStatus } = useQuery({
+    queryKey: [`/api/connections/status/${user.id}`],
+    enabled: isAuthenticated && !!user.id,
+  });
   
   const getAvailabilityColor = (availability: string) => {
     switch (availability) {
@@ -111,13 +120,47 @@ export function ProfessionalCard({ professional, onConnect, onMessage }: Profess
 
           {/* Action buttons */}
           <div className="flex space-x-2 pt-2">
-            <Button 
-              size="sm" 
-              className="flex-1"
-              onClick={onConnect}
-            >
-              Connect
-            </Button>
+            {connectionStatus?.connected ? (
+              connectionStatus.status === 'accepted' ? (
+                <Button 
+                  size="sm" 
+                  className="flex-1"
+                  variant="outline"
+                  disabled
+                >
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  Connected
+                </Button>
+              ) : connectionStatus.status === 'pending' ? (
+                <Button 
+                  size="sm" 
+                  className="flex-1"
+                  variant="outline"
+                  disabled
+                >
+                  <Clock className="h-4 w-4 mr-1" />
+                  {connectionStatus.isRequester ? 'Request Sent' : 'Request Received'}
+                </Button>
+              ) : (
+                <Button 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={onConnect}
+                >
+                  <UserPlus className="h-4 w-4 mr-1" />
+                  Connect
+                </Button>
+              )
+            ) : (
+              <Button 
+                size="sm" 
+                className="flex-1"
+                onClick={onConnect}
+              >
+                <UserPlus className="h-4 w-4 mr-1" />
+                Connect
+              </Button>
+            )}
             <Button 
               size="sm" 
               variant="outline"
