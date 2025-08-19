@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { useAuth } from "@/hooks/useAuth";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
@@ -16,6 +17,9 @@ import { VideoCall } from "@/pages/video-call";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
+  
+  // Initialize real-time notifications
+  useRealtimeNotifications();
 
   return (
     <Switch>

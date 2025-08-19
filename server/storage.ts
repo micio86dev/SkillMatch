@@ -71,6 +71,7 @@ export interface IStorage {
   likePost(postId: string, userId: string): Promise<void>;
   unlikePost(postId: string, userId: string): Promise<void>;
   addComment(postId: string, userId: string, content: string): Promise<void>;
+  getComment(commentId: string): Promise<{ id: string; userId: string; content: string } | undefined>;
   likeComment(commentId: string, userId: string): Promise<void>;
   unlikeComment(commentId: string, userId: string): Promise<void>;
   likeProject(projectId: string, userId: string): Promise<void>;
@@ -350,6 +351,14 @@ export class DatabaseStorage implements IStorage {
         .set({ commentsCount: sql`${posts.commentsCount} + 1` })
         .where(eq(posts.id, postId));
     });
+  }
+
+  async getComment(commentId: string): Promise<{ id: string; userId: string; content: string } | undefined> {
+    const [comment] = await db
+      .select({ id: postComments.id, userId: postComments.userId, content: postComments.content })
+      .from(postComments)
+      .where(eq(postComments.id, commentId));
+    return comment;
   }
 
   async likeComment(commentId: string, userId: string): Promise<void> {

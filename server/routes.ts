@@ -12,7 +12,7 @@ import {
   insertFeedbackSchema,
   insertNotificationPreferencesSchema,
 } from "@shared/schema";
-import { notificationService, createMessageNotification, createLikeNotification, createCommentNotification, createFeedbackNotification } from "./notifications";
+import { notificationService, createMessageNotification, createLikeNotification, createCommentLikeNotification, createProjectLikeNotification, createCommentNotification, createFeedbackNotification } from "./notifications";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -254,6 +254,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { commentId } = req.params;
       const userId = req.user.claims.sub;
       await storage.likeComment(commentId, userId);
+      
+      // Get comment details to notify the author
+      const comment = await storage.getComment(commentId);
+      if (comment && comment.userId !== userId) {
+        await createCommentLikeNotification(comment.userId, userId, commentId);
+      }
+      
       res.json({ success: true });
     } catch (error) {
       console.error("Error liking comment:", error);
@@ -279,6 +286,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { projectId } = req.params;
       const userId = req.user.claims.sub;
       await storage.likeProject(projectId, userId);
+      
+      // Get project details to notify the author
+      const project = await storage.getProject(projectId);
+      if (project && project.companyUserId !== userId) {
+        await createProjectLikeNotification(project.companyUserId, userId, projectId);
+      }
+      
       res.json({ success: true });
     } catch (error) {
       console.error("Error liking project:", error);
@@ -295,6 +309,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error unliking project:", error);
       res.status(500).json({ message: "Failed to unlike project" });
+    }
+  });
+
+  // Like status routes
+  app.get('/api/posts/:postId/like-status', isAuthenticated, async (req: any, res) => {
+    try {
+      const { postId } = req.params;
+      const userId = req.user.claims.sub;
+      const isLiked = await storage.isPostLikedByUser(postId, userId);
+      res.json({ isLiked });
+    } catch (error) {
+      console.error("Error checking post like status:", error);
+      res.status(500).json({ message: "Failed to check like status" });
+    }
+  });
+
+  app.get('/api/comments/:commentId/like-status', isAuthenticated, async (req: any, res) => {
+    try {
+      const { commentId } = req.params;
+      const userId = req.user.claims.sub;
+      const isLiked = await storage.isCommentLikedByUser(commentId, userId);
+      res.json({ isLiked });
+    } catch (error) {
+      console.error("Error checking comment like status:", error);
+      res.status(500).json({ message: "Failed to check like status" });
+    }
+  });
+
+  app.get('/api/projects/:projectId/like-status', isAuthenticated, async (req: any, res) => {
+    try {
+      const { projectId } = req.params;
+      const userId = req.user.claims.sub;
+      const isLiked = await storage.isProjectLikedByUser(projectId, userId);
+      res.json({ isLiked });
+    } catch (error) {
+      console.error("Error checking project like status:", error);
+      res.status(500).json({ message: "Failed to check like status" });
     }
   });
 
@@ -395,7 +446,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const feedback = await storage.createFeedback(feedbackData);
       
       // Create notification for the feedback recipient
-      await createFeedbackNotification(feedbackData.toUserId, fromUserId, feedbackData.rating, feedbackData.comment);
+      await createFeedbackNotification(feedbackData.toUserId, fromUserId, feedbackData.rating, feedbackData.comment || '');
       
       res.json(feedback);
     } catch (error) {
