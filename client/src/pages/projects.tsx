@@ -52,6 +52,7 @@ export default function Projects() {
       requiredSkills: [],
       seniorityLevel: "mid",
       contractType: "project_based",
+      teamSize: 1,
       estimatedHours: 0,
       budgetMin: 0,
       budgetMax: 0,
@@ -172,7 +173,7 @@ export default function Projects() {
                         )}
                       />
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <FormField
                           control={createProjectForm.control}
                           name="seniorityLevel"
@@ -215,6 +216,32 @@ export default function Projects() {
                                   <SelectItem value="project_based">Project-based</SelectItem>
                                   <SelectItem value="full_time">Full-time</SelectItem>
                                   <SelectItem value="part_time">Part-time</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={createProjectForm.control}
+                          name="teamSize"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Team Size Required</FormLabel>
+                              <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="How many professionals?" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="1">1 Professional</SelectItem>
+                                  <SelectItem value="2">2 Professionals</SelectItem>
+                                  <SelectItem value="3">3 Professionals</SelectItem>
+                                  <SelectItem value="4">4 Professionals</SelectItem>
+                                  <SelectItem value="5">5 Professionals</SelectItem>
+                                  <SelectItem value="6">6+ Professionals</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />

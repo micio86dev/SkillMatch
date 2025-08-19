@@ -82,6 +82,7 @@ export const projects = pgTable("projects", {
   requiredSkills: text("required_skills").array(),
   seniorityLevel: varchar("seniority_level", { enum: ["junior", "mid", "senior", "lead", "principal"] }),
   contractType: varchar("contract_type", { enum: ["hourly", "project_based", "full_time", "part_time"] }).default("project_based"),
+  teamSize: integer("team_size").default(1),
   estimatedHours: integer("estimated_hours"),
   budgetMin: decimal("budget_min", { precision: 10, scale: 2 }),
   budgetMax: decimal("budget_max", { precision: 10, scale: 2 }),

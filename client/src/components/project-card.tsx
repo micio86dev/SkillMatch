@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, MapPin, Building, DollarSign } from "lucide-react";
+import { Clock, MapPin, Building, DollarSign, Users } from "lucide-react";
 import { Project, User } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
 import { LikeButton } from "@/components/like-button";
@@ -114,6 +114,23 @@ export function ProjectCard({ project }: ProjectCardProps) {
                 <span className="text-slate-600 dark:text-slate-400 flex items-center">
                   <Clock className="h-4 w-4 mr-1" />
                   Est. {project.estimatedHours} hours
+                </span>
+              </div>
+            )}
+
+            {project.teamSize && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-600 dark:text-slate-400 flex items-center">
+                  <Users className="h-4 w-4 mr-1" />
+                  Team Size
+                </span>
+                <span className="font-semibold text-slate-900 dark:text-white">
+                  {project.teamSize === 1 
+                    ? '1 Professional' 
+                    : project.teamSize === 6 
+                      ? '6+ Professionals'
+                      : `${project.teamSize} Professionals`
+                  }
                 </span>
               </div>
             )}
