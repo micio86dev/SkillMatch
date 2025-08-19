@@ -25,12 +25,12 @@ export default function Projects() {
   const queryClient = useQueryClient();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [filters, setFilters] = useState({
-    status: "",
+    status: "all",
     search: "",
   });
 
   const { data: projects, isLoading } = useQuery({
-    queryKey: ["/api/projects", filters],
+    queryKey: ["/api/projects", { ...filters, status: filters.status === "all" ? "" : filters.status }],
     refetchOnWindowFocus: false,
   });
 
@@ -351,7 +351,7 @@ export default function Projects() {
                       <SelectValue placeholder="All statuses" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All statuses</SelectItem>
+                      <SelectItem value="all">All statuses</SelectItem>
                       <SelectItem value="open">Open</SelectItem>
                       <SelectItem value="in_review">In Review</SelectItem>
                       <SelectItem value="assigned">Assigned</SelectItem>

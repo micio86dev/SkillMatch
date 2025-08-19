@@ -14,14 +14,18 @@ export default function Professionals() {
   const { toast } = useToast();
   const [filters, setFilters] = useState({
     skills: "",
-    availability: "",
-    seniorityLevel: "",
+    availability: "any",
+    seniorityLevel: "any",
     minRate: "",
     maxRate: "",
   });
 
   const { data: professionals, isLoading } = useQuery({
-    queryKey: ["/api/professionals/search", filters],
+    queryKey: ["/api/professionals/search", {
+      ...filters,
+      availability: filters.availability === "any" ? "" : filters.availability,
+      seniorityLevel: filters.seniorityLevel === "any" ? "" : filters.seniorityLevel
+    }],
     refetchOnWindowFocus: false,
   });
 
@@ -42,14 +46,14 @@ export default function Professionals() {
   const clearFilters = () => {
     setFilters({
       skills: "",
-      availability: "",
-      seniorityLevel: "",
+      availability: "any",
+      seniorityLevel: "any",
       minRate: "",
       maxRate: "",
     });
   };
 
-  const hasActiveFilters = Object.values(filters).some(value => value !== "");
+  const hasActiveFilters = filters.skills !== "" || filters.availability !== "any" || filters.seniorityLevel !== "any" || filters.minRate !== "" || filters.maxRate !== "";
 
   return (
     <Layout>
@@ -102,7 +106,7 @@ export default function Professionals() {
                       <SelectValue placeholder="Any" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any</SelectItem>
+                      <SelectItem value="any">Any</SelectItem>
                       <SelectItem value="available">Available</SelectItem>
                       <SelectItem value="partially_available">Partially Available</SelectItem>
                       <SelectItem value="unavailable">Unavailable</SelectItem>
@@ -122,7 +126,7 @@ export default function Professionals() {
                       <SelectValue placeholder="Any" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any</SelectItem>
+                      <SelectItem value="any">Any</SelectItem>
                       <SelectItem value="junior">Junior</SelectItem>
                       <SelectItem value="mid">Mid-Level</SelectItem>
                       <SelectItem value="senior">Senior</SelectItem>

@@ -133,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/profile/professional', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       const profileData = insertProfessionalProfileSchema.parse({
         ...req.body,
         userId,
@@ -148,7 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/profile/professional', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       const profileData = insertProfessionalProfileSchema.partial().parse(req.body);
       const profile = await storage.updateProfessionalProfile(userId, profileData);
       res.json(profile);
@@ -174,7 +174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/profile/company', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       const profileData = insertCompanyProfileSchema.parse({
         ...req.body,
         userId,
@@ -238,7 +238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/projects', isAuthenticated, async (req: any, res) => {
     try {
-      const companyUserId = req.user.claims.sub;
+      const companyUserId = req.session.userId!;
       const projectData = insertProjectSchema.parse({
         ...req.body,
         companyUserId,
@@ -254,7 +254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/projects/:id', isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       
       // Verify project ownership
       const project = await storage.getProject(id);
@@ -288,7 +288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/posts', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       const postData = insertPostSchema.parse({
         ...req.body,
         userId,
@@ -304,7 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/posts/:postId/like', isAuthenticated, async (req: any, res) => {
     try {
       const { postId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       await storage.likePost(postId, userId);
       
       // Get post details to notify the author
@@ -324,7 +324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/posts/:postId/like', isAuthenticated, async (req: any, res) => {
     try {
       const { postId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       await storage.unlikePost(postId, userId);
       res.json({ success: true });
     } catch (error) {
@@ -337,7 +337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/comments/:commentId/like', isAuthenticated, async (req: any, res) => {
     try {
       const { commentId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       await storage.likeComment(commentId, userId);
       
       // Get comment details to notify the author
@@ -356,7 +356,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/comments/:commentId/like', isAuthenticated, async (req: any, res) => {
     try {
       const { commentId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       await storage.unlikeComment(commentId, userId);
       res.json({ success: true });
     } catch (error) {
@@ -369,7 +369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/projects/:projectId/like', isAuthenticated, async (req: any, res) => {
     try {
       const { projectId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       await storage.likeProject(projectId, userId);
       
       // Get project details to notify the author
@@ -388,7 +388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/projects/:projectId/like', isAuthenticated, async (req: any, res) => {
     try {
       const { projectId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       await storage.unlikeProject(projectId, userId);
       res.json({ success: true });
     } catch (error) {
@@ -401,7 +401,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/posts/:postId/like-status', isAuthenticated, async (req: any, res) => {
     try {
       const { postId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       const isLiked = await storage.isPostLikedByUser(postId, userId);
       res.json({ isLiked });
     } catch (error) {
@@ -413,7 +413,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/comments/:commentId/like-status', isAuthenticated, async (req: any, res) => {
     try {
       const { commentId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       const isLiked = await storage.isCommentLikedByUser(commentId, userId);
       res.json({ isLiked });
     } catch (error) {
@@ -425,7 +425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/projects/:projectId/like-status', isAuthenticated, async (req: any, res) => {
     try {
       const { projectId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       const isLiked = await storage.isProjectLikedByUser(projectId, userId);
       res.json({ isLiked });
     } catch (error) {
@@ -437,7 +437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/posts/:postId/comments', isAuthenticated, async (req: any, res) => {
     try {
       const { postId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       const { content } = z.object({ content: z.string() }).parse(req.body);
       await storage.addComment(postId, userId, content);
       
@@ -458,7 +458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Message routes
   app.get('/api/messages/conversation/:userId', isAuthenticated, async (req: any, res) => {
     try {
-      const currentUserId = req.user.claims.sub;
+      const currentUserId = req.session.userId!;
       const { userId } = req.params;
       const conversation = await storage.getConversation(currentUserId, userId);
       res.json(conversation);
@@ -470,7 +470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/messages', isAuthenticated, async (req: any, res) => {
     try {
-      const senderId = req.user.claims.sub;
+      const senderId = req.session.userId!;
       const messageData = insertMessageSchema.parse({
         ...req.body,
         senderId,
@@ -500,7 +500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/messages/unread-count', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       const count = await storage.getUnreadMessagesCount(userId);
       res.json({ count });
     } catch (error) {
@@ -523,7 +523,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/feedback', isAuthenticated, async (req: any, res) => {
     try {
-      const fromUserId = req.user.claims.sub;
+      const fromUserId = req.session.userId!;
       const feedbackData = insertFeedbackSchema.parse({
         ...req.body,
         fromUserId,
@@ -543,7 +543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Connection routes
   app.get('/api/connections', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       const { status } = req.query;
       const connections = await storage.getConnections(userId, status as string);
       res.json(connections);
@@ -555,7 +555,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/connections', isAuthenticated, async (req: any, res) => {
     try {
-      const requesterId = req.user.claims.sub;
+      const requesterId = req.session.userId!;
       const { addresseeId } = z.object({ addresseeId: z.string() }).parse(req.body);
       const connection = await storage.createConnection(requesterId, addresseeId);
       res.json(connection);
@@ -581,7 +581,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   if (process.env.NODE_ENV === 'development') {
     app.post('/api/test-notifications', isAuthenticated, async (req: any, res) => {
       try {
-        const userId = req.user.claims.sub;
+        const userId = req.session.userId!;
         const { createTestNotifications } = await import('./weeklyDigest');
         await createTestNotifications(userId);
         res.json({ success: true, message: 'Test notifications created' });
@@ -595,7 +595,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Notification routes
   app.get('/api/notifications', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       const { limit } = req.query as { limit?: string };
       const notifications = await storage.getNotifications(userId, limit ? parseInt(limit) : undefined);
       res.json(notifications);
@@ -607,7 +607,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/notifications/unread-count', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       const count = await storage.getUnreadNotificationsCount(userId);
       res.json({ count });
     } catch (error) {
@@ -630,7 +630,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Notification preferences routes
   app.get('/api/notification-preferences', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       const preferences = await storage.getNotificationPreferences(userId);
       res.json(preferences);
     } catch (error) {
@@ -641,7 +641,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/notification-preferences', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       const preferencesData = insertNotificationPreferencesSchema.parse({
         ...req.body,
         userId,
@@ -682,7 +682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/profile/cv', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId!;
       const { cvUrl } = req.body;
       
       if (!cvUrl) {
