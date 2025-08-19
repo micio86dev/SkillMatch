@@ -29,8 +29,18 @@ export default function Projects() {
     search: "",
   });
 
-  const { data: projects, isLoading } = useQuery({
-    queryKey: ["/api/projects", { ...filters, status: filters.status === "all" ? "" : filters.status }],
+  const queryFilters = { ...filters, status: filters.status === "all" ? "" : filters.status };
+  const { data: projects = [], isLoading } = useQuery({
+    queryKey: ["/api/projects", queryFilters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (queryFilters.status) params.append('status', queryFilters.status);
+      if (queryFilters.search) params.append('search', queryFilters.search);
+      const url = `/api/projects${params.toString() ? '?' + params.toString() : ''}`;
+      const response = await fetch(url, { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch projects');
+      return response.json();
+    },
     refetchOnWindowFocus: false,
   });
 

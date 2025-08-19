@@ -20,12 +20,25 @@ export default function Professionals() {
     maxRate: "",
   });
 
-  const { data: professionals, isLoading } = useQuery({
-    queryKey: ["/api/professionals/search", {
-      ...filters,
-      availability: filters.availability === "any" ? "" : filters.availability,
-      seniorityLevel: filters.seniorityLevel === "any" ? "" : filters.seniorityLevel
-    }],
+  const queryFilters = {
+    ...filters,
+    availability: filters.availability === "any" ? "" : filters.availability,
+    seniorityLevel: filters.seniorityLevel === "any" ? "" : filters.seniorityLevel
+  };
+  const { data: professionals = [], isLoading } = useQuery({
+    queryKey: ["/api/professionals/search", queryFilters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (queryFilters.skills) params.append('skills', queryFilters.skills);
+      if (queryFilters.availability) params.append('availability', queryFilters.availability);
+      if (queryFilters.seniorityLevel) params.append('seniorityLevel', queryFilters.seniorityLevel);
+      if (queryFilters.minRate) params.append('minRate', queryFilters.minRate);
+      if (queryFilters.maxRate) params.append('maxRate', queryFilters.maxRate);
+      const url = `/api/professionals/search${params.toString() ? '?' + params.toString() : ''}`;
+      const response = await fetch(url, { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch professionals');
+      return response.json();
+    },
     refetchOnWindowFocus: false,
   });
 
