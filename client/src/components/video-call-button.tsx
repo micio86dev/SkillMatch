@@ -62,9 +62,12 @@ export function VideoCallButton({
         variant={variant}
         size={size}
         className={`${className} font-medium shadow-sm transition-all`}
+        aria-label={size === "sm" || size === "icon" ? "Start video call" : undefined}
       >
-        <Video className="h-4 w-4 mr-2" />
-        {size !== "sm" ? "Video Call" : ""}
+        <Video className={`h-4 w-4 ${size === "sm" || size === "icon" ? "" : "mr-2"}`} />
+        {size !== "sm" && size !== "icon" && <span>Video Call</span>}
+        {size === "sm" && <span className="sr-only">Video Call</span>}
+        {size === "icon" && <span className="sr-only">Video Call</span>}
       </Button>
 
       {/* Active Video Call */}

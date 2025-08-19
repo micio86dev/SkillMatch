@@ -117,9 +117,9 @@ export default function Messages() {
 
   return (
     <Layout>
-      <div className="h-[calc(100vh-4rem)] flex">
+      <div className="h-[calc(100vh-4rem)] flex flex-col md:flex-row">
         {/* Sidebar - Conversation List */}
-        <div className="w-1/3 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+        <div className="w-full md:w-1/3 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 md:max-h-full">
           <ConversationList 
             conversations={conversations}
             selectedConversationId={selectedConversationId || undefined}
@@ -129,7 +129,7 @@ export default function Messages() {
         </div>
         
         {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col bg-slate-50 dark:bg-slate-900">
+        <div className="flex-1 flex flex-col bg-slate-50 dark:bg-slate-900 min-h-0">
           {selectedConversation ? (
             <>
               {/* Conversation Header */}
@@ -138,7 +138,7 @@ export default function Messages() {
               />
               
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-2 md:space-y-4">
                 {conversationMessages.map((message) => {
                   const isOwn = message.senderId === (user?.id || 'current');
                   const sender = isOwn 
@@ -158,23 +158,26 @@ export default function Messages() {
               </div>
               
               {/* Message Input */}
-              <div className="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-4">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-1 flex items-center space-x-2">
+              <div className="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-2 md:p-4">
+                <div className="flex items-center gap-2 md:gap-3">
+                  <div className="flex-1 flex items-center gap-2">
                     <Input 
                       placeholder="Type your message..."
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                       className="flex-1"
+                      aria-label="Message input"
                     />
                     <Button 
                       onClick={handleSendMessage}
                       disabled={!newMessage.trim()}
                       size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-3"
+                      aria-label="Send message"
                     >
-                      <Send className="h-4 w-4" />
+                      <Send className="h-4 w-4 md:mr-1" />
+                      <span className="hidden md:inline">Send</span>
                     </Button>
                   </div>
                   <VideoCallButton 

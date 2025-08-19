@@ -331,44 +331,46 @@ export function VideoCall({ recipientId, recipientName, onClose, isIncoming = fa
   }, [initializeSocket, isIncoming, startCall, handleEndCall]);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-      <Card className="w-full max-w-4xl mx-4 bg-slate-900 border-slate-700">
-        <CardContent className="p-6">
+    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
+      <Card className="w-full max-w-4xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+        <CardContent className="p-4 md:p-6">
           {/* Header */}
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-white mb-2">
+          <div className="text-center mb-4 md:mb-6">
+            <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
               {callState.isConnected ? 'Connected' : (isIncoming ? 'Incoming Call' : 'Calling')}
             </h2>
-            <p className="text-slate-300">{recipientName}</p>
+            <p className="text-slate-600 dark:text-slate-300">{recipientName}</p>
           </div>
 
           {/* Video Container */}
-          <div className="relative bg-slate-800 rounded-lg overflow-hidden mb-6" style={{ aspectRatio: '16/9' }}>
+          <div className="relative bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden mb-4 md:mb-6" style={{ aspectRatio: '16/9' }}>
             {/* Remote Video */}
             <video
               ref={remoteVideoRef}
               autoPlay
               playsInline
               className="w-full h-full object-cover"
+              aria-label={`Video call with ${recipientName}`}
             />
             
             {/* Local Video (Picture-in-Picture) */}
-            <div className="absolute top-4 right-4 w-48 h-36 bg-slate-700 rounded-lg overflow-hidden border-2 border-slate-600">
+            <div className="absolute top-2 right-2 md:top-4 md:right-4 w-24 h-18 md:w-48 md:h-36 bg-slate-200 dark:bg-slate-700 rounded-lg overflow-hidden border-2 border-slate-300 dark:border-slate-600">
               <video
                 ref={localVideoRef}
                 autoPlay
                 playsInline
                 muted
                 className="w-full h-full object-cover"
+                aria-label="Your video feed"
               />
             </div>
 
             {/* Connection Status */}
             {!callState.isConnected && (
-              <div className="absolute inset-0 flex items-center justify-center bg-slate-800 bg-opacity-75">
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-100/90 dark:bg-slate-800/90">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p className="text-white">
+                  <p className="text-slate-700 dark:text-slate-200">
                     {isIncoming ? 'Connecting...' : 'Waiting for answer...'}
                   </p>
                 </div>
@@ -377,41 +379,45 @@ export function VideoCall({ recipientId, recipientName, onClose, isIncoming = fa
           </div>
 
           {/* Controls */}
-          <div className="flex justify-center space-x-4">
+          <div className="flex justify-center items-center gap-2 md:gap-4 flex-wrap">
             <Button
               onClick={toggleMute}
               variant={callState.isMuted ? "destructive" : "secondary"}
               size="lg"
-              className="rounded-full w-14 h-14"
+              className="rounded-full w-12 h-12 md:w-14 md:h-14"
+              aria-label={callState.isMuted ? "Unmute microphone" : "Mute microphone"}
             >
-              {callState.isMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+              {callState.isMuted ? <MicOff className="h-5 w-5 md:h-6 md:w-6" /> : <Mic className="h-5 w-5 md:h-6 md:w-6" />}
             </Button>
 
             <Button
               onClick={toggleVideo}
               variant={callState.isVideoEnabled ? "secondary" : "destructive"}
               size="lg"
-              className="rounded-full w-14 h-14"
+              className="rounded-full w-12 h-12 md:w-14 md:h-14"
+              aria-label={callState.isVideoEnabled ? "Turn off camera" : "Turn on camera"}
             >
-              {callState.isVideoEnabled ? <Video className="h-6 w-6" /> : <VideoOff className="h-6 w-6" />}
+              {callState.isVideoEnabled ? <Video className="h-5 w-5 md:h-6 md:w-6" /> : <VideoOff className="h-5 w-5 md:h-6 md:w-6" />}
             </Button>
 
             <Button
               onClick={toggleScreenShare}
               variant={callState.isScreenSharing ? "default" : "secondary"}
               size="lg"
-              className="rounded-full w-14 h-14"
+              className="rounded-full w-12 h-12 md:w-14 md:h-14"
+              aria-label={callState.isScreenSharing ? "Stop screen sharing" : "Start screen sharing"}
             >
-              {callState.isScreenSharing ? <MonitorOff className="h-6 w-6" /> : <Monitor className="h-6 w-6" />}
+              {callState.isScreenSharing ? <MonitorOff className="h-5 w-5 md:h-6 md:w-6" /> : <Monitor className="h-5 w-5 md:h-6 md:w-6" />}
             </Button>
 
             <Button
               onClick={handleEndCall}
               variant="destructive"
               size="lg"
-              className="rounded-full w-14 h-14"
+              className="rounded-full w-12 h-12 md:w-14 md:h-14"
+              aria-label="End call"
             >
-              <PhoneOff className="h-6 w-6" />
+              <PhoneOff className="h-5 w-5 md:h-6 md:w-6" />
             </Button>
           </div>
         </CardContent>
