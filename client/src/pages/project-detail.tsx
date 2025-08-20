@@ -42,16 +42,16 @@ export default function ProjectDetail() {
   const { t } = useTranslation();
   const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+
+  const { data: project, isLoading, error } = useQuery<ProjectWithCompany>({
+    queryKey: [`/api/projects/${id}`],
+  });
   
   const pageShareData = usePageShare('project', {
     data: project,
     title: project?.title ? `${project.title} - Project Details` : 'Project Details',
     description: project?.description || 'Discover this project opportunity on DevConnect',
     hashtags: ['Project', ...(project?.requiredSkills?.slice(0, 3) || []), 'DevConnect', 'TechJobs']
-  });
-
-  const { data: project, isLoading, error } = useQuery<ProjectWithCompany>({
-    queryKey: [`/api/projects/${id}`],
   });
 
   const { data: subscriptionStatus } = useQuery<{ isSubscribed: boolean }>({
