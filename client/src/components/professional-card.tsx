@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, User, MapPin, Clock, MessageSquare, CheckCircle, UserPlus } from "lucide-react";
+import { Star, User, MapPin, Clock, MessageSquare, CheckCircle, UserPlus, Loader2 } from "lucide-react";
 import { ProfessionalProfile, User as UserType } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,9 +13,10 @@ interface ProfessionalCardProps {
   professional: ProfessionalProfile & { user: UserType };
   onConnect?: () => void;
   onMessage?: () => void;
+  isConnectLoading?: boolean;
 }
 
-export function ProfessionalCard({ professional, onConnect, onMessage }: ProfessionalCardProps) {
+export function ProfessionalCard({ professional, onConnect, onMessage, isConnectLoading }: ProfessionalCardProps) {
   const { user } = professional;
   const { isAuthenticated } = useAuth();
   
@@ -152,9 +153,19 @@ export function ProfessionalCard({ professional, onConnect, onMessage }: Profess
                   size="sm" 
                   className="flex-1"
                   onClick={onConnect}
+                  disabled={isConnectLoading}
                 >
-                  <UserPlus className="h-4 w-4 mr-1" />
-                  Connect
+                  {isConnectLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="h-4 w-4 mr-1" />
+                      Connect
+                    </>
+                  )}
                 </Button>
               )
             ) : (
@@ -162,9 +173,19 @@ export function ProfessionalCard({ professional, onConnect, onMessage }: Profess
                 size="sm" 
                 className="flex-1"
                 onClick={onConnect}
+                disabled={isConnectLoading}
               >
-                <UserPlus className="h-4 w-4 mr-1" />
-                Connect
+                {isConnectLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4 mr-1" />
+                    Connect
+                  </>
+                )}
               </Button>
             )}
             {(connectionStatus as any)?.status === 'accepted' && (

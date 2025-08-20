@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Layout } from "@/components/layout";
 import { ProfessionalCard } from "@/components/professional-card";
 import { Card, CardContent } from "@/components/ui/card";
@@ -58,30 +58,8 @@ export default function Professionals() {
     refetchOnWindowFocus: false,
   });
 
-  const handleConnect = async (professional: any) => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to connect with professionals.",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/login";
-      }, 1000);
-      return;
-    }
-
-    try {
-      const professionalUserId = professional.user?.id || professional.userId;
-      if (!professionalUserId) {
-        toast({
-          title: "Error",
-          description: "Unable to send connection request. Professional information is incomplete.",
-          variant: "destructive",
-        });
-        return;
-      }
-
+  const connectMutation = useMutation({
+    mutationFn: async (professionalUserId: string) => {
       const response = await fetch('/api/connections/request', {
         method: 'POST',
         headers: {
@@ -99,18 +77,21 @@ export default function Professionals() {
             description: `Connection ${error.status}. ${error.message}`,
             variant: error.status === 'accepted' ? 'default' : 'destructive',
           });
-        } else {
-          throw new Error(error.message || 'Failed to send connection request');
+          return;
         }
-        return;
+        throw new Error(error.message || 'Failed to send connection request');
       }
 
+      return response.json();
+    },
+    onSuccess: (data, professionalUserId) => {
       // Invalidate connection status queries to update UI
       queryClient.invalidateQueries({ queryKey: ['/api/connections/status'] });
       
+      const professional = professionals?.find((p: any) => (p.user?.id || p.userId) === professionalUserId);
       toast({
         title: t('professionals.connectionRequestSent'),
-        description: t('professionals.connectionRequestSentDesc', { name: professional.user?.firstName || 'the professional' }),
+        description: t('professionals.connectionRequestSentDesc', { name: professional?.user?.firstName || 'the professional' }),
         variant: "default",
         style: {
           backgroundColor: '#10B981',
@@ -118,8 +99,9 @@ export default function Professionals() {
           color: 'white'
         }
       });
-    } catch (error) {
-      if (isUnauthorizedError(error as Error)) {
+    },
+    onError: (error: Error) => {
+      if (isUnauthorizedError(error)) {
         toast({
           title: "Unauthorized",
           description: "You are logged out. Logging in again...",
@@ -138,6 +120,32 @@ export default function Professionals() {
         variant: "destructive",
       });
     }
+  });
+
+  const handleConnect = (professional: any) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to connect with professionals.",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 1000);
+      return;
+    }
+
+    const professionalUserId = professional.user?.id || professional.userId;
+    if (!professionalUserId) {
+      toast({
+        title: "Error",
+        description: "Unable to send connection request. Professional information is incomplete.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    connectMutation.mutate(professionalUserId);
   };
 
   const handleMessage = (professional: any) => {
@@ -398,6 +406,7 @@ export default function Professionals() {
                   professional={professional}
                   onConnect={() => handleConnect(professional)}
                   onMessage={() => handleMessage(professional)}
+                  isConnectLoading={connectMutation.isPending}
                 />
               ))}
             </div>
