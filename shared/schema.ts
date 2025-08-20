@@ -216,7 +216,7 @@ export const feedback = pgTable("feedback", {
 export const notifications = pgTable("notifications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id).notNull(),
-  type: varchar("type", { enum: ["message", "like", "comment", "feedback", "connection"] }).notNull(),
+  type: varchar("type", { enum: ["message", "like", "comment", "feedback", "connection", "application_received", "application_accepted", "application_rejected"] }).notNull(),
   title: varchar("title").notNull(),
   message: text("message").notNull(),
   relatedId: varchar("related_id"), // ID of related post, message, etc.

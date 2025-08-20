@@ -135,6 +135,10 @@ export interface IStorage {
   // Notification preferences operations
   getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined>;
   upsertNotificationPreferences(preferences: InsertNotificationPreferences): Promise<NotificationPreferences>;
+  
+  // Project application operations
+  getProjectApplicationById(applicationId: string): Promise<ProjectApplication | undefined>;
+  getUserProjectApplication(projectId: string, userId: string): Promise<ProjectApplication | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -162,10 +166,11 @@ export class DatabaseStorage implements IStorage {
       .insert(users)
       .values({
         id: userData.id,
-        email: userData.email,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        profileImageUrl: userData.profileImageUrl,
+        email: userData.email || null,
+        firstName: userData.firstName || null,
+        lastName: userData.lastName || null,
+        profileImageUrl: userData.profileImageUrl || null,
+        password: '', // Required field
       })
       .onConflictDoUpdate({
         target: users.id,
@@ -747,7 +752,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(projectPreventives.userId, userId),
-          eq(projectPreventives.category, category),
+          category ? eq(projectPreventives.category, category as any) : sql`1=1`,
           eq(projectPreventives.isActive, true)
         )
       );
@@ -758,7 +763,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(projectPreventives.isGlobal, true),
-          eq(projectPreventives.category, category),
+          category ? eq(projectPreventives.category, category as any) : sql`1=1`,
           eq(projectPreventives.isActive, true)
         )
       );
@@ -889,6 +894,27 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
     
     return !!application;
+  }
+
+  async getProjectApplicationById(applicationId: string): Promise<ProjectApplication | undefined> {
+    const [application] = await db
+      .select()
+      .from(projectApplications)
+      .where(eq(projectApplications.id, applicationId));
+    return application;
+  }
+
+  async getUserProjectApplication(projectId: string, userId: string): Promise<ProjectApplication | undefined> {
+    const [application] = await db
+      .select()
+      .from(projectApplications)
+      .where(
+        and(
+          eq(projectApplications.projectId, projectId),
+          eq(projectApplications.userId, userId)
+        )
+      );
+    return application;
   }
 
   async isPostLikedByUser(postId: string, userId: string): Promise<boolean> {

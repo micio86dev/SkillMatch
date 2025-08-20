@@ -13,6 +13,7 @@ import {
   insertMessageSchema,
   insertFeedbackSchema,
   insertNotificationPreferencesSchema,
+  insertProjectApplicationSchema,
   registerUserSchema,
   loginUserSchema,
   connections,
@@ -373,6 +374,184 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Project application routes
+  // Apply to a project - professionals only
+  app.post('/api/projects/:id/apply', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { id: projectId } = req.params;
+      const applicationData = insertProjectApplicationSchema.parse({
+        ...req.body,
+        projectId,
+        userId
+      });
+      
+      // Check if user already applied
+      const existingApplication = await storage.hasUserAppliedToProject(projectId, userId);
+      if (existingApplication) {
+        const userLang = await getUserLanguage(userId, storage);
+        return res.status(400).json({ message: translateMessage("You have already applied to this project", userLang) });
+      }
+      
+      // Check if project has available spots
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        const userLang = await getUserLanguage(userId, storage);
+        return res.status(404).json({ message: translateMessage("Project not found", userLang) });
+      }
+      
+      const acceptedCount = await storage.getAcceptedApplicationsCount(projectId);
+      if (acceptedCount >= (project.teamSize || 1)) {
+        const userLang = await getUserLanguage(userId, storage);
+        return res.status(400).json({ message: translateMessage("This project team is full", userLang) });
+      }
+      
+      const application = await storage.createProjectApplication(applicationData);
+      
+      // Notify the project owner
+      const companyLang = await getUserLanguage(project.companyUserId, storage);
+      await storage.createNotification({
+        userId: project.companyUserId,
+        type: 'application_received',
+        title: translateMessage('notifications.applicationReceived', companyLang),
+        message: translateMessage('notifications.applicationReceivedDetails', companyLang),
+        relatedId: application.id,
+        relatedUserId: userId
+      });
+      
+      res.json(application);
+    } catch (error) {
+      console.error('Error applying to project:', error);
+      const userId = req.session?.userId;
+      const userLang = userId ? await getUserLanguage(userId, storage) : 'en';
+      res.status(500).json({ message: translateMessage("Failed to apply to project", userLang) });
+    }
+  });
+  
+  // Get applications for a project - company owners only
+  app.get('/api/projects/:id/applications', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { id: projectId } = req.params;
+      
+      // Check if user owns this project
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        const userLang = await getUserLanguage(userId, storage);
+        return res.status(404).json({ message: translateMessage("Project not found", userLang) });
+      }
+      
+      if (project.companyUserId !== userId) {
+        const userLang = await getUserLanguage(userId, storage);
+        return res.status(403).json({ message: translateMessage("You can only view applications for your own projects", userLang) });
+      }
+      
+      const applications = await storage.getProjectApplications(projectId);
+      res.json(applications);
+    } catch (error) {
+      console.error('Error fetching project applications:', error);
+      const userId = req.session?.userId;
+      const userLang = userId ? await getUserLanguage(userId, storage) : 'en';
+      res.status(500).json({ message: translateMessage("Failed to fetch applications", userLang) });
+    }
+  });
+  
+  // Update application status - company owners only
+  app.patch('/api/applications/:id/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { id: applicationId } = req.params;
+      const { status } = req.body;
+      
+      if (!['accepted', 'rejected'].includes(status)) {
+        const userLang = await getUserLanguage(userId, storage);
+        return res.status(400).json({ message: translateMessage("Invalid status", userLang) });
+      }
+      
+      const application = await storage.getProjectApplicationById(applicationId);
+      if (!application) {
+        const userLang = await getUserLanguage(userId, storage);
+        return res.status(404).json({ message: translateMessage("Application not found", userLang) });
+      }
+      
+      // Check if user owns the project
+      const project = await storage.getProject(application.projectId);
+      if (!project || project.companyUserId !== userId) {
+        const userLang = await getUserLanguage(userId, storage);
+        return res.status(403).json({ message: translateMessage("You can only manage applications for your own projects", userLang) });
+      }
+      
+      // Check if team is already full when accepting
+      if (status === 'accepted') {
+        const acceptedCount = await storage.getAcceptedApplicationsCount(application.projectId);
+        if (acceptedCount >= (project.teamSize || 1)) {
+          const userLang = await getUserLanguage(userId, storage);
+          return res.status(400).json({ message: translateMessage("Project team is already full", userLang) });
+        }
+      }
+      
+      const updatedApplication = status === 'accepted' 
+        ? await storage.acceptProjectApplication(applicationId, userId)
+        : await storage.rejectProjectApplication(applicationId, userId);
+      
+      // Notify the applicant
+      const notificationType = status === 'accepted' ? 'application_accepted' : 'application_rejected';
+      await storage.createNotification({
+        userId: application.userId,
+        type: notificationType,
+        title: translateMessage(
+          status === 'accepted' ? 'notifications.applicationAccepted' : 'notifications.applicationRejected',
+          await getUserLanguage(application.userId, storage)
+        ),
+        message: translateMessage(
+          status === 'accepted' ? 'notifications.applicationAcceptedDetails' : 'notifications.applicationRejectedDetails',
+          await getUserLanguage(application.userId, storage)
+        ),
+        relatedId: application.projectId,
+        relatedUserId: userId
+      });
+      
+      res.json(updatedApplication);
+    } catch (error) {
+      console.error('Error updating application status:', error);
+      const userId = req.session?.userId;
+      const userLang = userId ? await getUserLanguage(userId, storage) : 'en';
+      res.status(500).json({ message: translateMessage("Failed to update application status", userLang) });
+    }
+  });
+  
+  // Get user's application status for a specific project
+  app.get('/api/projects/:id/application-status', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { id: projectId } = req.params;
+      
+      const application = await storage.getUserProjectApplication(projectId, userId);
+      if (!application) {
+        return res.json({ hasApplied: false, application: null });
+      }
+      
+      res.json({ hasApplied: true, application });
+    } catch (error) {
+      console.error('Error checking application status:', error);
+      const userId = req.session?.userId;
+      const userLang = userId ? await getUserLanguage(userId, storage) : 'en';
+      res.status(500).json({ message: translateMessage("Failed to check application status", userLang) });
+    }
+  });
+  
+  // Get accepted applications count for a project
+  app.get('/api/projects/:id/accepted-count', async (req, res) => {
+    try {
+      const { id: projectId } = req.params;
+      const count = await storage.getAcceptedApplicationsCount(projectId);
+      res.json({ count });
+    } catch (error) {
+      console.error('Error getting accepted applications count:', error);
+      res.status(500).json({ message: translateMessage("Failed to get accepted applications count") });
+    }
+  });
+  
   // Project subscription routes
   app.post('/api/projects/:id/subscribe', isAuthenticated, async (req: any, res) => {
     try {
