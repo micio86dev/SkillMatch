@@ -4,7 +4,8 @@ import { Server as SocketIOServer } from "socket.io";
 import { storage } from "./storage";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
-import { setupAuth, isAuthenticated, hashPassword, verifyPassword } from "./auth";
+import { hashPassword, verifyPassword } from "./auth";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 import {
   insertProfessionalProfileSchema,
   insertCompanyProfileSchema,
@@ -1306,7 +1307,7 @@ Make the preventive specific, practical, and helpful for project management.`;
   // Connection routes
   app.post('/api/connections/request', isAuthenticated, async (req: any, res) => {
     try {
-      const requesterId = req.session.userId!;
+      const requesterId = req.user.claims.sub;
       const { addresseeId } = req.body;
 
       if (!addresseeId) {
@@ -1342,7 +1343,7 @@ Make the preventive specific, practical, and helpful for project management.`;
 
   app.get('/api/connections/status/:userId', isAuthenticated, async (req: any, res) => {
     try {
-      const currentUserId = req.session.userId!;
+      const currentUserId = req.user.claims.sub;
       const { userId } = req.params;
       
       const connection = await storage.getConnectionStatus(currentUserId, userId);
@@ -1396,7 +1397,7 @@ Make the preventive specific, practical, and helpful for project management.`;
 
   app.get('/api/connections', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.session.userId!;
+      const userId = req.user.claims.sub;
       const { status } = req.query;
       
       const connections = await storage.getConnections(userId, status as string);
@@ -1453,7 +1454,7 @@ Make the preventive specific, practical, and helpful for project management.`;
 
   app.post('/api/connections', isAuthenticated, async (req: any, res) => {
     try {
-      const requesterId = req.session.userId!;
+      const requesterId = req.user.claims.sub;
       const { addresseeId } = z.object({ addresseeId: z.string() }).parse(req.body);
       const connection = await storage.createConnection(requesterId, addresseeId);
       res.json(connection);
