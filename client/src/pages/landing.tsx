@@ -151,7 +151,7 @@ export default function Landing() {
                 <Button 
                   size="lg" 
                   className="text-lg px-8 py-4"
-                  onClick={() => window.location.href = "/api/login"}
+                  onClick={() => window.location.href = "/auth/login"}
                 >
                   <User className="mr-2 h-5 w-5" />
                   {t('home.professionalButton')}
@@ -160,7 +160,7 @@ export default function Landing() {
                   size="lg" 
                   variant="outline"
                   className="text-lg px-8 py-4"
-                  onClick={() => window.location.href = "/api/login"}
+                  onClick={() => window.location.href = "/auth/login"}
                 >
                   <Briefcase className="mr-2 h-5 w-5" />
                   {t('home.companyButton')}
@@ -412,7 +412,7 @@ export default function Landing() {
                 size="lg" 
                 variant="secondary"
                 className="flex-1 text-lg"
-                onClick={() => window.location.href = "/api/login"}
+                onClick={() => window.location.href = "/auth/login"}
               >
                 <User className="mr-2 h-5 w-5" />
                 Join as Professional
@@ -421,7 +421,7 @@ export default function Landing() {
                 size="lg" 
                 variant="outline"
                 className="flex-1 text-lg border-white text-primary hover:bg-white hover:text-primary"
-                onClick={() => window.location.href = "/api/login"}
+                onClick={() => window.location.href = "/auth/login"}
               >
                 <Briefcase className="mr-2 h-5 w-5" />
                 Post a Project

@@ -64,13 +64,13 @@ export function Header() {
               <Button 
                 variant="ghost" 
                 size="sm"
-                onClick={() => window.location.href = "/api/login"}
+                onClick={() => window.location.href = "/auth/login"}
               >
                 {t('auth.login')}
               </Button>
               <Button 
                 size="sm"
-                onClick={() => window.location.href = "/api/login"}
+                onClick={() => window.location.href = "/auth/login"}
               >
                 <User className="mr-2 h-4 w-4" />
                 {t('auth.signup')}
@@ -151,7 +151,7 @@ export function Header() {
                     variant="ghost" 
                     className="w-full justify-start"
                     onClick={() => {
-                      window.location.href = "/api/login";
+                      window.location.href = "/auth/login";
                       setIsMobileMenuOpen(false);
                     }}
                   >
@@ -160,7 +160,7 @@ export function Header() {
                   <Button 
                     className="w-full justify-start"
                     onClick={() => {
-                      window.location.href = "/api/login";
+                      window.location.href = "/auth/login";
                       setIsMobileMenuOpen(false);
                     }}
                   >

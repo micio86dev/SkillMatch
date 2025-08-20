@@ -85,7 +85,7 @@ export default function CareerInsights() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        window.location.href = "/auth/login";
       }, 500);
       return;
     }
