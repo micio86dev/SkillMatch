@@ -13,9 +13,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { PageShare, usePageShare } from "@/components/page-share";
+import { useTranslation } from "react-i18next";
 
 export default function Professionals() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const [filters, setFilters] = useState({
@@ -102,8 +104,8 @@ export default function Professionals() {
       }
 
       toast({
-        title: "Connection Request Sent",
-        description: `Your connection request has been sent to ${professional.user?.firstName || 'the professional'}!`,
+        title: t('professionals.connectionRequestSent'),
+        description: t('professionals.connectionRequestSentDesc', { name: professional.user?.firstName || 'the professional' }),
       });
     } catch (error) {
       if (isUnauthorizedError(error as Error)) {
@@ -130,8 +132,8 @@ export default function Professionals() {
   const handleMessage = (professional: any) => {
     if (!isAuthenticated) {
       toast({
-        title: "Authentication Required",
-        description: "Please sign in to start messaging.",
+        title: t('professionals.authRequired'),
+        description: t('professionals.signInToMessage'),
         variant: "destructive",
       });
       setTimeout(() => {
@@ -195,10 +197,10 @@ export default function Professionals() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-            IT Professionals
+            {t('professionals.title')}
           </h1>
           <p className="text-slate-700 dark:text-slate-300">
-            Discover and connect with talented developers, designers, and tech experts
+            {t('professionals.subtitle')}
           </p>
         </div>
 
@@ -208,10 +210,10 @@ export default function Professionals() {
             <div className="space-y-4">
               <div className="flex items-center space-x-2 mb-4">
                 <Filter className="h-5 w-5 text-slate-700 dark:text-slate-300" />
-                <h3 className="font-semibold text-slate-900 dark:text-white">Filter Professionals</h3>
+                <h3 className="font-semibold text-slate-900 dark:text-white">{t('professionals.filterProfessionals')}</h3>
                 {hasActiveFilters && (
                   <Button variant="ghost" size="sm" onClick={clearFilters}>
-                    Clear All
+                    {t('professionals.clearAll')}
                   </Button>
                 )}
               </div>

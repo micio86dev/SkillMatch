@@ -27,6 +27,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { SocialShare } from "@/components/social-share";
+import { useTranslation } from "react-i18next";
 
 interface PostCardProps {
   post: Post & { user: UserType };
@@ -43,6 +44,7 @@ interface Comment {
 export function PostCard({ post }: PostCardProps) {
   const { user } = post;
   const { user: currentUser } = useAuth();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showComments, setShowComments] = useState(false);
@@ -244,7 +246,7 @@ export function PostCard({ post }: PostCardProps) {
               className="bg-red-600 hover:bg-red-700"
               disabled={deletePostMutation.isPending}
             >
-              {deletePostMutation.isPending ? "Deleting..." : "Delete"}
+              {deletePostMutation.isPending ? t('projects.deleting') : t('projects.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -256,6 +258,7 @@ export function PostCard({ post }: PostCardProps) {
 function CommentSection({ postId }: { postId: string }) {
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState("");
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
@@ -520,7 +523,7 @@ function CommentSection({ postId }: { postId: string }) {
               className="bg-red-600 hover:bg-red-700"
               disabled={deleteCommentMutation.isPending}
             >
-              {deleteCommentMutation.isPending ? "Deleting..." : "Delete"}
+              {deleteCommentMutation.isPending ? t('projects.deleting') : t('projects.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

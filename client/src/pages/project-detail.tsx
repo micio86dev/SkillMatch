@@ -28,6 +28,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { ProjectApplyButton } from "@/components/project-apply-button";
 import { ApplicationManager } from "@/components/application-manager";
+import { useTranslation } from "react-i18next";
 
 interface ProjectWithCompany extends Project {
   company: UserType;
@@ -37,6 +38,7 @@ interface ProjectWithCompany extends Project {
 export default function ProjectDetail() {
   const { id } = useParams();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
 
@@ -422,7 +424,7 @@ export default function ProjectDetail() {
             <Card>
               <CardContent className="p-8 text-center">
                 <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-4">
-                  Ready to work on this project?
+                  {t('projects.readyToWork')}
                 </h3>
                 <p className="text-slate-600 dark:text-slate-400 mb-6">
                   Submit your application and showcase why you're the perfect fit for this opportunity.

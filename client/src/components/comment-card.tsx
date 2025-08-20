@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { User } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { LikeButton } from "@/components/like-button";
+import { useTranslation } from "react-i18next";
 
 interface CommentCardProps {
   comment: {
@@ -19,6 +20,7 @@ interface CommentCardProps {
 }
 
 export function CommentCard({ comment }: CommentCardProps) {
+  const { t } = useTranslation();
   return (
     <Card className="w-full">
       <CardContent className="p-4">
