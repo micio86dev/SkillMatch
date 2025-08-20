@@ -89,6 +89,7 @@ export default function Professionals() {
     onSuccess: (data, professionalUserId) => {
       setConnectingUserId(null);
       // Invalidate connection status queries to update UI
+      queryClient.invalidateQueries({ queryKey: [`/api/connections/status/${professionalUserId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/connections/status'] });
       
       const professional = professionals?.find((p: any) => (p.user?.id || p.userId) === professionalUserId);
