@@ -418,7 +418,7 @@ export default function ProjectDetail() {
           </div>
         </div>
 
-        {/* Apply for Project Button - Moved to Bottom */}
+        {/* Apply for Project Section */}
         {project.status === 'open' && (
           <div className="mt-8">
             <Card>
@@ -427,7 +427,7 @@ export default function ProjectDetail() {
                   {t('projects.readyToWork')}
                 </h3>
                 <p className="text-slate-600 dark:text-slate-400 mb-6">
-                  Submit your application and showcase why you're the perfect fit for this opportunity.
+                  {t('projects.submitApplication')}
                 </p>
                 <ProjectApplyButton 
                   projectId={project.id}

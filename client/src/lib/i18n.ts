@@ -813,6 +813,13 @@ const resources = {
       "projects.delete": "Elimina",
       "projects.deleting": "Eliminando...",
       "projects.comments": "commenti",
+      "projects.applicationSubmitted": "Candidatura Inviata",
+      "projects.applicationSubmittedDesc": "La tua candidatura è stata inviata all'azienda.",
+      "projects.loginToApply": "Accedi per Candidarti",
+      "projects.applicationAccepted": "Candidatura Accettata",
+      "projects.applicationRejected": "Candidatura Rifiutata",
+      "projects.applicationPending": "Candidatura in Sospeso",
+      "projects.submitApplication": "Invia la tua candidatura e dimostra perché sei la persona perfetta per questa opportunità.",
       
       // Social Share
       "share.title": "Condividi questo post",

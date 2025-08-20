@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Send, CheckCircle, Clock, XCircle } from "lucide-react";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 
 const applicationSchema = z.object({
   coverLetter: z.string().min(50, "Cover letter must be at least 50 characters"),
@@ -39,6 +40,7 @@ export function ProjectApplyButton({ projectId, projectTitle, isProjectFull }: P
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showDialog, setShowDialog] = useState(false);
+  const { t } = useTranslation();
 
   // Check if user has already applied
   const { data: userApplications = [] } = useQuery<any[]>({
@@ -62,8 +64,13 @@ export function ProjectApplyButton({ projectId, projectTitle, isProjectFull }: P
     },
     onSuccess: () => {
       toast({
-        title: "Application Submitted",
-        description: "Your application has been sent to the company.",
+        title: t('projects.applicationSubmitted'),
+        description: t('projects.applicationSubmittedDesc'),
+        style: {
+          backgroundColor: '#10B981',
+          border: '1px solid #059669',
+          color: 'white'
+        }
       });
       queryClient.invalidateQueries({ queryKey: ["/api/user/applications"] });
       setShowDialog(false);
@@ -89,7 +96,7 @@ export function ProjectApplyButton({ projectId, projectTitle, isProjectFull }: P
         }}
       >
         <Send className="h-4 w-4" />
-        Login to Apply
+        {t('projects.loginToApply')}
       </Button>
     );
   }
@@ -102,7 +109,7 @@ export function ProjectApplyButton({ projectId, projectTitle, isProjectFull }: P
     return (
       <Button disabled variant="outline" className="flex items-center gap-2">
         <XCircle className="h-4 w-4" />
-        Project Full
+        {t('projects.projectFull')}
       </Button>
     );
   }
@@ -122,11 +129,11 @@ export function ProjectApplyButton({ projectId, projectTitle, isProjectFull }: P
     const getStatusText = () => {
       switch (existingApplication.status) {
         case 'accepted':
-          return 'Application Accepted';
+          return t('projects.applicationAccepted');
         case 'rejected':
-          return 'Application Rejected';
+          return t('projects.applicationRejected');
         default:
-          return 'Application Pending';
+          return t('projects.applicationPending');
       }
     };
 
