@@ -45,7 +45,7 @@ export function ProjectApplyButton({ projectId, projectTitle, isProjectFull }: P
   // Check if user has already applied
   const { data: userApplications = [] } = useQuery<any[]>({
     queryKey: ["/api/user/applications"],
-    enabled: isAuthenticated && user?.userType === 'professional',
+    enabled: isAuthenticated,
   });
 
   const existingApplication = userApplications.find((app: any) => app.projectId === projectId);
@@ -101,9 +101,7 @@ export function ProjectApplyButton({ projectId, projectTitle, isProjectFull }: P
     );
   }
 
-  if (user?.userType !== 'professional') {
-    return null; // Company users don't see apply button
-  }
+  // Allow all authenticated users to apply to projects
 
   if (isProjectFull) {
     return (
