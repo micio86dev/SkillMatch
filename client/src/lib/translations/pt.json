@@ -1,0 +1,51 @@
+{
+  "nav": {
+    "professionals": "Profissionais",
+    "projects": "Projetos",
+    "companies": "Empresas",
+    "messages": "Mensagens",
+    "profile": "Perfil",
+    "myProjects": "Meus Projetos"
+  },
+  "auth": {
+    "login": "Entrar",
+    "signup": "Cadastrar",
+    "logout": "Sair"
+  },
+  "common": {
+    "loading": "Carregando...",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "search": "Pesquisar",
+    "filter": "Filtrar",
+    "apply": "Aplicar",
+    "view": "Ver"
+  },
+  "home": {
+    "welcome": "Bem-vindo ao VibeSync",
+    "subtitle": "Conecte-se com os melhores profissionais de TI e descubra projetos incríveis"
+  },
+  "projects": {
+    "title": "Projetos",
+    "pageTitle": "Explorar Projetos de TI",
+    "pageDescription": "Descubra projetos empolgantes de TI e oportunidades freelance.",
+    "postProject": "Publicar Projeto"
+  },
+  "language": {
+    "select": "Selecionar Idioma",
+    "english": "Inglês",
+    "spanish": "Espanhol",
+    "french": "Francês",
+    "german": "Alemão",
+    "italian": "Italiano",
+    "portuguese": "Português",
+    "russian": "Russo",
+    "chinese": "Chinês",
+    "japanese": "Japonês",
+    "korean": "Coreano",
+    "arabic": "Árabe",
+    "hindi": "Hindi"
+  }
+}

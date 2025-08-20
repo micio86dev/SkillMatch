@@ -1,0 +1,51 @@
+{
+  "nav": {
+    "professionals": "पेशेवर",
+    "projects": "परियोजनाएं",
+    "companies": "कंपनियां",
+    "messages": "संदेश",
+    "profile": "प्रोफाइल",
+    "myProjects": "मेरी परियोजनाएं"
+  },
+  "auth": {
+    "login": "लॉग इन",
+    "signup": "साइन अप",
+    "logout": "लॉग आउट"
+  },
+  "common": {
+    "loading": "लोड हो रहा है...",
+    "save": "सेव करें",
+    "cancel": "रद्द करें",
+    "delete": "डिलीट करें",
+    "edit": "संपादित करें",
+    "search": "खोजें",
+    "filter": "फिल्टर",
+    "apply": "आवेदन करें",
+    "view": "देखें"
+  },
+  "home": {
+    "welcome": "VibeSync में आपका स्वागत है",
+    "subtitle": "शीर्ष आईटी पेशेवरों से जुड़ें और अद्भुत परियोजनाओं की खोज करें"
+  },
+  "projects": {
+    "title": "परियोजनाएं",
+    "pageTitle": "आईटी परियोजनाओं को ब्राउज़ करें",
+    "pageDescription": "रोमांचक आईटी परियोजनाओं और फ्रीलांस अवसरों की खोज करें।",
+    "postProject": "प्रोजेक्ट पोस्ट करें"
+  },
+  "language": {
+    "select": "भाषा चुनें",
+    "english": "अंग्रेजी",
+    "spanish": "स्पेनिश",
+    "french": "फ्रेंच",
+    "german": "जर्मन",
+    "italian": "इतालवी",
+    "portuguese": "पुर्तगाली",
+    "russian": "रूसी",
+    "chinese": "चीनी",
+    "japanese": "जापानी",
+    "korean": "कोरियाई",
+    "arabic": "अरबी",
+    "hindi": "हिंदी"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "nav": {
+    "professionals": "전문가",
+    "projects": "프로젝트",
+    "companies": "회사",
+    "messages": "메시지",
+    "profile": "프로필",
+    "myProjects": "내 프로젝트"
+  },
+  "auth": {
+    "login": "로그인",
+    "signup": "가입",
+    "logout": "로그아웃"
+  },
+  "common": {
+    "loading": "로딩 중...",
+    "save": "저장",
+    "cancel": "취소",
+    "delete": "삭제",
+    "edit": "편집",
+    "search": "검색",
+    "filter": "필터",
+    "apply": "지원",
+    "view": "보기"
+  },
+  "home": {
+    "welcome": "VibeSync에 오신 것을 환영합니다",
+    "subtitle": "최고의 IT 전문가들과 연결하고 멋진 프로젝트를 발견하세요"
+  },
+  "projects": {
+    "title": "프로젝트",
+    "pageTitle": "IT 프로젝트 탐색",
+    "pageDescription": "흥미진진한 IT 프로젝트와 프리랜스 기회를 발견하세요.",
+    "postProject": "프로젝트 게시"
+  },
+  "language": {
+    "select": "언어 선택",
+    "english": "영어",
+    "spanish": "스페인어",
+    "french": "프랑스어",
+    "german": "독일어",
+    "italian": "이탈리아어",
+    "portuguese": "포르투갈어",
+    "russian": "러시아어",
+    "chinese": "중국어",
+    "japanese": "일본어",
+    "korean": "한국어",
+    "arabic": "아랍어",
+    "hindi": "힌디어"
+  }
+}

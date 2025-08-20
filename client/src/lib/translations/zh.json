@@ -1,0 +1,51 @@
+{
+  "nav": {
+    "professionals": "专业人员",
+    "projects": "项目",
+    "companies": "公司",
+    "messages": "消息",
+    "profile": "个人资料",
+    "myProjects": "我的项目"
+  },
+  "auth": {
+    "login": "登录",
+    "signup": "注册",
+    "logout": "注销"
+  },
+  "common": {
+    "loading": "加载中...",
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "search": "搜索",
+    "filter": "筛选",
+    "apply": "申请",
+    "view": "查看"
+  },
+  "home": {
+    "welcome": "欢迎来到VibeSync",
+    "subtitle": "与顶级IT专业人员联系，发现精彩项目"
+  },
+  "projects": {
+    "title": "项目",
+    "pageTitle": "浏览IT项目",
+    "pageDescription": "发现令人兴奋的IT项目和自由职业机会。",
+    "postProject": "发布项目"
+  },
+  "language": {
+    "select": "选择语言",
+    "english": "英语",
+    "spanish": "西班牙语",
+    "french": "法语",
+    "german": "德语",
+    "italian": "意大利语",
+    "portuguese": "葡萄牙语",
+    "russian": "俄语",
+    "chinese": "中文",
+    "japanese": "日语",
+    "korean": "韩语",
+    "arabic": "阿拉伯语",
+    "hindi": "印地语"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "nav": {
+    "professionals": "المهنيون",
+    "projects": "المشاريع",
+    "companies": "الشركات",
+    "messages": "الرسائل",
+    "profile": "الملف الشخصي",
+    "myProjects": "مشاريعي"
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "signup": "التسجيل",
+    "logout": "تسجيل الخروج"
+  },
+  "common": {
+    "loading": "جارٍ التحميل...",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تحرير",
+    "search": "بحث",
+    "filter": "تصفية",
+    "apply": "تطبيق",
+    "view": "عرض"
+  },
+  "home": {
+    "welcome": "مرحباً بك في VibeSync",
+    "subtitle": "تواصل مع أفضل محترفي تكنولوجيا المعلومات واكتشف مشاريع رائعة"
+  },
+  "projects": {
+    "title": "المشاريع",
+    "pageTitle": "تصفح مشاريع تكنولوجيا المعلومات",
+    "pageDescription": "اكتشف مشاريع تكنولوجيا المعلومات المثيرة وفرص العمل الحر.",
+    "postProject": "نشر مشروع"
+  },
+  "language": {
+    "select": "اختر اللغة",
+    "english": "الإنجليزية",
+    "spanish": "الإسبانية",
+    "french": "الفرنسية",
+    "german": "الألمانية",
+    "italian": "الإيطالية",
+    "portuguese": "البرتغالية",
+    "russian": "الروسية",
+    "chinese": "الصينية",
+    "japanese": "اليابانية",
+    "korean": "الكورية",
+    "arabic": "العربية",
+    "hindi": "الهندية"
+  }
+}

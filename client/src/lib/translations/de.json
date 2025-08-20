@@ -1,0 +1,51 @@
+{
+  "nav": {
+    "professionals": "Fachkräfte",
+    "projects": "Projekte",
+    "companies": "Unternehmen",
+    "messages": "Nachrichten",
+    "profile": "Profil",
+    "myProjects": "Meine Projekte"
+  },
+  "auth": {
+    "login": "Anmelden",
+    "signup": "Registrieren",
+    "logout": "Abmelden"
+  },
+  "common": {
+    "loading": "Wird geladen...",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "search": "Suchen",
+    "filter": "Filter",
+    "apply": "Bewerben",
+    "view": "Ansehen"
+  },
+  "home": {
+    "welcome": "Willkommen bei VibeSync",
+    "subtitle": "Verbinden Sie sich mit Top-IT-Fachkräften und entdecken Sie großartige Projekte"
+  },
+  "projects": {
+    "title": "Projekte",
+    "pageTitle": "IT-Projekte durchsuchen",
+    "pageDescription": "Entdecken Sie spannende IT-Projekte und Freelance-Möglichkeiten.",
+    "postProject": "Projekt veröffentlichen"
+  },
+  "language": {
+    "select": "Sprache auswählen",
+    "english": "Englisch",
+    "spanish": "Spanisch",
+    "french": "Französisch",
+    "german": "Deutsch",
+    "italian": "Italienisch",
+    "portuguese": "Portugiesisch",
+    "russian": "Russisch",
+    "chinese": "Chinesisch",
+    "japanese": "Japanisch",
+    "korean": "Koreanisch",
+    "arabic": "Arabisch",
+    "hindi": "Hindi"
+  }
+}
