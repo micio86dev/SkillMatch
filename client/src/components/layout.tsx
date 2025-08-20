@@ -177,7 +177,7 @@ export function Layout({ children }: LayoutProps) {
                               credentials: 'include',
                             });
                             if (response.ok) {
-                              window.location.href = '/auth/login';
+                              window.location.href = '/api/login';
                             }
                           } catch (error) {
                             console.error('Logout failed:', error);
@@ -195,7 +195,7 @@ export function Layout({ children }: LayoutProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => window.location.href = "/auth/login"}
+                    onClick={() => window.location.href = "/api/login"}
                     className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium transition-colors"
                   >
                     Sign In
@@ -265,7 +265,7 @@ export function Layout({ children }: LayoutProps) {
                             credentials: 'include',
                           });
                           if (response.ok) {
-                            window.location.href = '/auth/login';
+                            window.location.href = '/api/login';
                           }
                         } catch (error) {
                           console.error('Logout failed:', error);

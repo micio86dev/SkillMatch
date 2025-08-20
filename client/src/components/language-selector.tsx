@@ -52,7 +52,7 @@ export function LanguageSelector({ userId, currentLanguage }: LanguageSelectorPr
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/auth/login";
+          window.location.href = "/api/login";
         }, 500);
         return;
       }

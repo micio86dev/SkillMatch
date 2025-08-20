@@ -66,7 +66,7 @@ export default function Professionals() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/auth/login";
+        window.location.href = "/api/login";
       }, 1000);
       return;
     }
@@ -126,7 +126,7 @@ export default function Professionals() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/auth/login";
+          window.location.href = "/api/login";
         }, 500);
         return;
       }
@@ -148,7 +148,7 @@ export default function Professionals() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/auth/login";
+        window.location.href = "/api/login";
       }, 1000);
       return;
     }

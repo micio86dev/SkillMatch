@@ -45,7 +45,7 @@ export default function Messages() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/auth/login";
+        window.location.href = "/api/login";
       }, 500);
       return;
     }
@@ -98,7 +98,7 @@ export default function Messages() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/auth/login";
+          window.location.href = "/api/login";
         }, 500);
         return;
       }
