@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
+import { useTranslation } from "react-i18next";
 import { Moon, Sun, Code, Menu, X, Bell, MessageSquare, User, Briefcase, Users, Home, Building2, ChevronDown, Shield } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -39,6 +40,7 @@ function UnreadMessagesBadge() {
 export function Layout({ children }: LayoutProps) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { t } = useTranslation();
   const [location] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -51,15 +53,15 @@ export function Layout({ children }: LayoutProps) {
   }
 
   const navigation = isAuthenticated ? [
-    { name: 'Professionals', href: '/professionals', icon: Users },
-    { name: 'Projects', href: '/projects', icon: Briefcase },
-    ...(user?.userType === 'professional' ? [{ name: 'Subscriptions', href: '/subscriptions', icon: Bell }] : []),
-    { name: 'Companies', href: '/companies', icon: Building2 },
-    { name: 'Career Insights', href: '/career-insights', icon: Code },
-    { name: 'Messages', href: '/messages', icon: MessageSquare },
+    { name: t('nav.professionals'), href: '/professionals', icon: Users },
+    { name: t('nav.projects'), href: '/projects', icon: Briefcase },
+    ...(user?.userType === 'professional' ? [{ name: t('nav.subscriptions'), href: '/subscriptions', icon: Bell }] : []),
+    { name: t('nav.companies'), href: '/companies', icon: Building2 },
+    { name: t('nav.careerInsights'), href: '/career-insights', icon: Code },
+    { name: t('nav.messages'), href: '/messages', icon: MessageSquare },
   ] : [
-    { name: 'Browse Talent', href: '/professionals' },
-    { name: 'Find Projects', href: '/projects' },
+    { name: t('nav.professionals'), href: '/professionals' },
+    { name: t('nav.projects'), href: '/projects' },
   ];
 
   return (
