@@ -19,7 +19,7 @@ import { useState } from "react";
 import { z } from "zod";
 
 const createPreventiveSchema = insertProjectPreventiveSchema.extend({
-  validationRule: z.string().min(1, "Validation rule is required"),
+  validationRule: z.string().min(1, "validation.validationRuleRequired"),
 });
 
 export default function Preventives() {
@@ -56,7 +56,7 @@ export default function Preventives() {
 
   const generateForm = useForm({
     resolver: zodResolver(z.object({
-      category: z.string().min(1, "Category is required"),
+      category: z.string().min(1, "validation.categoryRequired"),
       projectContext: z.string().optional(),
     })),
     defaultValues: {
@@ -167,7 +167,7 @@ export default function Preventives() {
       validationRule: preventive.validationRule,
       errorMessage: preventive.errorMessage,
       category: preventive.category || "general",
-      isActive: preventive.isActive,
+      isActive: preventive.isActive ?? true,
     });
     setShowCreateDialog(true);
   };

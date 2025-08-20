@@ -13,7 +13,7 @@ import { Wand2 } from "lucide-react";
 import { z } from "zod";
 
 const generateSchema = z.object({
-  category: z.string().min(1, "Category is required"),
+  category: z.string().min(1, "validation.categoryRequired"),
   projectContext: z.string().optional(),
 });
 

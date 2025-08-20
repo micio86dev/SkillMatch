@@ -1,5 +1,6 @@
 import { Server as SocketIOServer } from 'socket.io';
 import { storage } from './storage';
+import { t } from './i18n-server';
 import { sendEmail } from './email';
 import type { InsertNotification, NotificationPreferences, User } from '@shared/schema';
 
@@ -258,8 +259,11 @@ export async function createMessageNotification(receiverId: string, senderId: st
   await notificationService.createNotification({
     userId: receiverId,
     type: 'message',
-    title: 'New Message',
-    message: `${sender?.firstName || 'Someone'} sent you a message: "${messageContent.substring(0, 100)}${messageContent.length > 100 ? '...' : ''}"`,
+    title: t('notifications.newMessage'),
+    message: t('notifications.messageSent', {
+      name: sender?.firstName || t('notifications.someone'),
+      preview: `${messageContent.substring(0, 100)}${messageContent.length > 100 ? '...' : ''}`
+    }),
     relatedId: senderId,
     relatedUserId: senderId,
   });
@@ -270,8 +274,10 @@ export async function createLikeNotification(postOwnerId: string, likerId: strin
   await notificationService.createNotification({
     userId: postOwnerId,
     type: 'like',
-    title: 'Post Liked',
-    message: `${liker?.firstName || 'Someone'} liked your post`,
+    title: t('notifications.postLiked'),
+    message: t('notifications.postLikedBy', {
+      name: liker?.firstName || t('notifications.someone')
+    }),
     relatedId: postId,
     relatedUserId: likerId,
   });
@@ -282,8 +288,10 @@ export async function createCommentLikeNotification(commentOwnerId: string, like
   await notificationService.createNotification({
     userId: commentOwnerId,
     type: 'like',
-    title: 'Comment Liked',
-    message: `${liker?.firstName || 'Someone'} liked your comment`,
+    title: t('notifications.commentLiked'),
+    message: t('notifications.commentLikedBy', {
+      name: liker?.firstName || t('notifications.someone')
+    }),
     relatedId: commentId,
     relatedUserId: likerId,
   });
@@ -294,8 +302,10 @@ export async function createProjectLikeNotification(projectOwnerId: string, like
   await notificationService.createNotification({
     userId: projectOwnerId,
     type: 'like',
-    title: 'Project Liked',
-    message: `${liker?.firstName || 'Someone'} liked your project`,
+    title: t('notifications.projectLiked'),
+    message: t('notifications.projectLikedBy', {
+      name: liker?.firstName || t('notifications.someone')
+    }),
     relatedId: projectId,
     relatedUserId: likerId,
   });
@@ -306,8 +316,11 @@ export async function createCommentNotification(postOwnerId: string, commenterId
   await notificationService.createNotification({
     userId: postOwnerId,
     type: 'comment',
-    title: 'New Comment',
-    message: `${commenter?.firstName || 'Someone'} commented on your post: "${commentContent.substring(0, 100)}${commentContent.length > 100 ? '...' : ''}"`,
+    title: t('notifications.newComment'),
+    message: t('notifications.commentedOnPost', {
+      name: commenter?.firstName || t('notifications.someone'),
+      preview: `${commentContent.substring(0, 100)}${commentContent.length > 100 ? '...' : ''}`
+    }),
     relatedId: postId,
     relatedUserId: commenterId,
   });
@@ -318,8 +331,12 @@ export async function createFeedbackNotification(userId: string, feedbackGiverId
   await notificationService.createNotification({
     userId: userId,
     type: 'feedback',
-    title: 'New Feedback Received',
-    message: `${feedbackGiver?.firstName || 'Someone'} left you ${rating}-star feedback${comment ? `: "${comment.substring(0, 100)}${comment.length > 100 ? '...' : ''}"` : ''}`,
+    title: t('notifications.newFeedbackReceived'),
+    message: t('notifications.feedbackReceived', {
+      name: feedbackGiver?.firstName || t('notifications.someone'),
+      rating,
+      comment: comment ? `: "${comment.substring(0, 100)}${comment.length > 100 ? '...' : ''}"` : ''
+    }),
     relatedId: feedbackGiverId,
     relatedUserId: feedbackGiverId,
   });

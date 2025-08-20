@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslatedZodResolver } from "@/lib/translatedZodResolver";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginUser>({
-    resolver: zodResolver(loginUserSchema),
+    resolver: useTranslatedZodResolver(loginUserSchema),
     defaultValues: {
       email: "",
       password: "",

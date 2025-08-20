@@ -450,20 +450,20 @@ export const insertUserSchema = createInsertSchema(users).omit({
 
 // Authentication schemas
 export const registerUserSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  email: z.string().email("validation.email"),
+  password: z.string().min(8, "validation.passwordLength"),
   confirmPassword: z.string(),
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
+  firstName: z.string().min(1, "validation.firstNameRequired"),
+  lastName: z.string().min(1, "validation.lastNameRequired"),
   userType: z.enum(["professional", "company"]),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
+  message: "validation.passwordsDontMatch",
   path: ["confirmPassword"],
 });
 
 export const loginUserSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
+  email: z.string().email("validation.email"),
+  password: z.string().min(1, "validation.passwordRequired"),
 });
 
 export const insertProfessionalProfileSchema = createInsertSchema(professionalProfiles).omit({
