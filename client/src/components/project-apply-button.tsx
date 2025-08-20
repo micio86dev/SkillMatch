@@ -16,7 +16,7 @@ import { useTranslation } from "react-i18next";
 
 const applicationSchema = z.object({
   coverLetter: z.string().min(50, "Cover letter must be at least 50 characters"),
-  proposedRate: z.string().optional().transform(val => val ? parseFloat(val) : undefined),
+  proposedRate: z.string().optional(),
 });
 
 interface ProjectApplyButtonProps {
@@ -61,8 +61,14 @@ export function ProjectApplyButton({ projectId, projectTitle, isProjectFull }: P
   const applyMutation = useMutation({
     mutationFn: async (data: any) => {
       console.log('Submitting application data:', data);
+      // Ensure proposedRate is sent as string or undefined
+      const cleanData = {
+        ...data,
+        proposedRate: data.proposedRate ? String(data.proposedRate) : undefined
+      };
+      console.log('Cleaned application data:', cleanData);
       try {
-        const result = await apiRequest("POST", `/api/projects/${projectId}/apply`, data);
+        const result = await apiRequest("POST", `/api/projects/${projectId}/apply`, cleanData);
         console.log('Application submitted successfully:', result);
         return result;
       } catch (error) {
