@@ -29,6 +29,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { ProjectApplyButton } from "@/components/project-apply-button";
 import { ApplicationManager } from "@/components/application-manager";
 import { useTranslation } from "react-i18next";
+import { PageShare, usePageShare } from "@/components/page-share";
 
 interface ProjectWithCompany extends Project {
   company: UserType;
@@ -41,6 +42,13 @@ export default function ProjectDetail() {
   const { t } = useTranslation();
   const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+  
+  const pageShareData = usePageShare('project', {
+    data: project,
+    title: project?.title ? `${project.title} - Project Details` : 'Project Details',
+    description: project?.description || 'Discover this project opportunity on DevConnect',
+    hashtags: ['Project', ...(project?.requiredSkills?.slice(0, 3) || []), 'DevConnect', 'TechJobs']
+  });
 
   const { data: project, isLoading, error } = useQuery<ProjectWithCompany>({
     queryKey: [`/api/projects/${id}`],
@@ -449,6 +457,9 @@ export default function ProjectDetail() {
           </div>
         )}
       </div>
+      
+      {/* Page Share */}
+      <PageShare {...pageShareData} variant="floating" />
     </Layout>
   );
 }

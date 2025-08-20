@@ -22,6 +22,7 @@ import {
   Sparkles
 } from "lucide-react";
 import { useEffect } from "react";
+import { PageShare, usePageShare } from "@/components/page-share";
 
 interface CareerInsight {
   skillsGapAnalysis: {
@@ -61,6 +62,12 @@ interface CareerInsight {
 export default function CareerInsights() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  
+  const pageShareData = usePageShare('custom', {
+    title: 'AI Career Insights - IT Professional Development',
+    description: 'Get personalized AI-powered career insights, skill gap analysis, and professional development recommendations tailored for IT professionals.',
+    hashtags: ['CareerInsights', 'ITCareers', 'SkillDevelopment', 'ProfessionalGrowth']
+  });
 
   const { data: insights, isLoading, error, refetch } = useQuery<CareerInsight>({
     queryKey: ["/api/career-insights"],
@@ -553,6 +560,9 @@ export default function CareerInsights() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Page Share */}
+      <PageShare {...pageShareData} variant="floating" />
     </Layout>
   );
 }

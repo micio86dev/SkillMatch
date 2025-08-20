@@ -23,6 +23,7 @@ import { SkillsInput } from "@/components/skills-input";
 import { LanguageSelector } from "@/components/language-selector";
 import { useState, useEffect } from "react";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { PageShare, usePageShare } from "@/components/page-share";
 
 export default function Profile() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -30,6 +31,13 @@ export default function Profile() {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [profileType, setProfileType] = useState<"professional" | "company">("professional");
+  
+  const pageShareData = usePageShare('professional', {
+    data: user,
+    title: user ? `${user.firstName} ${user.lastName} - Profile` : 'My Profile',
+    description: 'Manage your professional profile, skills, and account settings on DevConnect.',
+    hashtags: ['Profile', 'IT', 'Professional', 'DevConnect']
+  });
 
   const handleAvatarUpdate = async (avatarUrl: string) => {
     try {
@@ -988,6 +996,9 @@ export default function Profile() {
           </Tabs>
         )}
       </div>
+      
+      {/* Page Share */}
+      <PageShare {...pageShareData} variant="floating" />
     </Layout>
   );
 }

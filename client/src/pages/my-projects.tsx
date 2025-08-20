@@ -12,11 +12,18 @@ import { ApplicationManager } from "@/components/application-manager";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { PageShare, usePageShare } from "@/components/page-share";
 
 export default function MyProjects() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  
+  const pageShareData = usePageShare('custom', {
+    title: 'My Projects - Company Dashboard',
+    description: 'Manage your company projects, view applications, and track project progress on DevConnect.',
+    hashtags: ['MyProjects', 'CompanyDashboard', 'ProjectManagement', 'DevConnect']
+  });
 
   // Redirect if not authenticated or not a company
   useEffect(() => {
@@ -179,6 +186,9 @@ export default function MyProjects() {
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* Page Share */}
+      <PageShare {...pageShareData} variant="floating" />
     </Layout>
   );
 }

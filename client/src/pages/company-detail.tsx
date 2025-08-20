@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
+import { PageShare, usePageShare } from "@/components/page-share";
 
 interface Company {
   id: string;
@@ -60,6 +61,13 @@ export default function CompanyDetail() {
 
   const { data: company, isLoading, error } = useQuery<Company>({
     queryKey: [`/api/companies/${id}`],
+  });
+  
+  const pageShareData = usePageShare('company', {
+    data: company,
+    title: company?.companyName ? `${company.companyName} - Company Profile` : 'Company Profile',
+    description: company?.description || 'Discover this company on DevConnect',
+    hashtags: ['Company', company?.industry || 'Technology', 'DevConnect', 'TechBusiness']
   });
 
   if (isLoading) {
@@ -321,6 +329,9 @@ export default function CompanyDetail() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Page Share */}
+      <PageShare {...pageShareData} variant="floating" />
     </Layout>
   );
 }

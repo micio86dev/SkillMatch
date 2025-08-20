@@ -20,6 +20,7 @@ import { useState } from "react";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { PreventivesButton } from "@/components/preventives-button";
 import { useTranslation } from "react-i18next";
+import { PageShare, usePageShare } from "@/components/page-share";
 
 export default function Projects() {
   const { user, isAuthenticated } = useAuth();
@@ -27,6 +28,12 @@ export default function Projects() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  
+  const pageShareData = usePageShare('custom', {
+    title: 'Browse IT Projects',
+    description: 'Discover exciting IT projects and freelance opportunities. Find your next project in software development, web design, mobile apps, and more.',
+    hashtags: ['ITProjects', 'Freelance', 'TechJobs', 'ProjectOpportunities']
+  });
   const [filters, setFilters] = useState({
     status: "all",
     search: "",
@@ -502,6 +509,9 @@ export default function Projects() {
           </Card>
         )}
       </div>
+      
+      {/* Page Share */}
+      <PageShare {...pageShareData} variant="floating" />
     </Layout>
   );
 }

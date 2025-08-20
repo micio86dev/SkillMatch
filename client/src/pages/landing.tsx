@@ -5,9 +5,16 @@ import { Header } from "@/components/header";
 import { Star, Code, Users, Briefcase, MessageSquare, ArrowRight, CheckCircle, User, Zap, Shield, Rocket } from "lucide-react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
+import { PageShare, usePageShare } from "@/components/page-share";
 
 export default function Landing() {
   const { t } = useTranslation();
+  
+  const pageShareData = usePageShare('home', {
+    title: 'DevConnect - Professional IT Networking Platform',
+    description: 'Connect with IT professionals, discover career opportunities, and grow your network. Join DevConnect today!',
+    hashtags: ['DevConnect', 'ITNetworking', 'TechCareers', 'Freelance']
+  });
   const featuredProfessionals = [
     {
       name: "Sarah Chen",
@@ -473,6 +480,9 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+      
+      {/* Page Share */}
+      <PageShare {...pageShareData} variant="floating" />
     </div>
   );
 }

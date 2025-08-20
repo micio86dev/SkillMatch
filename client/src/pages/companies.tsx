@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Building2, MapPin, Globe, Users, Briefcase, Search } from "lucide-react";
 import { Link } from "wouter";
+import { PageShare, usePageShare } from "@/components/page-share";
 
 interface Company {
   id: string;
@@ -25,6 +26,12 @@ interface Company {
 export default function Companies() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIndustry, setSelectedIndustry] = useState<string>("all");
+  
+  const pageShareData = usePageShare('custom', {
+    title: 'Browse IT Companies',
+    description: 'Discover innovative IT companies and startups. Connect with leading technology companies for collaboration and career opportunities.',
+    hashtags: ['ITCompanies', 'TechStartups', 'BusinessOpportunities', 'TechCareers']
+  });
 
   const { data: companies = [], isLoading } = useQuery<Company[]>({
     queryKey: ['/api/companies'],
@@ -193,6 +200,9 @@ export default function Companies() {
           )}
         </div>
       </div>
+      
+      {/* Page Share */}
+      <PageShare {...pageShareData} variant="floating" />
     </Layout>
   );
 }
