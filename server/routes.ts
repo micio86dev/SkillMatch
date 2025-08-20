@@ -37,6 +37,7 @@ async function createNotification(userId: string, type: string, title: string, m
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { z } from "zod";
 import OpenAI from "openai";
+import { translateMessage, getUserLanguage } from "./translations";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -50,7 +51,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(validatedData.email);
       if (existingUser) {
-        return res.status(400).json({ message: "User already exists with this email" });
+        return res.status(400).json({ message: translateMessage("User already exists with this email") });
       }
 
       // Hash password and create user
@@ -74,7 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: error.errors[0].message });
       }
-      res.status(500).json({ message: "Failed to register user" });
+      res.status(500).json({ message: translateMessage("Failed to register user") });
     }
   });
 
@@ -85,13 +86,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Find user by email
       const user = await storage.getUserByEmail(validatedData.email);
       if (!user) {
-        return res.status(401).json({ message: "Invalid email or password" });
+        return res.status(401).json({ message: translateMessage("Invalid email or password") });
       }
 
       // Verify password
       const isPasswordValid = await verifyPassword(validatedData.password, user.password);
       if (!isPasswordValid) {
-        return res.status(401).json({ message: "Invalid email or password" });
+        return res.status(401).json({ message: translateMessage("Invalid email or password") });
       }
 
       // Set session
@@ -105,18 +106,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: error.errors[0].message });
       }
-      res.status(500).json({ message: "Failed to login" });
+      res.status(500).json({ message: translateMessage("Failed to login") });
     }
   });
 
-  app.post('/api/auth/logout', (req, res) => {
-    req.session.destroy((err) => {
+  app.post('/api/auth/logout', async (req: any, res) => {
+    const userId = req.session?.userId;
+    const userLang = userId ? await getUserLanguage(userId, storage) : 'en';
+    
+    req.session.destroy((err: any) => {
       if (err) {
         console.error("Logout error:", err);
-        return res.status(500).json({ message: "Failed to logout" });
+        return res.status(500).json({ message: translateMessage("Failed to logout", userLang) });
       }
       res.clearCookie('connect.sid');
-      res.json({ message: "Logged out successfully" });
+      res.json({ message: translateMessage("Logged out successfully", userLang) });
     });
   });
 
@@ -125,14 +129,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.session.userId!;
       const user = await storage.getUser(userId);
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        const userLang = await getUserLanguage(userId, storage);
+        return res.status(404).json({ message: translateMessage("User not found", userLang) });
       }
       // Return user without password
       const { password, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (error) {
       console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
+      const userId = req.session?.userId;
+      const userLang = userId ? await getUserLanguage(userId, storage) : 'en';
+      res.status(500).json({ message: translateMessage("Failed to fetch user", userLang) });
     }
   });
 
@@ -143,14 +150,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { language } = req.body;
       
       if (!language || typeof language !== 'string') {
-        return res.status(400).json({ message: "Language is required" });
+        const userLang = await getUserLanguage(userId, storage);
+        return res.status(400).json({ message: translateMessage("Language is required", userLang) });
       }
       
       const updatedUser = await storage.updateUserLanguage(userId, language);
       res.json({ success: true, user: updatedUser });
     } catch (error) {
       console.error("Error updating user language:", error);
-      res.status(500).json({ message: "Failed to update language preference" });
+      const userId = req.session?.userId;
+      const userLang = userId ? await getUserLanguage(userId, storage) : 'en';
+      res.status(500).json({ message: translateMessage("Failed to update language preference", userLang) });
     }
   });
 
@@ -160,12 +170,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId } = req.params;
       const profile = await storage.getProfessionalProfile(userId);
       if (!profile) {
-        return res.status(404).json({ message: "Professional profile not found" });
+        return res.status(404).json({ message: translateMessage("Professional profile not found") });
       }
       res.json(profile);
     } catch (error) {
       console.error("Error fetching professional profile:", error);
-      res.status(500).json({ message: "Failed to fetch professional profile" });
+      res.status(500).json({ message: translateMessage("Failed to fetch professional profile") });
     }
   });
 
@@ -180,7 +190,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(profile);
     } catch (error) {
       console.error("Error creating professional profile:", error);
-      res.status(500).json({ message: "Failed to create professional profile" });
+      const userId = req.session?.userId;
+      const userLang = userId ? await getUserLanguage(userId, storage) : 'en';
+      res.status(500).json({ message: translateMessage("Failed to create professional profile", userLang) });
     }
   });
 
@@ -192,7 +204,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(profile);
     } catch (error) {
       console.error("Error updating professional profile:", error);
-      res.status(500).json({ message: "Failed to update professional profile" });
+      const userId = req.session?.userId;
+      const userLang = userId ? await getUserLanguage(userId, storage) : 'en';
+      res.status(500).json({ message: translateMessage("Failed to update professional profile", userLang) });
     }
   });
 
@@ -201,12 +215,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId } = req.params;
       const profile = await storage.getCompanyProfile(userId);
       if (!profile) {
-        return res.status(404).json({ message: "Company profile not found" });
+        return res.status(404).json({ message: translateMessage("Company profile not found") });
       }
       res.json(profile);
     } catch (error) {
       console.error("Error fetching company profile:", error);
-      res.status(500).json({ message: "Failed to fetch company profile" });
+      res.status(500).json({ message: translateMessage("Failed to fetch company profile") });
     }
   });
 

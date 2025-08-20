@@ -9,6 +9,7 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import type { Express, RequestHandler } from "express";
 import { storage } from "./storage";
+import { translateMessage, getUserLanguage } from "./translations";
 
 const SALT_ROUNDS = 12;
 
@@ -44,7 +45,7 @@ export async function verifyPassword(password: string, hashedPassword: string): 
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   if (!req.session || !req.session.userId) {
-    return res.status(401).json({ message: "Unauthorized" });
+    return res.status(401).json({ message: translateMessage("Unauthorized") });
   }
   next();
 };
