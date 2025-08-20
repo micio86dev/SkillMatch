@@ -114,7 +114,7 @@ export default function Projects() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/login";
+          window.location.href = "/api/auth/login";
         }, 500);
         return;
       }
@@ -128,7 +128,7 @@ export default function Projects() {
 
   const handleCreateProject = (data: any) => {
     if (!isAuthenticated) {
-      window.location.href = "/api/login";
+      window.location.href = "/api/auth/login";
       return;
     }
     createProjectMutation.mutate(data);
@@ -590,7 +590,7 @@ export default function Projects() {
                     {t("projects.postYourFirstProject")}
                   </Button>
                 ) : (
-                  <Button onClick={() => (window.location.href = "/api/login")}>
+                  <Button onClick={() => (window.location.href = "/api/auth/login")}>
                     {t("projects.signInToPostProject")}
                   </Button>
                 )}
