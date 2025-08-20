@@ -4,8 +4,8 @@ import { Server as SocketIOServer } from "socket.io";
 import { storage } from "./storage";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
-import { hashPassword, verifyPassword } from "./auth";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { hashPassword, verifyPassword, isAuthenticated as sessionAuth } from "./auth";
+import { setupAuth } from "./replitAuth";
 import {
   insertProfessionalProfileSchema,
   insertCompanyProfileSchema,
@@ -127,7 +127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get('/api/auth/user', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId!;
       const user = await storage.getUser(userId);
@@ -147,7 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update user language preference
-  app.put('/api/auth/user/language', isAuthenticated, async (req: any, res) => {
+  app.put('/api/auth/user/language', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId!;
       const { language } = req.body;
@@ -182,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/profile/professional', isAuthenticated, async (req: any, res) => {
+  app.post('/api/profile/professional', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId!;
       const profileData = insertProfessionalProfileSchema.parse({
@@ -199,7 +199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/profile/professional', isAuthenticated, async (req: any, res) => {
+  app.put('/api/profile/professional', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId!;
       const profileData = insertProfessionalProfileSchema.partial().parse(req.body);
@@ -227,7 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/profile/company', isAuthenticated, async (req: any, res) => {
+  app.post('/api/profile/company', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId!;
       const profileData = insertCompanyProfileSchema.parse({
@@ -333,7 +333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/projects', isAuthenticated, async (req: any, res) => {
+  app.post('/api/projects', sessionAuth, async (req: any, res) => {
     try {
       const companyUserId = req.session.userId!;
       const projectData = insertProjectSchema.parse({
@@ -357,7 +357,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/projects/:id', isAuthenticated, async (req: any, res) => {
+  app.put('/api/projects/:id', sessionAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
       const userId = req.session.userId!;
@@ -388,7 +388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Project application routes
   // Apply to a project - professionals only
-  app.post('/api/projects/:id/apply', isAuthenticated, async (req: any, res) => {
+  app.post('/api/projects/:id/apply', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { id: projectId } = req.params;
@@ -441,7 +441,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get applications for a project - company owners only
-  app.get('/api/projects/:id/applications', isAuthenticated, async (req: any, res) => {
+  app.get('/api/projects/:id/applications', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { id: projectId } = req.params;
@@ -469,7 +469,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Update application status - company owners only
-  app.patch('/api/applications/:id/status', isAuthenticated, async (req: any, res) => {
+  app.patch('/api/applications/:id/status', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { id: applicationId } = req.params;
@@ -533,7 +533,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get user's application status for a specific project
-  app.get('/api/projects/:id/application-status', isAuthenticated, async (req: any, res) => {
+  app.get('/api/projects/:id/application-status', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { id: projectId } = req.params;
@@ -565,7 +565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Project subscription routes
-  app.post('/api/projects/:id/subscribe', isAuthenticated, async (req: any, res) => {
+  app.post('/api/projects/:id/subscribe', sessionAuth, async (req: any, res) => {
     try {
       const { id: projectId } = req.params;
       const userId = req.user.claims.sub;
@@ -594,7 +594,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/projects/:id/subscribe', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/projects/:id/subscribe', sessionAuth, async (req: any, res) => {
     try {
       const { id: projectId } = req.params;
       const userId = req.user.claims.sub;
@@ -607,7 +607,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/projects/:id/subscription-status', isAuthenticated, async (req: any, res) => {
+  app.get('/api/projects/:id/subscription-status', sessionAuth, async (req: any, res) => {
     try {
       const { id: projectId } = req.params;
       const userId = req.user.claims.sub;
@@ -620,7 +620,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/user/subscriptions', isAuthenticated, async (req: any, res) => {
+  app.get('/api/user/subscriptions', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const subscriptions = await storage.getUserProjectSubscriptions(userId);
@@ -632,7 +632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Project preventives routes
-  app.get('/api/preventives', isAuthenticated, async (req: any, res) => {
+  app.get('/api/preventives', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId!;
       const { category } = req.query;
@@ -651,7 +651,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/preventives', isAuthenticated, async (req: any, res) => {
+  app.post('/api/preventives', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId!;
       const preventiveData = {
@@ -667,7 +667,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/preventives/:id', isAuthenticated, async (req: any, res) => {
+  app.get('/api/preventives/:id', sessionAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
       const userId = req.session.userId!;
@@ -684,7 +684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/preventives/:id', isAuthenticated, async (req: any, res) => {
+  app.put('/api/preventives/:id', sessionAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
       const userId = req.session.userId!;
@@ -701,7 +701,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/preventives/:id', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/preventives/:id', sessionAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
       const userId = req.session.userId!;
@@ -715,7 +715,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate new preventive using AI
-  app.post('/api/preventives/generate', isAuthenticated, async (req: any, res) => {
+  app.post('/api/preventives/generate', sessionAuth, async (req: any, res) => {
     try {
       const { category, projectContext } = req.body;
       const userId = req.session.userId!;
@@ -772,7 +772,7 @@ Make the preventive specific, practical, and helpful for project management.`;
   });
 
   // Project applications routes
-  app.post('/api/projects/:projectId/apply', isAuthenticated, async (req: any, res) => {
+  app.post('/api/projects/:projectId/apply', sessionAuth, async (req: any, res) => {
     try {
       const { projectId } = req.params;
       const userId = req.session.userId!;
@@ -810,7 +810,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.get('/api/projects/:projectId/applications', isAuthenticated, async (req: any, res) => {
+  app.get('/api/projects/:projectId/applications', sessionAuth, async (req: any, res) => {
     try {
       const { projectId } = req.params;
       const userId = req.session.userId!;
@@ -829,7 +829,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.get('/api/applications/:applicationId', isAuthenticated, async (req: any, res) => {
+  app.get('/api/applications/:applicationId', sessionAuth, async (req: any, res) => {
     try {
       const { applicationId } = req.params;
       const userId = req.session.userId!;
@@ -858,7 +858,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.post('/api/applications/:applicationId/accept', isAuthenticated, async (req: any, res) => {
+  app.post('/api/applications/:applicationId/accept', sessionAuth, async (req: any, res) => {
     try {
       const { applicationId } = req.params;
       const userId = req.session.userId!;
@@ -894,7 +894,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.post('/api/applications/:applicationId/reject', isAuthenticated, async (req: any, res) => {
+  app.post('/api/applications/:applicationId/reject', sessionAuth, async (req: any, res) => {
     try {
       const { applicationId } = req.params;
       const userId = req.session.userId!;
@@ -930,7 +930,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.get('/api/user/applications', isAuthenticated, async (req: any, res) => {
+  app.get('/api/user/applications', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId!;
       const applications = await storage.getUserApplications(userId);
@@ -974,7 +974,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.post('/api/posts', isAuthenticated, async (req: any, res) => {
+  app.post('/api/posts', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId!;
       const postData = insertPostSchema.parse({
@@ -989,7 +989,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.put('/api/posts/:postId', isAuthenticated, async (req: any, res) => {
+  app.put('/api/posts/:postId', sessionAuth, async (req: any, res) => {
     try {
       const { postId } = req.params;
       const { content } = req.body;
@@ -1010,7 +1010,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.delete('/api/posts/:postId', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/posts/:postId', sessionAuth, async (req: any, res) => {
     try {
       const { postId } = req.params;
       const userId = req.session.userId!;
@@ -1026,7 +1026,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.post('/api/posts/:postId/like', isAuthenticated, async (req: any, res) => {
+  app.post('/api/posts/:postId/like', sessionAuth, async (req: any, res) => {
     try {
       const { postId } = req.params;
       const userId = req.session.userId!;
@@ -1046,7 +1046,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.delete('/api/posts/:postId/like', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/posts/:postId/like', sessionAuth, async (req: any, res) => {
     try {
       const { postId } = req.params;
       const userId = req.session.userId!;
@@ -1059,7 +1059,7 @@ Make the preventive specific, practical, and helpful for project management.`;
   });
 
   // Comment like routes
-  app.post('/api/comments/:commentId/like', isAuthenticated, async (req: any, res) => {
+  app.post('/api/comments/:commentId/like', sessionAuth, async (req: any, res) => {
     try {
       const { commentId } = req.params;
       const userId = req.session.userId!;
@@ -1078,7 +1078,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.delete('/api/comments/:commentId/like', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/comments/:commentId/like', sessionAuth, async (req: any, res) => {
     try {
       const { commentId } = req.params;
       const userId = req.session.userId!;
@@ -1091,7 +1091,7 @@ Make the preventive specific, practical, and helpful for project management.`;
   });
 
   // Project like routes
-  app.post('/api/projects/:projectId/like', isAuthenticated, async (req: any, res) => {
+  app.post('/api/projects/:projectId/like', sessionAuth, async (req: any, res) => {
     try {
       const { projectId } = req.params;
       const userId = req.session.userId!;
@@ -1110,7 +1110,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.delete('/api/projects/:projectId/like', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/projects/:projectId/like', sessionAuth, async (req: any, res) => {
     try {
       const { projectId } = req.params;
       const userId = req.session.userId!;
@@ -1123,7 +1123,7 @@ Make the preventive specific, practical, and helpful for project management.`;
   });
 
   // Like status routes
-  app.get('/api/posts/:postId/like-status', isAuthenticated, async (req: any, res) => {
+  app.get('/api/posts/:postId/like-status', sessionAuth, async (req: any, res) => {
     try {
       const { postId } = req.params;
       const userId = req.session.userId!;
@@ -1135,7 +1135,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.get('/api/comments/:commentId/like-status', isAuthenticated, async (req: any, res) => {
+  app.get('/api/comments/:commentId/like-status', sessionAuth, async (req: any, res) => {
     try {
       const { commentId } = req.params;
       const userId = req.session.userId!;
@@ -1147,7 +1147,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.get('/api/projects/:projectId/like-status', isAuthenticated, async (req: any, res) => {
+  app.get('/api/projects/:projectId/like-status', sessionAuth, async (req: any, res) => {
     try {
       const { projectId } = req.params;
       const userId = req.session.userId!;
@@ -1159,7 +1159,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.post('/api/posts/:postId/comments', isAuthenticated, async (req: any, res) => {
+  app.post('/api/posts/:postId/comments', sessionAuth, async (req: any, res) => {
     try {
       const { postId } = req.params;
       const userId = req.session.userId!;
@@ -1180,7 +1180,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.put('/api/comments/:commentId', isAuthenticated, async (req: any, res) => {
+  app.put('/api/comments/:commentId', sessionAuth, async (req: any, res) => {
     try {
       const { commentId } = req.params;
       const { content } = req.body;
@@ -1201,7 +1201,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.delete('/api/comments/:commentId', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/comments/:commentId', sessionAuth, async (req: any, res) => {
     try {
       const { commentId } = req.params;
       const userId = req.session.userId!;
@@ -1231,7 +1231,7 @@ Make the preventive specific, practical, and helpful for project management.`;
 
   // Message routes
   // Get all conversations for a user
-  app.get('/api/conversations', isAuthenticated, async (req: any, res) => {
+  app.get('/api/conversations', sessionAuth, async (req: any, res) => {
     try {
       const currentUserId = req.session.userId!;
       const conversations = await storage.getConversations(currentUserId);
@@ -1242,7 +1242,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.get('/api/messages/conversation/:userId', isAuthenticated, async (req: any, res) => {
+  app.get('/api/messages/conversation/:userId', sessionAuth, async (req: any, res) => {
     try {
       const currentUserId = req.session.userId!;
       const { userId } = req.params;
@@ -1254,7 +1254,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.post('/api/messages', isAuthenticated, async (req: any, res) => {
+  app.post('/api/messages', sessionAuth, async (req: any, res) => {
     try {
       const senderId = req.session.userId!;
       const messageData = insertMessageSchema.parse({
@@ -1282,7 +1282,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.put('/api/messages/:messageId/read', isAuthenticated, async (req, res) => {
+  app.put('/api/messages/:messageId/read', sessionAuth, async (req, res) => {
     try {
       const { messageId } = req.params;
       await storage.markMessageAsRead(messageId);
@@ -1293,7 +1293,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.get('/api/messages/unread-count', isAuthenticated, async (req: any, res) => {
+  app.get('/api/messages/unread-count', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId!;
       const count = await storage.getUnreadMessagesCount(userId);
@@ -1305,7 +1305,7 @@ Make the preventive specific, practical, and helpful for project management.`;
   });
 
   // Connection routes
-  app.post('/api/connections/request', isAuthenticated, async (req: any, res) => {
+  app.post('/api/connections/request', sessionAuth, async (req: any, res) => {
     try {
       const requesterId = req.user.claims.sub;
       const { addresseeId } = req.body;
@@ -1341,7 +1341,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.get('/api/connections/status/:userId', isAuthenticated, async (req: any, res) => {
+  app.get('/api/connections/status/:userId', sessionAuth, async (req: any, res) => {
     try {
       const currentUserId = req.user.claims.sub;
       const { userId } = req.params;
@@ -1358,7 +1358,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.put('/api/connections/:connectionId/status', isAuthenticated, async (req: any, res) => {
+  app.put('/api/connections/:connectionId/status', sessionAuth, async (req: any, res) => {
     try {
       const { connectionId } = req.params;
       const { status } = req.body;
@@ -1395,7 +1395,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.get('/api/connections', isAuthenticated, async (req: any, res) => {
+  app.get('/api/connections', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { status } = req.query;
@@ -1420,7 +1420,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.post('/api/feedback', isAuthenticated, async (req: any, res) => {
+  app.post('/api/feedback', sessionAuth, async (req: any, res) => {
     try {
       const fromUserId = req.session.userId!;
       const feedbackData = insertFeedbackSchema.parse({
@@ -1440,7 +1440,7 @@ Make the preventive specific, practical, and helpful for project management.`;
   });
 
   // Connection routes
-  app.get('/api/connections', isAuthenticated, async (req: any, res) => {
+  app.get('/api/connections', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId!;
       const { status } = req.query;
@@ -1452,7 +1452,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.post('/api/connections', isAuthenticated, async (req: any, res) => {
+  app.post('/api/connections', sessionAuth, async (req: any, res) => {
     try {
       const requesterId = req.user.claims.sub;
       const { addresseeId } = z.object({ addresseeId: z.string() }).parse(req.body);
@@ -1464,7 +1464,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.put('/api/connections/:id', isAuthenticated, async (req: any, res) => {
+  app.put('/api/connections/:id', sessionAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
       const { status } = z.object({ status: z.string() }).parse(req.body);
@@ -1478,7 +1478,7 @@ Make the preventive specific, practical, and helpful for project management.`;
 
   // Test endpoint for creating notifications (development only)
   if (process.env.NODE_ENV === 'development') {
-    app.post('/api/test-notifications', isAuthenticated, async (req: any, res) => {
+    app.post('/api/test-notifications', sessionAuth, async (req: any, res) => {
       try {
         const userId = req.session.userId!;
         const { createTestNotifications } = await import('./weeklyDigest');
@@ -1492,7 +1492,7 @@ Make the preventive specific, practical, and helpful for project management.`;
   }
 
   // Notification routes
-  app.get('/api/notifications', isAuthenticated, async (req: any, res) => {
+  app.get('/api/notifications', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId!;
       const { limit } = req.query as { limit?: string };
@@ -1504,7 +1504,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.get('/api/notifications/unread-count', isAuthenticated, async (req: any, res) => {
+  app.get('/api/notifications/unread-count', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId!;
       const count = await storage.getUnreadNotificationsCount(userId);
@@ -1515,7 +1515,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.put('/api/notifications/:id/read', isAuthenticated, async (req: any, res) => {
+  app.put('/api/notifications/:id/read', sessionAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
       await storage.markNotificationAsRead(id);
@@ -1527,7 +1527,7 @@ Make the preventive specific, practical, and helpful for project management.`;
   });
 
   // Job import endpoints
-  app.post('/api/import/jobs', isAuthenticated, async (req: any, res) => {
+  app.post('/api/import/jobs', sessionAuth, async (req: any, res) => {
     try {
       const { maxJobs = 5 } = req.body;
       const jobImportService = new JobImportService();
@@ -1539,7 +1539,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.post('/api/import/jobs/specific', isAuthenticated, async (req: any, res) => {
+  app.post('/api/import/jobs/specific', sessionAuth, async (req: any, res) => {
     try {
       const { designersCount = 5, projectManagersCount = 5 } = req.body;
       const jobImportService = new JobImportService();
@@ -1574,7 +1574,7 @@ Make the preventive specific, practical, and helpful for project management.`;
   });
 
   // Notification preferences routes
-  app.get('/api/notification-preferences', isAuthenticated, async (req: any, res) => {
+  app.get('/api/notification-preferences', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId!;
       const preferences = await storage.getNotificationPreferences(userId);
@@ -1585,7 +1585,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.put('/api/notification-preferences', isAuthenticated, async (req: any, res) => {
+  app.put('/api/notification-preferences', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId!;
       const preferencesData = insertNotificationPreferencesSchema.parse({
@@ -1601,7 +1601,7 @@ Make the preventive specific, practical, and helpful for project management.`;
   });
 
   // Object storage routes for CV/file uploads
-  app.post('/api/objects/upload', isAuthenticated, async (req, res) => {
+  app.post('/api/objects/upload', sessionAuth, async (req, res) => {
     try {
       const objectStorageService = new ObjectStorageService();
       const uploadURL = await objectStorageService.getObjectEntityUploadURL();
@@ -1612,7 +1612,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.get('/objects/:objectPath(*)', isAuthenticated, async (req, res) => {
+  app.get('/objects/:objectPath(*)', sessionAuth, async (req, res) => {
     try {
       const objectStorageService = new ObjectStorageService();
       const objectFile = await objectStorageService.getObjectEntityFile(req.path);
@@ -1626,7 +1626,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  app.put('/api/profile/cv', isAuthenticated, async (req: any, res) => {
+  app.put('/api/profile/cv', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId!;
       const { cvUrl } = req.body;
@@ -1649,7 +1649,7 @@ Make the preventive specific, practical, and helpful for project management.`;
   });
 
   // Avatar upload routes
-  app.put('/api/profile/avatar', isAuthenticated, async (req: any, res) => {
+  app.put('/api/profile/avatar', sessionAuth, async (req: any, res) => {
     try {
       const { avatarUrl } = req.body;
       if (!avatarUrl) {
@@ -1892,7 +1892,7 @@ Make the preventive specific, practical, and helpful for project management.`;
   }
 
   // API endpoint to create a new call room
-  app.post('/api/calls/create', isAuthenticated, async (req: any, res) => {
+  app.post('/api/calls/create', sessionAuth, async (req: any, res) => {
     try {
       const roomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
       res.json({ roomId, callUrl: `/call/${roomId}` });
