@@ -229,8 +229,17 @@ export class JobImportService {
     // Create company user account
     const hashedPassword = await bcrypt.hash(nanoid(12), 10);
     
+    // Use company email instead of AI-generated one to avoid duplicates
+    const finalEmail = companyEmail;
+    
+    // Check once more if email exists (AI might have generated same email)
+    const existingUser = await storage.getUserByEmail(finalEmail);
+    if (existingUser) {
+      return existingUser;
+    }
+    
     const companyUser = await storage.createUser({
-      email: companyProfile.email,
+      email: finalEmail,
       password: hashedPassword,
       firstName: companyProfile.firstName,
       lastName: companyProfile.lastName,

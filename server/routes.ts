@@ -39,6 +39,7 @@ import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { z } from "zod";
 import OpenAI from "openai";
 import { translateMessage, getUserLanguage } from "./translations";
+import { JobImportService } from "./job-import-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -267,7 +268,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Professional search routes
+  // Professional routes
+  app.get('/api/professionals', async (req: any, res) => {
+    try {
+      const professionals = await storage.searchProfessionals({});
+      res.json(professionals);
+    } catch (error) {
+      console.error("Error fetching professionals:", error);
+      res.status(500).json({ message: "Failed to fetch professionals" });
+    }
+  });
+
   app.get('/api/professionals/search', async (req: any, res) => {
     try {
       const { skills, availability, seniorityLevel, minRate, maxRate } = req.query;
@@ -1514,14 +1525,39 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  // Stats endpoint
-  app.get('/api/stats', isAuthenticated, async (req: any, res) => {
+  // Job import endpoints
+  app.post('/api/import/jobs', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.session.userId!;
+      const { maxJobs = 5 } = req.body;
+      const jobImportService = new JobImportService();
+      const result = await jobImportService.importJobsFromWeb(maxJobs);
+      res.json(result);
+    } catch (error) {
+      console.error("Error importing jobs:", error);
+      res.status(500).json({ message: "Failed to import jobs" });
+    }
+  });
+
+  app.post('/api/import/jobs/specific', isAuthenticated, async (req: any, res) => {
+    try {
+      const { designersCount = 5, projectManagersCount = 5 } = req.body;
+      const jobImportService = new JobImportService();
+      const result = await jobImportService.importSpecificRoles(designersCount, projectManagersCount);
+      res.json(result);
+    } catch (error) {
+      console.error("Error importing specific roles:", error);
+      res.status(500).json({ message: "Failed to import specific roles" });
+    }
+  });
+
+  // Stats endpoint
+  app.get('/api/stats', async (req: any, res) => {
+    try {
+      const userId = req.session?.userId;
       const [activeProfessionals, openProjects, unreadMessages] = await Promise.all([
         storage.getActiveProfessionalsCount(),
         storage.getOpenProjectsCount(),
-        storage.getUnreadMessagesCount(userId)
+        userId ? storage.getUnreadMessagesCount(userId) : Promise.resolve(0)
       ]);
 
       res.json({
