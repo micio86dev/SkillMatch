@@ -387,11 +387,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Project application routes
-  // Apply to a project - professionals only
-  app.post('/api/projects/:id/apply', sessionAuth, async (req: any, res) => {
+  // Apply to a project - all authenticated users
+  app.post('/api/projects/:projectId/apply', sessionAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId;
-      const { id: projectId } = req.params;
+      const { projectId } = req.params;
       const applicationData = insertProjectApplicationSchema.parse({
         ...req.body,
         projectId,
@@ -771,44 +771,7 @@ Make the preventive specific, practical, and helpful for project management.`;
     }
   });
 
-  // Project applications routes
-  app.post('/api/projects/:projectId/apply', sessionAuth, async (req: any, res) => {
-    try {
-      const { projectId } = req.params;
-      const userId = req.session.userId!;
-      const { coverLetter, proposedRate } = req.body;
-      
-      // Check if user has already applied
-      const hasApplied = await storage.hasUserAppliedToProject(projectId, userId);
-      if (hasApplied) {
-        return res.status(400).json({ message: "You have already applied to this project" });
-      }
-      
-      // Verify project exists and is open
-      const project = await storage.getProject(projectId);
-      if (!project) {
-        return res.status(404).json({ message: "Project not found" });
-      }
-      
-      if (project.status !== "open") {
-        return res.status(400).json({ message: "This project is no longer accepting applications" });
-      }
-      
-      const applicationData = {
-        projectId,
-        userId,
-        coverLetter,
-        proposedRate,
-        status: "pending" as const,
-      };
-      
-      const application = await storage.createProjectApplication(applicationData);
-      res.json(application);
-    } catch (error) {
-      console.error("Error creating application:", error);
-      res.status(500).json({ message: "Failed to submit application" });
-    }
-  });
+  // Duplicate route removed - using the main apply route above
 
   app.get('/api/projects/:projectId/applications', sessionAuth, async (req: any, res) => {
     try {

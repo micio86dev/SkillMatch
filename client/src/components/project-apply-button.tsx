@@ -61,7 +61,14 @@ export function ProjectApplyButton({ projectId, projectTitle, isProjectFull }: P
   const applyMutation = useMutation({
     mutationFn: async (data: any) => {
       console.log('Submitting application data:', data);
-      return apiRequest(`/api/projects/${projectId}/apply`, "POST", data);
+      try {
+        const result = await apiRequest(`/api/projects/${projectId}/apply`, "POST", data);
+        console.log('Application submitted successfully:', result);
+        return result;
+      } catch (error) {
+        console.error('Application submission failed:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
@@ -78,9 +85,10 @@ export function ProjectApplyButton({ projectId, projectTitle, isProjectFull }: P
       form.reset();
     },
     onError: (error: any) => {
+      console.error('Application mutation error:', error);
       toast({
         title: "Application Failed",
-        description: error.message || "Failed to submit application",
+        description: error.message || "Failed to submit application. Please try again.",
         variant: "destructive",
       });
     },
