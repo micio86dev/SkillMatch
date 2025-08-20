@@ -1,6 +1,7 @@
 import { storage } from "./storage";
 import { AIJobParser } from "./ai-service";
 import { JobScraper } from "./job-scraper";
+import { processJobWithAI } from "./ai";
 import bcrypt from "bcrypt";
 import { nanoid } from "nanoid";
 import { type User } from "@shared/schema";
@@ -43,7 +44,10 @@ export class JobImportService {
             }
           }
 
-          // Parse job with AI
+          // Process job with new AI function for title normalization and categorization
+          const aiProcessed = await processJobWithAI(rawJob.title, fullContent);
+          
+          // Parse job with existing AI parser for detailed extraction
           const parsedJob = await this.aiParser.parseJobPosting(fullContent, rawJob.sourceUrl);
           if (!parsedJob) {
             errors++;
@@ -54,11 +58,11 @@ export class JobImportService {
           // Create or find company user
           const companyUser = await this.createOrFindCompanyUser(parsedJob.companyName, parsedJob.companyDescription);
           
-          // Create project with budget validation
+          // Create project with budget validation and AI-processed data
           const projectData = {
             companyUserId: companyUser.id,
-            title: parsedJob.title,
-            description: parsedJob.description,
+            title: aiProcessed.normalized_title || parsedJob.title,
+            description: aiProcessed.clean_description || parsedJob.description,
             requiredSkills: parsedJob.requiredSkills,
             seniorityLevel: parsedJob.seniorityLevel,
             contractType: parsedJob.contractType,
@@ -68,17 +72,20 @@ export class JobImportService {
             budgetMax: parsedJob.budgetMax?.toString(),
             location: parsedJob.location,
             isRemote: parsedJob.isRemote,
+            // Store AI-processed data
+            category: aiProcessed.category,
+            originalTitle: rawJob.title
           } as any;
           
           try {
             await storage.createProject(projectData);
             imported++;
-            console.log(`Imported job: ${parsedJob.title} from ${parsedJob.companyName}`);
+            console.log(`Imported job: ${aiProcessed.normalized_title || parsedJob.title} (${aiProcessed.category}) from ${parsedJob.companyName}`);
             await this.recordJobImport(parsedJob.title, parsedJob.companyName, rawJob.sourceUrl);
           } catch (projectError: any) {
             // Handle budget validation errors for imported projects
             if (projectError.message && projectError.message.includes("Budget")) {
-              console.warn(`Skipping project "${parsedJob.title}" due to budget validation: ${projectError.message}`);
+              console.warn(`Skipping project "${aiProcessed.normalized_title || parsedJob.title}" due to budget validation: ${projectError.message}`);
               skipped++;
               continue;
             } else {
@@ -133,7 +140,10 @@ export class JobImportService {
             }
           }
 
-          // Parse job with AI
+          // Process job with new AI function for title normalization and categorization
+          const aiProcessed = await processJobWithAI(rawJob.title, fullContent);
+          
+          // Parse job with existing AI parser for detailed extraction
           const parsedJob = await this.aiParser.parseJobPosting(fullContent, rawJob.sourceUrl);
           if (!parsedJob) {
             errors++;
@@ -144,11 +154,11 @@ export class JobImportService {
           // Create or find company user
           const companyUser = await this.createOrFindCompanyUser(parsedJob.companyName, parsedJob.companyDescription);
           
-          // Create project with budget validation
+          // Create project with budget validation and AI-processed data
           const projectData = {
             companyUserId: companyUser.id,
-            title: parsedJob.title,
-            description: parsedJob.description,
+            title: aiProcessed.normalized_title || parsedJob.title,
+            description: aiProcessed.clean_description || parsedJob.description,
             requiredSkills: parsedJob.requiredSkills,
             seniorityLevel: parsedJob.seniorityLevel,
             contractType: parsedJob.contractType,
@@ -158,6 +168,9 @@ export class JobImportService {
             budgetMax: parsedJob.budgetMax?.toString(),
             location: parsedJob.location,
             isRemote: parsedJob.isRemote,
+            // Store AI-processed data
+            category: aiProcessed.category,
+            originalTitle: rawJob.title
           } as any;
           
           try {
@@ -166,7 +179,7 @@ export class JobImportService {
             
             // Store import record to prevent duplicates
             await this.recordJobImport(parsedJob.title, parsedJob.companyName, parsedJob.originalUrl);
-            console.log(`Imported job: ${parsedJob.title} from ${parsedJob.companyName}`);
+            console.log(`Imported job: ${aiProcessed.normalized_title || parsedJob.title} (${aiProcessed.category}) from ${parsedJob.companyName}`);
             
             // Stop if we've imported enough jobs
             if (imported >= maxJobs) {
@@ -175,7 +188,7 @@ export class JobImportService {
           } catch (projectError: any) {
             // Handle budget validation errors for imported projects
             if (projectError.message && projectError.message.includes("Budget")) {
-              console.warn(`Skipping project "${parsedJob.title}" due to budget validation: ${projectError.message}`);
+              console.warn(`Skipping project "${aiProcessed.normalized_title || parsedJob.title}" due to budget validation: ${projectError.message}`);
               skipped++;
               continue;
             } else {
