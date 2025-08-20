@@ -116,18 +116,28 @@ export function ProfessionalCard({ professional, onConnect, onMessage }: Profess
 
           {/* Action buttons */}
           <div className="flex space-x-2 pt-2">
-            {connectionStatus?.connected ? (
-              connectionStatus.status === 'accepted' ? (
-                <Button 
-                  size="sm" 
-                  className="flex-1"
-                  variant="outline"
-                  disabled
-                >
-                  <CheckCircle className="h-4 w-4 mr-1" />
-                  Connected
-                </Button>
-              ) : connectionStatus.status === 'pending' ? (
+            {(connectionStatus as any)?.connected ? (
+              (connectionStatus as any).status === 'accepted' ? (
+                <>
+                  <Button 
+                    size="sm" 
+                    className="flex-1"
+                    variant="outline"
+                    disabled
+                  >
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Connected
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={onMessage}
+                    className="bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 dark:text-blue-400 dark:border-blue-800"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                  </Button>
+                </>
+              ) : (connectionStatus as any).status === 'pending' ? (
                 <Button 
                   size="sm" 
                   className="flex-1"
@@ -135,7 +145,7 @@ export function ProfessionalCard({ professional, onConnect, onMessage }: Profess
                   disabled
                 >
                   <Clock className="h-4 w-4 mr-1" />
-                  {connectionStatus.isRequester ? 'Request Sent' : 'Request Received'}
+                  {(connectionStatus as any).isRequester ? 'Request Sent' : 'Request Received'}
                 </Button>
               ) : (
                 <Button 
@@ -157,18 +167,11 @@ export function ProfessionalCard({ professional, onConnect, onMessage }: Profess
                 Connect
               </Button>
             )}
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={onMessage}
-            >
-              <MessageSquare className="h-4 w-4" />
-            </Button>
-            {connectionStatus?.status === 'accepted' && (
+            {(connectionStatus as any)?.status === 'accepted' && (
               <FeedbackForm
                 professionalId={user.id}
                 professionalName={`${user.firstName} ${user.lastName}`}
-                professionalImage={user.profileImageUrl}
+                professionalImage={user.profileImageUrl || undefined}
               />
             )}
           </div>
