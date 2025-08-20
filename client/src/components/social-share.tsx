@@ -216,6 +216,7 @@ export function SocialShare({
             onNativeShare={handleNativeShare}
             copied={copied}
             url={url}
+            t={t}
           />
         </DialogContent>
       </Dialog>
@@ -236,6 +237,7 @@ export function SocialShare({
             onNativeShare={handleNativeShare}
             copied={copied}
             url={url}
+            t={t}
           />
         </CardContent>
       </Card>
@@ -252,6 +254,7 @@ interface ShareContentProps {
   onNativeShare: () => void;
   copied: boolean;
   url: string;
+  t: (key: string) => string;
 }
 
 function ShareContent({
@@ -261,6 +264,7 @@ function ShareContent({
   onNativeShare,
   copied,
   url,
+  t,
 }: ShareContentProps) {
   return (
     <div className="space-y-4">

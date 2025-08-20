@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Layout } from "@/components/layout";
 import { ProfessionalCard } from "@/components/professional-card";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,12 +14,14 @@ import { useLocation } from "wouter";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { PageShare, usePageShare } from "@/components/page-share";
 import { useTranslation } from "react-i18next";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Professionals() {
   const { toast } = useToast();
   const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState({
     skills: "",
     availability: "any",
@@ -103,9 +105,18 @@ export default function Professionals() {
         return;
       }
 
+      // Invalidate connection status queries to update UI
+      queryClient.invalidateQueries({ queryKey: ['/api/connections/status'] });
+      
       toast({
         title: t('professionals.connectionRequestSent'),
         description: t('professionals.connectionRequestSentDesc', { name: professional.user?.firstName || 'the professional' }),
+        variant: "default",
+        style: {
+          backgroundColor: '#10B981',
+          border: '1px solid #059669',
+          color: 'white'
+        }
       });
     } catch (error) {
       if (isUnauthorizedError(error as Error)) {
