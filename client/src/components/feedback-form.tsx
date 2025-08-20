@@ -63,7 +63,7 @@ export function FeedbackForm({
 
   const createFeedbackMutation = useMutation({
     mutationFn: async (data: { toUserId: string; rating: number; comment: string; projectId?: string }) => {
-      return apiRequest("/api/feedback", "POST", data);
+      return apiRequest("POST", "/api/feedback", data);
     },
     onSuccess: () => {
       toast({

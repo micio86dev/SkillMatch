@@ -62,7 +62,7 @@ export function ProjectApplyButton({ projectId, projectTitle, isProjectFull }: P
     mutationFn: async (data: any) => {
       console.log('Submitting application data:', data);
       try {
-        const result = await apiRequest(`/api/projects/${projectId}/apply`, "POST", data);
+        const result = await apiRequest("POST", `/api/projects/${projectId}/apply`, data);
         console.log('Application submitted successfully:', result);
         return result;
       } catch (error) {

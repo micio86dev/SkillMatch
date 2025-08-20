@@ -32,7 +32,7 @@ export function PreventivesButton() {
 
   const generateMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest("/api/preventives/generate", "POST", data);
+      return apiRequest("POST", "/api/preventives/generate", data);
     },
     onSuccess: () => {
       toast({

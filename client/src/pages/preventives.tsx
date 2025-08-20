@@ -67,7 +67,7 @@ export default function Preventives() {
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest("/api/preventives", "POST", data);
+      return apiRequest("POST", "/api/preventives", data);
     },
     onSuccess: () => {
       toast({
@@ -89,7 +89,7 @@ export default function Preventives() {
 
   const generateMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest("/api/preventives/generate", "POST", data);
+      return apiRequest("POST", "/api/preventives/generate", data);
     },
     onSuccess: () => {
       toast({
