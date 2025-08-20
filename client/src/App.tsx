@@ -10,8 +10,6 @@ import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import "@/lib/i18n";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
-import Login from "@/pages/auth/login";
-import Signup from "@/pages/auth/signup";
 import Home from "@/pages/home";
 import Profile from "@/pages/profile";
 import Projects from "@/pages/projects";
@@ -38,8 +36,6 @@ function Router() {
     <Switch>
       {isLoading || !isAuthenticated ? (
         <>
-          <Route path="/auth/login" component={Login} />
-          <Route path="/auth/signup" component={Signup} />
           <Route path="/" component={Landing} />
           {/* Allow access to public pages when not logged in */}
           <Route path="/professionals" component={Professionals} />
