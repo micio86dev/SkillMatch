@@ -140,6 +140,14 @@ const resources = {
       "projects.deleting": "Deleting...",
       "projects.comments": "comments",
       
+      // Social Share
+      "share.title": "Share this post",
+      "share.copyLink": "Copy Link",
+      "share.linkCopied": "Link copied to clipboard!",
+      "share.shareOn": "Share on",
+      "share.orShareDirect": "Or share directly:",
+      "share.shareWith": "Share with {{platform}}",
+      
       // Professionals
       "professionals.title": "IT Professionals",
       "professionals.subtitle": "Discover and connect with talented developers, designers, and tech experts",
@@ -335,6 +343,21 @@ const resources = {
       "projects.delete": "Eliminar",
       "projects.deleting": "Eliminando...",
       "projects.comments": "comentarios",
+      
+      // Social Share
+      "share.title": "Compartir esta publicación",
+      "share.copyLink": "Copiar Enlace",
+      "share.linkCopied": "¡Enlace copiado al portapapeles!",
+      "share.shareOn": "Compartir en",
+      "share.orShareDirect": "O compartir directamente:",
+      "share.shareWith": "Compartir con {{platform}}",
+      "share.chooseHow": "Elige cómo te gustaría compartir este contenido",
+      "share.shareViaDevice": "Compartir a través del dispositivo",
+      "share.quickShare": "Compartir Rápido",
+      "share.tweet": "Tuitear",
+      "share.copied": "Copiado",
+      "share.copy": "Copiar",
+      "share.copyLinkLabel": "Copiar enlace",
       
       // Professionals
       "professionals.title": "Profesionales de TI",
@@ -784,6 +807,27 @@ const resources = {
       "projects.foundResults_other": "Trovati {{count}} progetti",
       "projects.postSuccess": "Progetto pubblicato con successo!",
       "projects.createError": "Impossibile creare il progetto. Riprova.",
+      "projects.readyToWork": "Pronto a lavorare su questo progetto?",
+      "projects.share": "Condividi",
+      "projects.edit": "Modifica",
+      "projects.delete": "Elimina",
+      "projects.deleting": "Eliminando...",
+      "projects.comments": "commenti",
+      
+      // Social Share
+      "share.title": "Condividi questo post",
+      "share.copyLink": "Copia Link",
+      "share.linkCopied": "Link copiato negli appunti!",
+      "share.shareOn": "Condividi su",
+      "share.orShareDirect": "O condividi direttamente:",
+      "share.shareWith": "Condividi con {{platform}}",
+      "share.chooseHow": "Scegli come vorresti condividere questo contenuto",
+      "share.shareViaDevice": "Condividi tramite dispositivo",
+      "share.quickShare": "Condivisione Rapida",
+      "share.tweet": "Tweet",
+      "share.copied": "Copiato",
+      "share.copy": "Copia",
+      "share.copyLinkLabel": "Copia link",
       
       // Language
       "language.select": "Seleziona Lingua",

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import {
   Share,
   Facebook,
@@ -137,6 +138,7 @@ export function SocialShare({
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const shareData = {
     url,
@@ -168,8 +170,8 @@ export function SocialShare({
       await navigator.clipboard.writeText(url);
       setCopied(true);
       toast({
-        title: "Link Copied",
-        description: "The link has been copied to your clipboard.",
+        title: t('share.linkCopied'),
+        description: t('share.linkCopied'),
       });
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
@@ -197,14 +199,14 @@ export function SocialShare({
             className="flex items-center space-x-2 text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-medium"
           >
             <Share className="h-4 w-4" />
-            <span>Share</span>
+            <span>{t('projects.share')}</span>
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-2xl w-full max-w-[95vw]">
           <DialogHeader>
-            <DialogTitle>Share this post</DialogTitle>
+            <DialogTitle>{t('share.title')}</DialogTitle>
             <DialogDescription>
-              Choose how you'd like to share this content
+              {t('share.chooseHow')}
             </DialogDescription>
           </DialogHeader>
           <ShareContent
@@ -225,7 +227,7 @@ export function SocialShare({
       <Card>
         <CardContent className="p-4">
           <h3 className="font-semibold text-slate-900 dark:text-white mb-4">
-            Share this post
+            {t('share.title')}
           </h3>
           <ShareContent
             platforms={socialPlatforms}
@@ -263,18 +265,18 @@ function ShareContent({
   return (
     <div className="space-y-4">
       {/* Native Share (if supported) */}
-      {navigator.share && (
+      {typeof navigator !== 'undefined' && navigator.share && (
         <Button
           onClick={onNativeShare}
           className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
         >
           <Send className="h-4 w-4 mr-2" />
-          Share via device
+          {t('share.shareViaDevice')}
         </Button>
       )}
 
       {/* Social Platforms Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3">
         {platforms.map((platform) => (
           <Button
             key={platform.name}
@@ -291,7 +293,7 @@ function ShareContent({
       {/* Copy Link */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-          Copy link
+          {t('share.copyLinkLabel')}
         </label>
         <div className="flex space-x-2">
           <Input
@@ -310,12 +312,12 @@ function ShareContent({
                 <svg className="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
-                Copied
+                {t('share.copied')}
               </>
             ) : (
               <>
                 <Copy className="h-4 w-4 mr-1" />
-                Copy
+                {t('share.copy')}
               </>
             )}
           </Button>
@@ -330,7 +332,7 @@ function ShareContent({
           size="sm"
           className="flex-1"
         >
-          Quick Share
+          {t('share.quickShare')}
         </Button>
         <Button
           onClick={() => onPlatformShare(platforms[1])} // Twitter
@@ -338,7 +340,7 @@ function ShareContent({
           size="sm"
           className="flex-1"
         >
-          Tweet
+          {t('share.tweet')}
         </Button>
       </div>
     </div>
