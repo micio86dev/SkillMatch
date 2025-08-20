@@ -29,6 +29,7 @@ export default function Professionals() {
     minRate: "",
     maxRate: "",
   });
+  const [connectingUserId, setConnectingUserId] = useState<string | null>(null);
   
   const pageShareData = usePageShare('custom', {
     title: 'Browse IT Professionals',
@@ -60,6 +61,7 @@ export default function Professionals() {
 
   const connectMutation = useMutation({
     mutationFn: async (professionalUserId: string) => {
+      setConnectingUserId(professionalUserId);
       const response = await fetch('/api/connections/request', {
         method: 'POST',
         headers: {
@@ -85,6 +87,7 @@ export default function Professionals() {
       return response.json();
     },
     onSuccess: (data, professionalUserId) => {
+      setConnectingUserId(null);
       // Invalidate connection status queries to update UI
       queryClient.invalidateQueries({ queryKey: ['/api/connections/status'] });
       
@@ -100,7 +103,8 @@ export default function Professionals() {
         }
       });
     },
-    onError: (error: Error) => {
+    onError: (error: Error, professionalUserId) => {
+      setConnectingUserId(null);
       if (isUnauthorizedError(error)) {
         toast({
           title: "Unauthorized",
@@ -406,7 +410,7 @@ export default function Professionals() {
                   professional={professional}
                   onConnect={() => handleConnect(professional)}
                   onMessage={() => handleMessage(professional)}
-                  isConnectLoading={connectMutation.isPending}
+                  isConnectLoading={connectingUserId === (professional.user?.id || professional.userId)}
                 />
               ))}
             </div>
