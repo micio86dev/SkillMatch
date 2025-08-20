@@ -16,7 +16,7 @@ import { useTranslation } from "react-i18next";
 
 const applicationSchema = z.object({
   coverLetter: z.string().min(50, "Cover letter must be at least 50 characters"),
-  proposedRate: z.number().min(1, "Proposed rate must be greater than 0").optional(),
+  proposedRate: z.string().optional().transform(val => val ? parseFloat(val) : undefined),
 });
 
 interface ProjectApplyButtonProps {
@@ -54,12 +54,13 @@ export function ProjectApplyButton({ projectId, projectTitle, isProjectFull }: P
     resolver: zodResolver(applicationSchema),
     defaultValues: {
       coverLetter: "",
-      proposedRate: undefined,
+      proposedRate: "",
     },
   });
 
   const applyMutation = useMutation({
     mutationFn: async (data: any) => {
+      console.log('Submitting application data:', data);
       return apiRequest(`/api/projects/${projectId}/apply`, "POST", data);
     },
     onSuccess: () => {
@@ -186,7 +187,6 @@ export function ProjectApplyButton({ projectId, projectTitle, isProjectFull }: P
                       type="number"
                       placeholder="Your hourly rate"
                       {...field}
-                      onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
                     />
                   </FormControl>
                   <FormMessage />
