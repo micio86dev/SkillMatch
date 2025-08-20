@@ -4,11 +4,30 @@ import { ProjectCard } from "@/components/project-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertProjectSchema } from "@shared/schema";
@@ -28,27 +47,30 @@ export default function Projects() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  
-  const pageShareData = usePageShare('custom', {
-    title: 'Browse IT Projects',
-    description: 'Discover exciting IT projects and freelance opportunities. Find your next project in software development, web design, mobile apps, and more.',
-    hashtags: ['ITProjects', 'Freelance', 'TechJobs', 'ProjectOpportunities']
+
+  const pageShareData = usePageShare("custom", {
+    title: t("projects.pageTitle"),
+    description: t("projects.pageDescription"),
+    hashtags: ["ITProjects", "Freelance", "TechJobs", "ProjectOpportunities"],
   });
   const [filters, setFilters] = useState({
     status: "all",
     search: "",
   });
 
-  const queryFilters = { ...filters, status: filters.status === "all" ? "" : filters.status };
+  const queryFilters = {
+    ...filters,
+    status: filters.status === "all" ? "" : filters.status,
+  };
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ["/api/projects", queryFilters],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (queryFilters.status) params.append('status', queryFilters.status);
-      if (queryFilters.search) params.append('search', queryFilters.search);
-      const url = `/api/projects${params.toString() ? '?' + params.toString() : ''}`;
-      const response = await fetch(url, { credentials: 'include' });
-      if (!response.ok) throw new Error('Failed to fetch projects');
+      if (queryFilters.status) params.append("status", queryFilters.status);
+      if (queryFilters.search) params.append("search", queryFilters.search);
+      const url = `/api/projects${params.toString() ? "?" + params.toString() : ""}`;
+      const response = await fetch(url, { credentials: "include" });
+      if (!response.ok) throw new Error("Failed to fetch projects");
       return response.json();
     },
     refetchOnWindowFocus: false,
@@ -80,15 +102,15 @@ export default function Projects() {
       setShowCreateDialog(false);
       createProjectForm.reset();
       toast({
-        title: t('common.success'),
-        description: t('projects.postSuccess'),
+        title: t("common.success"),
+        description: t("projects.postSuccess"),
       });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
+          title: t("projects.unauthorizedTitle"),
+          description: t("projects.unauthorizedMessage"),
           variant: "destructive",
         });
         setTimeout(() => {
@@ -97,8 +119,8 @@ export default function Projects() {
         return;
       }
       toast({
-        title: "Error",
-        description: "Failed to create project. Please try again.",
+        title: t("projects.createErrorTitle"),
+        description: t("projects.createError"),
         variant: "destructive",
       });
     },
@@ -119,7 +141,7 @@ export default function Projects() {
     });
   };
 
-  const hasActiveFilters = Object.values(filters).some(value => value !== "");
+  const hasActiveFilters = Object.values(filters).some((value) => value !== "");
 
   return (
     <Layout>
@@ -129,36 +151,47 @@ export default function Projects() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-                Projects
+                {t("projects.title")}
               </h1>
               <p className="text-slate-700 dark:text-slate-300">
-                Discover exciting opportunities or post your own project
+                {t("projects.subtitle")}
               </p>
             </div>
-            
+
             {isAuthenticated && (
-              <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+              <Dialog
+                open={showCreateDialog}
+                onOpenChange={setShowCreateDialog}
+              >
                 <DialogTrigger asChild>
                   <Button size="lg">
                     <Plus className="mr-2 h-4 w-4" />
-                    Post Project
+                    {t("projects.postProject")}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Post a New Project</DialogTitle>
+                    <DialogTitle>{t("projects.postNewProject")}</DialogTitle>
                   </DialogHeader>
-                  
+
                   <Form {...createProjectForm}>
-                    <form onSubmit={createProjectForm.handleSubmit(handleCreateProject)} className="space-y-6">
+                    <form
+                      onSubmit={createProjectForm.handleSubmit(
+                        handleCreateProject,
+                      )}
+                      className="space-y-6"
+                    >
                       <FormField
                         control={createProjectForm.control}
                         name="title"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Project Title</FormLabel>
+                            <FormLabel>{t("projects.projectTitle")}</FormLabel>
                             <FormControl>
-                              <Input placeholder="e.g. Senior React Developer for E-commerce Platform" {...field} />
+                              <Input
+                                placeholder={t("projects.projectTitlePlaceholder")}
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -170,12 +203,12 @@ export default function Projects() {
                         name="description"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Project Description</FormLabel>
+                            <FormLabel>{t("projects.projectDescription")}</FormLabel>
                             <FormControl>
-                              <Textarea 
-                                placeholder="Describe your project, requirements, and what you're looking for..."
+                              <Textarea
+                                placeholder={t("projects.projectDescriptionPlaceholder")}
                                 className="min-h-[120px]"
-                                {...field} 
+                                {...field}
                               />
                             </FormControl>
                             <FormMessage />
@@ -189,19 +222,24 @@ export default function Projects() {
                           name="seniorityLevel"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Required Seniority Level</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
+                              <FormLabel>{t("projects.requiredSeniorityLevel")}</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                value={field.value}
+                              >
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Select level" />
+                                    <SelectValue placeholder={t("projects.selectLevel")} />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="junior">Junior</SelectItem>
-                                  <SelectItem value="mid">Mid-Level</SelectItem>
-                                  <SelectItem value="senior">Senior</SelectItem>
-                                  <SelectItem value="lead">Lead</SelectItem>
-                                  <SelectItem value="principal">Principal</SelectItem>
+                                  <SelectItem value="junior">{t("projects.junior")}</SelectItem>
+                                  <SelectItem value="mid">{t("projects.midLevel")}</SelectItem>
+                                  <SelectItem value="senior">{t("projects.senior")}</SelectItem>
+                                  <SelectItem value="lead">{t("projects.lead")}</SelectItem>
+                                  <SelectItem value="principal">
+                                    {t("projects.principal")}
+                                  </SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -214,18 +252,27 @@ export default function Projects() {
                           name="contractType"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Contract Type</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
+                              <FormLabel>{t("projects.contractType")}</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                value={field.value}
+                              >
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Select type" />
+                                    <SelectValue placeholder={t("projects.selectType")} />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="hourly">Hourly</SelectItem>
-                                  <SelectItem value="project_based">Project-based</SelectItem>
-                                  <SelectItem value="full_time">Full-time</SelectItem>
-                                  <SelectItem value="part_time">Part-time</SelectItem>
+                                  <SelectItem value="hourly">{t("projects.hourly")}</SelectItem>
+                                  <SelectItem value="project_based">
+                                    {t("projects.projectBased")}
+                                  </SelectItem>
+                                  <SelectItem value="full_time">
+                                    {t("projects.fullTime")}
+                                  </SelectItem>
+                                  <SelectItem value="part_time">
+                                    {t("projects.partTime")}
+                                  </SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -238,20 +285,37 @@ export default function Projects() {
                           name="teamSize"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Team Size Required</FormLabel>
-                              <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                              <FormLabel>{t("projects.teamSizeRequired")}</FormLabel>
+                              <Select
+                                onValueChange={(value) =>
+                                  field.onChange(parseInt(value))
+                                }
+                                value={field.value?.toString()}
+                              >
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder="How many professionals?" />
+                                    <SelectValue placeholder={t("projects.howManyProfessionals")} />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="1">1 Professional</SelectItem>
-                                  <SelectItem value="2">2 Professionals</SelectItem>
-                                  <SelectItem value="3">3 Professionals</SelectItem>
-                                  <SelectItem value="4">4 Professionals</SelectItem>
-                                  <SelectItem value="5">5 Professionals</SelectItem>
-                                  <SelectItem value="6">6+ Professionals</SelectItem>
+                                  <SelectItem value="1">
+                                    {t("projects.oneProfessional")}
+                                  </SelectItem>
+                                  <SelectItem value="2">
+                                    {t("projects.twoProfessionals")}
+                                  </SelectItem>
+                                  <SelectItem value="3">
+                                    {t("projects.threeProfessionals")}
+                                  </SelectItem>
+                                  <SelectItem value="4">
+                                    {t("projects.fourProfessionals")}
+                                  </SelectItem>
+                                  <SelectItem value="5">
+                                    {t("projects.fiveProfessionals")}
+                                  </SelectItem>
+                                  <SelectItem value="6">
+                                    {t("projects.sixPlusProfessionals")}
+                                  </SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -266,13 +330,17 @@ export default function Projects() {
                           name="estimatedHours"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Estimated Hours</FormLabel>
+                              <FormLabel>{t("projects.estimatedHours")}</FormLabel>
                               <FormControl>
-                                <Input 
-                                  type="number" 
-                                  placeholder="120"
+                                <Input
+                                  type="number"
+                                  placeholder={t("projects.estimatedHoursPlaceholder")}
                                   {...field}
-                                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                  onChange={(e) =>
+                                    field.onChange(
+                                      parseInt(e.target.value) || 0,
+                                    )
+                                  }
                                 />
                               </FormControl>
                               <FormMessage />
@@ -285,13 +353,15 @@ export default function Projects() {
                           name="budgetMin"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Min Budget ($)</FormLabel>
+                              <FormLabel>{t("projects.minBudget")}</FormLabel>
                               <FormControl>
-                                <Input 
-                                  type="number" 
-                                  placeholder="5000"
+                                <Input
+                                  type="number"
+                                  placeholder={t("projects.budgetPlaceholder")}
                                   {...field}
-                                  onChange={(e) => field.onChange(e.target.value)}
+                                  onChange={(e) =>
+                                    field.onChange(e.target.value)
+                                  }
                                 />
                               </FormControl>
                               <FormMessage />
@@ -304,13 +374,15 @@ export default function Projects() {
                           name="budgetMax"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Max Budget ($)</FormLabel>
+                              <FormLabel>{t("projects.maxBudget")}</FormLabel>
                               <FormControl>
-                                <Input 
-                                  type="number" 
-                                  placeholder="10000"
+                                <Input
+                                  type="number"
+                                  placeholder={t("projects.budgetMaxPlaceholder")}
                                   {...field}
-                                  onChange={(e) => field.onChange(e.target.value)}
+                                  onChange={(e) =>
+                                    field.onChange(e.target.value)
+                                  }
                                 />
                               </FormControl>
                               <FormMessage />
@@ -324,9 +396,14 @@ export default function Projects() {
                         name="location"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Location (if not fully remote)</FormLabel>
+                            <FormLabel>
+                              {t("projects.locationIfNotRemote")}
+                            </FormLabel>
                             <FormControl>
-                              <Input placeholder="e.g. San Francisco, CA" {...field} />
+                              <Input
+                                placeholder={t("projects.locationPlaceholder")}
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -339,13 +416,15 @@ export default function Projects() {
                           variant="outline"
                           onClick={() => setShowCreateDialog(false)}
                         >
-                          Cancel
+                          {t("common.cancel")}
                         </Button>
-                        <Button 
+                        <Button
                           type="submit"
                           disabled={createProjectMutation.isPending}
                         >
-                          {createProjectMutation.isPending ? "Posting..." : "Post Project"}
+                          {createProjectMutation.isPending
+                            ? t("projects.posting")
+                            : t("projects.postProject")}
                         </Button>
                       </div>
                     </form>
@@ -362,10 +441,12 @@ export default function Projects() {
             <div className="space-y-4">
               <div className="flex items-center space-x-2 mb-4">
                 <Filter className="h-5 w-5 text-slate-600 dark:text-slate-400" />
-                <h3 className="font-semibold text-slate-900 dark:text-white">Filter Projects</h3>
+                <h3 className="font-semibold text-slate-900 dark:text-white">
+                  {t("projects.filterProjectsTitle")}
+                </h3>
                 {hasActiveFilters && (
                   <Button variant="ghost" size="sm" onClick={clearFilters}>
-                    Clear All
+                    {t("projects.clearAll")}
                   </Button>
                 )}
               </div>
@@ -373,14 +454,16 @@ export default function Projects() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    Search
+                    {t("projects.search")}
                   </label>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
                     <Input
-                      placeholder="Search projects..."
+                      placeholder={t("projects.searchPlaceholder")}
                       value={filters.search}
-                      onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                      onChange={(e) =>
+                        setFilters({ ...filters, search: e.target.value })
+                      }
                       className="pl-10"
                     />
                   </div>
@@ -388,21 +471,23 @@ export default function Projects() {
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    Status
+                    {t("projects.status")}
                   </label>
-                  <Select 
-                    value={filters.status} 
-                    onValueChange={(value) => setFilters({ ...filters, status: value })}
+                  <Select
+                    value={filters.status}
+                    onValueChange={(value) =>
+                      setFilters({ ...filters, status: value })
+                    }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="All statuses" />
+                      <SelectValue placeholder={t("projects.allStatuses")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All statuses</SelectItem>
-                      <SelectItem value="open">Open</SelectItem>
-                      <SelectItem value="in_review">In Review</SelectItem>
-                      <SelectItem value="assigned">Assigned</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="all">{t("projects.allStatuses")}</SelectItem>
+                      <SelectItem value="open">{t("projects.open")}</SelectItem>
+                      <SelectItem value="in_review">{t("projects.inReview")}</SelectItem>
+                      <SelectItem value="assigned">{t("projects.assigned")}</SelectItem>
+                      <SelectItem value="completed">{t("projects.completed")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -411,8 +496,11 @@ export default function Projects() {
               {hasActiveFilters && (
                 <div className="flex flex-wrap gap-2 mt-4">
                   {filters.search && (
-                    <Badge variant="secondary" className="flex items-center gap-1">
-                      Search: {filters.search}
+                    <Badge
+                      variant="secondary"
+                      className="flex items-center gap-1"
+                    >
+                      {t("projects.searchPrefix")} {filters.search}
                       <button
                         onClick={() => setFilters({ ...filters, search: "" })}
                         className="ml-1 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-full w-4 h-4 flex items-center justify-center text-xs"
@@ -422,8 +510,11 @@ export default function Projects() {
                     </Badge>
                   )}
                   {filters.status && (
-                    <Badge variant="secondary" className="flex items-center gap-1">
-                      Status: {filters.status}
+                    <Badge
+                      variant="secondary"
+                      className="flex items-center gap-1"
+                    >
+                      {t("projects.statusPrefix")} {filters.status}
                       <button
                         onClick={() => setFilters({ ...filters, status: "" })}
                         className="ml-1 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-full w-4 h-4 flex items-center justify-center text-xs"
@@ -465,7 +556,7 @@ export default function Projects() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <p className="text-slate-600 dark:text-slate-400">
-                Found {projects.length} project{projects.length !== 1 ? 's' : ''}
+                {t(projects.length === 1 ? "projects.foundResults_one" : "projects.foundResults_other", { count: projects.length })}
               </p>
             </div>
 
@@ -480,28 +571,27 @@ export default function Projects() {
             <CardContent className="p-12 text-center">
               <Briefcase className="w-16 h-16 text-slate-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-                No projects found
+                {t("projects.noProjectsFound")}
               </h3>
               <p className="text-slate-600 dark:text-slate-400 mb-4">
-                {hasActiveFilters 
-                  ? "Try adjusting your filters to see more results."
-                  : "Be the first to post a project and find talented professionals!"
-                }
+                {hasActiveFilters
+                  ? t("projects.tryAdjustingFilters")
+                  : t("projects.beFirstToPost")}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 {hasActiveFilters && (
                   <Button variant="outline" onClick={clearFilters}>
-                    Clear Filters
+                    {t("projects.clearFilters")}
                   </Button>
                 )}
                 {isAuthenticated ? (
                   <Button onClick={() => setShowCreateDialog(true)}>
                     <Plus className="mr-2 h-4 w-4" />
-                    Post Your First Project
+                    {t("projects.postYourFirstProject")}
                   </Button>
                 ) : (
-                  <Button onClick={() => window.location.href = "/api/login"}>
-                    Sign In to Post Project
+                  <Button onClick={() => (window.location.href = "/api/login")}>
+                    {t("projects.signInToPostProject")}
                   </Button>
                 )}
               </div>
@@ -509,7 +599,7 @@ export default function Projects() {
           </Card>
         )}
       </div>
-      
+
       {/* Page Share */}
       <PageShare {...pageShareData} variant="floating" />
     </Layout>
