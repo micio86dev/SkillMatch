@@ -55,16 +55,20 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, [i18n, user, isAuthenticated]);
 
   const changeLanguage = async (language: string) => {
+    console.log('LanguageContext: Changing language to:', language);
+    
     // Change language immediately in i18n
     await i18n.changeLanguage(language);
     
     // Store in localStorage for browser persistence
-    localStorage.setItem('i18nextLng', language);
+    localStorage.setItem('vibesync-language', language);
     
     // If user is authenticated, save to their profile
     if (isAuthenticated) {
       updateLanguageMutation.mutate(language);
     }
+    
+    console.log('LanguageContext: Language changed to:', i18n.language);
   };
 
   return (

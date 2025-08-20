@@ -85,7 +85,7 @@ export default function Home() {
                 <Users className="h-6 w-6 text-primary" />
               </div>
               <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
-                {stats?.activeProfessionals || 0}
+                {(stats as any)?.activeProfessionals || 0}
               </h3>
               <p className="text-sm text-slate-700 dark:text-slate-300">{t("home.activeProfessionals")}</p>
             </CardContent>
@@ -97,7 +97,7 @@ export default function Home() {
                 <Briefcase className="h-6 w-6 text-green-600 dark:text-green-400" />
               </div>
               <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
-                {stats?.openProjects || 0}
+                {(stats as any)?.openProjects || 0}
               </h3>
               <p className="text-sm text-slate-700 dark:text-slate-300">{t("home.openProjects")}</p>
             </CardContent>
@@ -109,7 +109,7 @@ export default function Home() {
                 <MessageSquare className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
               <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
-                {stats?.unreadMessages || 0}
+                {(stats as any)?.unreadMessages || 0}
               </h3>
               <p className="text-sm text-slate-700 dark:text-slate-300">{t("home.unreadMessages")}</p>
             </CardContent>
@@ -121,7 +121,7 @@ export default function Home() {
                 <TrendingUp className="h-6 w-6 text-orange-600 dark:text-orange-400" />
               </div>
               <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
-                {stats?.profileViews || 0}
+                {(stats as any)?.profileViews || 0}
               </h3>
               <p className="text-sm text-slate-700 dark:text-slate-300">{t("home.profileViews")}</p>
             </CardContent>

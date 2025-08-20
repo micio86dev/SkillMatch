@@ -1,12 +1,7 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Globe } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const SUPPORTED_LANGUAGES = [
   { code: 'en', name: 'English', flag: '🇺🇸' },
@@ -24,60 +19,14 @@ const SUPPORTED_LANGUAGES = [
 ];
 
 export function LanguageSwitcher({ className }: { className?: string }) {
-  const { i18n, t } = useTranslation();
-  const { user, isAuthenticated } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const updateLanguageMutation = useMutation({
-    mutationFn: async (language: string) => {
-      if (isAuthenticated) {
-        // Update user preference in database
-        await apiRequest("PUT", "/api/auth/user/language", { language });
-      }
-    },
-    onSuccess: () => {
-      if (isAuthenticated) {
-        // Invalidate user query to refresh data
-        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      }
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to update language preference",
-        variant: "destructive",
-      });
-      console.error("Failed to update language:", error);
-    },
-  });
-
-  const handleLanguageChange = async (language: string) => {
-    console.log('=== LANGUAGE CHANGE START ===');
-    console.log('Requested language:', language);
-    console.log('Current i18n language before:', i18n.language);
-    
-    // Force language change immediately
-    await i18n.changeLanguage(language);
-    
-    console.log('i18n language after change:', i18n.language);
-    
-    // Store in localStorage
-    localStorage.setItem('vibesync-language', language);
-    
-    // Save to user profile
-    if (isAuthenticated) {
-      updateLanguageMutation.mutate(language);
-    }
-    
-    console.log('=== LANGUAGE CHANGE COMPLETE ===');
-  };
+  const { i18n } = useTranslation();
+  const { changeLanguage } = useLanguage();
 
   const currentLanguage = SUPPORTED_LANGUAGES.find(lang => lang.code === i18n.language) || SUPPORTED_LANGUAGES[0];
 
   return (
     <div className={className}>
-      <Select value={i18n.language} onValueChange={handleLanguageChange}>
+      <Select value={i18n.language} onValueChange={changeLanguage}>
         <SelectTrigger className="w-fit min-w-[120px]">
           <SelectValue>
             <div className="flex items-center gap-2">

@@ -26,11 +26,12 @@ function UnreadMessagesBadge() {
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  if (!unreadCount?.count || unreadCount.count === 0) return null;
+  const count = (unreadCount as any)?.count || 0;
+  if (!count || count === 0) return null;
 
   return (
     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center min-w-[20px] px-1">
-      {unreadCount.count > 99 ? '99+' : unreadCount.count}
+      {count > 99 ? '99+' : count}
     </span>
   );
 }
@@ -53,7 +54,6 @@ export function Layout({ children }: LayoutProps) {
     { name: 'Professionals', href: '/professionals', icon: Users },
     { name: 'Projects', href: '/projects', icon: Briefcase },
     ...(user?.userType === 'professional' ? [{ name: 'Subscriptions', href: '/subscriptions', icon: Bell }] : []),
-    { name: 'Preventives', href: '/preventives', icon: Shield },
     { name: 'Companies', href: '/companies', icon: Building2 },
     { name: 'Career Insights', href: '/career-insights', icon: Code },
     { name: 'Messages', href: '/messages', icon: MessageSquare },
