@@ -140,7 +140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(userWithoutPassword);
     } catch (error) {
       console.error("Error fetching user:", error);
-      const userId = req.user?.claims?.sub;
+      const userId = req.session.userId;
       const userLang = userId ? await getUserLanguage(userId, storage) : 'en';
       res.status(500).json({ message: translateMessage("Failed to fetch user", userLang) });
     }
@@ -161,7 +161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, user: updatedUser });
     } catch (error) {
       console.error("Error updating user language:", error);
-      const userId = req.user?.claims?.sub;
+      const userId = req.session.userId;
       const userLang = userId ? await getUserLanguage(userId, storage) : 'en';
       res.status(500).json({ message: translateMessage("Failed to update language preference", userLang) });
     }
@@ -193,7 +193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(profile);
     } catch (error) {
       console.error("Error creating professional profile:", error);
-      const userId = req.user?.claims?.sub;
+      const userId = req.session.userId;
       const userLang = userId ? await getUserLanguage(userId, storage) : 'en';
       res.status(500).json({ message: translateMessage("Failed to create professional profile", userLang) });
     }
@@ -207,7 +207,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(profile);
     } catch (error) {
       console.error("Error updating professional profile:", error);
-      const userId = req.user?.claims?.sub;
+      const userId = req.session.userId;
       const userLang = userId ? await getUserLanguage(userId, storage) : 'en';
       res.status(500).json({ message: translateMessage("Failed to update professional profile", userLang) });
     }
@@ -390,7 +390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Apply to a project - professionals only
   app.post('/api/projects/:id/apply', sessionAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const { id: projectId } = req.params;
       const applicationData = insertProjectApplicationSchema.parse({
         ...req.body,
@@ -434,7 +434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(application);
     } catch (error) {
       console.error('Error applying to project:', error);
-      const userId = req.user?.claims?.sub;
+      const userId = req.session.userId;
       const userLang = userId ? await getUserLanguage(userId, storage) : 'en';
       res.status(500).json({ message: translateMessage("Failed to apply to project", userLang) });
     }
@@ -443,7 +443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get applications for a project - company owners only
   app.get('/api/projects/:id/applications', sessionAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const { id: projectId } = req.params;
       
       // Check if user owns this project
@@ -462,7 +462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(applications);
     } catch (error) {
       console.error('Error fetching project applications:', error);
-      const userId = req.user?.claims?.sub;
+      const userId = req.session.userId;
       const userLang = userId ? await getUserLanguage(userId, storage) : 'en';
       res.status(500).json({ message: translateMessage("Failed to fetch applications", userLang) });
     }
@@ -471,7 +471,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update application status - company owners only
   app.patch('/api/applications/:id/status', sessionAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const { id: applicationId } = req.params;
       const { status } = req.body;
       
@@ -526,7 +526,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedApplication);
     } catch (error) {
       console.error('Error updating application status:', error);
-      const userId = req.user?.claims?.sub;
+      const userId = req.session.userId;
       const userLang = userId ? await getUserLanguage(userId, storage) : 'en';
       res.status(500).json({ message: translateMessage("Failed to update application status", userLang) });
     }
@@ -535,7 +535,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user's application status for a specific project
   app.get('/api/projects/:id/application-status', sessionAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const { id: projectId } = req.params;
       
       const application = await storage.getUserProjectApplication(projectId, userId);
@@ -546,7 +546,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ hasApplied: true, application });
     } catch (error) {
       console.error('Error checking application status:', error);
-      const userId = req.user?.claims?.sub;
+      const userId = req.session.userId;
       const userLang = userId ? await getUserLanguage(userId, storage) : 'en';
       res.status(500).json({ message: translateMessage("Failed to check application status", userLang) });
     }
@@ -568,7 +568,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/projects/:id/subscribe', sessionAuth, async (req: any, res) => {
     try {
       const { id: projectId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       
       // Check if project exists and is open
       const project = await storage.getProject(projectId);
@@ -597,7 +597,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/projects/:id/subscribe', sessionAuth, async (req: any, res) => {
     try {
       const { id: projectId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       
       await storage.unsubscribeFromProject(projectId, userId);
       res.json({ success: true, message: "Successfully unsubscribed from project" });
@@ -610,7 +610,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/projects/:id/subscription-status', sessionAuth, async (req: any, res) => {
     try {
       const { id: projectId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       
       const isSubscribed = await storage.isSubscribedToProject(projectId, userId);
       res.json({ isSubscribed });
@@ -622,7 +622,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/user/subscriptions', sessionAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const subscriptions = await storage.getUserProjectSubscriptions(userId);
       res.json(subscriptions);
     } catch (error) {
@@ -1307,7 +1307,7 @@ Make the preventive specific, practical, and helpful for project management.`;
   // Connection routes
   app.post('/api/connections/request', sessionAuth, async (req: any, res) => {
     try {
-      const requesterId = req.user.claims.sub;
+      const requesterId = req.session.userId;
       const { addresseeId } = req.body;
 
       if (!addresseeId) {
@@ -1343,7 +1343,7 @@ Make the preventive specific, practical, and helpful for project management.`;
 
   app.get('/api/connections/status/:userId', sessionAuth, async (req: any, res) => {
     try {
-      const currentUserId = req.user.claims.sub;
+      const currentUserId = req.session.userId;
       const { userId } = req.params;
       
       const connection = await storage.getConnectionStatus(currentUserId, userId);
@@ -1397,7 +1397,7 @@ Make the preventive specific, practical, and helpful for project management.`;
 
   app.get('/api/connections', sessionAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const { status } = req.query;
       
       const connections = await storage.getConnections(userId, status as string);
@@ -1454,7 +1454,7 @@ Make the preventive specific, practical, and helpful for project management.`;
 
   app.post('/api/connections', sessionAuth, async (req: any, res) => {
     try {
-      const requesterId = req.user.claims.sub;
+      const requesterId = req.session.userId;
       const { addresseeId } = z.object({ addresseeId: z.string() }).parse(req.body);
       const connection = await storage.createConnection(requesterId, addresseeId);
       res.json(connection);
@@ -1554,7 +1554,7 @@ Make the preventive specific, practical, and helpful for project management.`;
   // Stats endpoint
   app.get('/api/stats', async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.session.userId;
       const [activeProfessionals, openProjects, unreadMessages] = await Promise.all([
         storage.getActiveProfessionalsCount(),
         storage.getOpenProjectsCount(),
