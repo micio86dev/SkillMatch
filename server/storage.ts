@@ -166,11 +166,11 @@ export class DatabaseStorage implements IStorage {
       .insert(users)
       .values({
         id: userData.id,
-        email: userData.email || null,
-        firstName: userData.firstName || null,
-        lastName: userData.lastName || null,
+        email: userData.email || '',
+        firstName: userData.firstName || '',
+        lastName: userData.lastName || '',
         profileImageUrl: userData.profileImageUrl || null,
-        password: '', // Required field
+        password: '', // Required field for auth users
       })
       .onConflictDoUpdate({
         target: users.id,
