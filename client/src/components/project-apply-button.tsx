@@ -92,7 +92,7 @@ export function ProjectApplyButton({ projectId, projectTitle, isProjectFull }: P
         variant="outline" 
         className="flex items-center gap-2"
         onClick={() => {
-          window.location.href = "/api/auth/login";
+          window.location.href = "/login";
         }}
       >
         <Send className="h-4 w-4" />

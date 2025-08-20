@@ -25,6 +25,8 @@ import CareerInsights from "@/pages/career-insights";
 import Subscriptions from "@/pages/subscriptions";
 import Preventives from "@/pages/preventives";
 import MyProjects from "@/pages/my-projects";
+import Login from "@/pages/login";
+import Register from "@/pages/register";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -37,6 +39,8 @@ function Router() {
       {isLoading || !isAuthenticated ? (
         <>
           <Route path="/" component={Landing} />
+          <Route path="/login" component={Login} />
+          <Route path="/register" component={Register} />
           {/* Allow access to public pages when not logged in */}
           <Route path="/professionals" component={Professionals} />
           <Route path="/projects" component={Projects} />

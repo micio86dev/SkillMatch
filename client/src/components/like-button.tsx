@@ -67,7 +67,7 @@ export function LikeButton({ itemType, itemId, initialLikeCount, className = '',
     }
     
     if (!isAuthenticated) {
-      window.location.href = '/api/auth/login';
+      window.location.href = '/login';
       return;
     }
     likeMutation.mutate();

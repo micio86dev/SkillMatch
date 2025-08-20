@@ -58,7 +58,7 @@ export default function MyProjects() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/auth/login";
+        window.location.href = "/login";
       }, 500);
     }
   }, [error, toast]);

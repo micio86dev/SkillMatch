@@ -64,7 +64,7 @@ export default function Profile() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/auth/login";
+        window.location.href = "/login";
       }, 500);
       return;
     }
@@ -166,7 +166,7 @@ export default function Profile() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/auth/login";
+          window.location.href = "/login";
         }, 500);
         return;
       }
@@ -199,7 +199,7 @@ export default function Profile() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/auth/login";
+          window.location.href = "/login";
         }, 500);
         return;
       }
@@ -325,7 +325,7 @@ export default function Profile() {
                       credentials: 'include',
                     });
                     if (response.ok) {
-                      window.location.href = '/api/auth/login';
+                      window.location.href = '/login';
                     }
                   } catch (error) {
                     console.error('Logout failed:', error);

@@ -103,7 +103,7 @@ export default function ProjectDetail() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/auth/login";
+          window.location.href = "/login";
         }, 500);
         return;
       }
@@ -123,7 +123,7 @@ export default function ProjectDetail() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/auth/login";
+        window.location.href = "/login";
       }, 1000);
       return;
     }
