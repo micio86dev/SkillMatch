@@ -254,12 +254,12 @@ export class DatabaseStorage implements IStorage {
 
     // Search by name or email
     if (filters.search && filters.search.trim()) {
-      const searchTerm = `%${filters.search.trim().toLowerCase()}%`;
+      const searchTerm = filters.search.trim().toLowerCase();
       conditions.push(
         or(
-          sql`LOWER(CONCAT(${users.firstName}, ' ', ${users.lastName})) LIKE ${searchTerm}`,
-          sql`LOWER(${users.email}) LIKE ${searchTerm}`,
-          sql`LOWER(${professionalProfiles.title}) LIKE ${searchTerm}`
+          sql`LOWER(${users.firstName} || ' ' || ${users.lastName}) LIKE ${'%' + searchTerm + '%'}`,
+          sql`LOWER(${users.email}) LIKE ${'%' + searchTerm + '%'}`,
+          sql`LOWER(${professionalProfiles.title}) LIKE ${'%' + searchTerm + '%'}`
         )
       );
     }
