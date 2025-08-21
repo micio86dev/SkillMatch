@@ -1,0 +1,13 @@
+{
+  "timestamp": "2025-08-21T08:46:16.739Z",
+  "database_status": "OPERATIONAL",
+  "export_method": "API",
+  "platform": "VibeSync Professional Networking",
+  "stats": {
+    "activeProfessionals": "45",
+    "openProjects": "135",
+    "unreadMessages": 0,
+    "profileViews": 0
+  },
+  "note": "Database PostgreSQL con 45 professionisti e 135 progetti"
+}

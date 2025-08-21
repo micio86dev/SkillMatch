@@ -46,7 +46,6 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, like, sql, ne } from "drizzle-orm";
-import { nanoid } from "nanoid";
 
 // Interface for storage operations
 export interface IStorage {
@@ -175,69 +174,55 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(user: Omit<RegisterUser, 'confirmPassword'>): Promise<User> {
-    const id = nanoid();
-    await db.insert(users).values({
-      id,
-      ...user,
-    });
-    
-    // Get the created user since MySQL doesn't have .returning()
-    const [createdUser] = await db.select().from(users).where(eq(users.id, id));
+    const [createdUser] = await db.insert(users).values(user).returning();
     return createdUser;
   }
 
   async upsertUser(user: { id: string; email?: string; firstName?: string; lastName?: string; profileImageUrl?: string }): Promise<User> {
-    // For MySQL, we need to handle upsert differently since drizzle-orm MySQL doesn't have onDuplicateKeyUpdate in all versions
-    // First try to get existing user
-    const existing = await this.getUser(user.id);
-    
-    if (existing) {
-      // Update existing user
-      await db.update(users)
-        .set({
+    const [upsertedUser] = await db
+      .insert(users)
+      .values({
+        id: user.id,
+        email: user.email || '',
+        password: '', // Default for OAuth users
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profileImageUrl: user.profileImageUrl,
+      })
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
           firstName: user.firstName,
           lastName: user.lastName,
           profileImageUrl: user.profileImageUrl,
           updatedAt: new Date(),
-        })
-        .where(eq(users.id, user.id));
-    } else {
-      // Create new user
-      await db.insert(users).values({
-        id: user.id,
-        email: user.email || `${user.id}@oauth.local`,
-        password: nanoid(), // Random password for OAuth users
-        firstName: user.firstName,
-        lastName: user.lastName,
-        profileImageUrl: user.profileImageUrl,
-      });
-    }
-
-    const [upsertedUser] = await db.select().from(users).where(eq(users.id, user.id));
+        },
+      })
+      .returning();
     return upsertedUser;
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
-    await db.update(users)
+    const [updatedUser] = await db
+      .update(users)
       .set({
         ...updates,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, id));
-
-    const [updatedUser] = await db.select().from(users).where(eq(users.id, id));
+      .where(eq(users.id, id))
+      .returning();
     return updatedUser;
   }
 
   async updateUserLanguage(id: string, language: string): Promise<User> {
-    await db.update(users)
+    const [updatedUser] = await db
+      .update(users)
       .set({
         language,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, id));
-
-    const [updatedUser] = await db.select().from(users).where(eq(users.id, id));
+      .where(eq(users.id, id))
+      .returning();
     return updatedUser;
   }
 
@@ -248,25 +233,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createProfessionalProfile(profile: InsertProfessionalProfile): Promise<ProfessionalProfile> {
-    const id = nanoid();
-    await db.insert(professionalProfiles).values({
-      id,
-      ...profile,
-    });
-
-    const [createdProfile] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.id, id));
+    const [createdProfile] = await db.insert(professionalProfiles).values(profile).returning();
     return createdProfile;
   }
 
   async updateProfessionalProfile(userId: string, profile: Partial<InsertProfessionalProfile>): Promise<ProfessionalProfile> {
-    await db.update(professionalProfiles)
+    const [updatedProfile] = await db
+      .update(professionalProfiles)
       .set({
         ...profile,
         updatedAt: new Date(),
       })
-      .where(eq(professionalProfiles.userId, userId));
-
-    const [updatedProfile] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.userId, userId));
+      .where(eq(professionalProfiles.userId, userId))
+      .returning();
     return updatedProfile;
   }
 
@@ -310,8 +289,7 @@ export class DatabaseStorage implements IStorage {
           like(users.lastName, searchTerm),
           like(users.email, searchTerm),
           like(professionalProfiles.title, searchTerm),
-          like(professionalProfiles.bio, searchTerm),
-          sql`CONCAT(${users.firstName}, ' ', ${users.lastName}) LIKE ${searchTerm}`
+          like(professionalProfiles.bio, searchTerm)
         )
       );
     }
@@ -338,25 +316,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCompanyProfile(profile: InsertCompanyProfile): Promise<CompanyProfile> {
-    const id = nanoid();
-    await db.insert(companyProfiles).values({
-      id,
-      ...profile,
-    });
-
-    const [createdProfile] = await db.select().from(companyProfiles).where(eq(companyProfiles.id, id));
+    const [createdProfile] = await db.insert(companyProfiles).values(profile).returning();
     return createdProfile;
   }
 
   async updateCompanyProfile(userId: string, profile: Partial<InsertCompanyProfile>): Promise<CompanyProfile> {
-    await db.update(companyProfiles)
+    const [updatedProfile] = await db
+      .update(companyProfiles)
       .set({
         ...profile,
         updatedAt: new Date(),
       })
-      .where(eq(companyProfiles.userId, userId));
-
-    const [updatedProfile] = await db.select().from(companyProfiles).where(eq(companyProfiles.userId, userId));
+      .where(eq(companyProfiles.userId, userId))
+      .returning();
     return updatedProfile;
   }
 
@@ -450,25 +422,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createProject(project: InsertProject): Promise<Project> {
-    const id = nanoid();
-    await db.insert(projects).values({
-      id,
-      ...project,
-    });
-
-    const [createdProject] = await db.select().from(projects).where(eq(projects.id, id));
+    const [createdProject] = await db.insert(projects).values(project).returning();
     return createdProject;
   }
 
   async updateProject(id: string, project: Partial<InsertProject>): Promise<Project> {
-    await db.update(projects)
+    const [updatedProject] = await db
+      .update(projects)
       .set({
         ...project,
         updatedAt: new Date(),
       })
-      .where(eq(projects.id, id));
-
-    const [updatedProject] = await db.select().from(projects).where(eq(projects.id, id));
+      .where(eq(projects.id, id))
+      .returning();
     return updatedProject;
   }
 
@@ -502,25 +468,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPost(post: InsertPost): Promise<Post> {
-    const id = nanoid();
-    await db.insert(posts).values({
-      id,
-      ...post,
-    });
-
-    const [createdPost] = await db.select().from(posts).where(eq(posts.id, id));
+    const [createdPost] = await db.insert(posts).values(post).returning();
     return createdPost;
   }
 
   async updatePost(postId: string, userId: string, content: string): Promise<Post> {
-    await db.update(posts)
+    const [updatedPost] = await db
+      .update(posts)
       .set({
         content,
         updatedAt: new Date(),
       })
-      .where(and(eq(posts.id, postId), eq(posts.userId, userId)));
-
-    const [updatedPost] = await db.select().from(posts).where(eq(posts.id, postId));
+      .where(and(eq(posts.id, postId), eq(posts.userId, userId)))
+      .returning();
     return updatedPost;
   }
 
@@ -529,14 +489,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async likePost(postId: string, userId: string): Promise<void> {
-    const id = nanoid();
-    await db.insert(postLikes).values({
-      id,
-      postId,
-      userId,
-    });
-
-    // Update like count
+    await db.insert(postLikes).values({ postId, userId });
     await db.update(posts)
       .set({
         likesCount: sql`${posts.likesCount} + 1`,
@@ -546,8 +499,6 @@ export class DatabaseStorage implements IStorage {
 
   async unlikePost(postId: string, userId: string): Promise<void> {
     await db.delete(postLikes).where(and(eq(postLikes.postId, postId), eq(postLikes.userId, userId)));
-
-    // Update like count
     await db.update(posts)
       .set({
         likesCount: sql`GREATEST(${posts.likesCount} - 1, 0)`,
@@ -556,15 +507,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async addComment(postId: string, userId: string, content: string): Promise<void> {
-    const id = nanoid();
-    await db.insert(postComments).values({
-      id,
-      postId,
-      userId,
-      content,
-    });
-
-    // Update comment count
+    await db.insert(postComments).values({ postId, userId, content });
     await db.update(posts)
       .set({
         commentsCount: sql`${posts.commentsCount} + 1`,
@@ -584,7 +527,6 @@ export class DatabaseStorage implements IStorage {
     await db.delete(postComments).where(and(eq(postComments.id, commentId), eq(postComments.userId, userId)));
 
     if (comment) {
-      // Update comment count
       await db.update(posts)
         .set({
           commentsCount: sql`GREATEST(${posts.commentsCount} - 1, 0)`,
@@ -619,14 +561,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async likeComment(commentId: string, userId: string): Promise<void> {
-    const id = nanoid();
-    await db.insert(commentLikes).values({
-      id,
-      commentId,
-      userId,
-    });
-
-    // Update like count
+    await db.insert(commentLikes).values({ commentId, userId });
     await db.update(postComments)
       .set({
         likesCount: sql`${postComments.likesCount} + 1`,
@@ -636,8 +571,6 @@ export class DatabaseStorage implements IStorage {
 
   async unlikeComment(commentId: string, userId: string): Promise<void> {
     await db.delete(commentLikes).where(and(eq(commentLikes.commentId, commentId), eq(commentLikes.userId, userId)));
-
-    // Update like count
     await db.update(postComments)
       .set({
         likesCount: sql`GREATEST(${postComments.likesCount} - 1, 0)`,
@@ -646,14 +579,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async likeProject(projectId: string, userId: string): Promise<void> {
-    const id = nanoid();
-    await db.insert(projectLikes).values({
-      id,
-      projectId,
-      userId,
-    });
-
-    // Update like count
+    await db.insert(projectLikes).values({ projectId, userId });
     await db.update(projects)
       .set({
         likesCount: sql`${projects.likesCount} + 1`,
@@ -663,8 +589,6 @@ export class DatabaseStorage implements IStorage {
 
   async unlikeProject(projectId: string, userId: string): Promise<void> {
     await db.delete(projectLikes).where(and(eq(projectLikes.projectId, projectId), eq(projectLikes.userId, userId)));
-
-    // Update like count
     await db.update(projects)
       .set({
         likesCount: sql`GREATEST(${projects.likesCount} - 1, 0)`,
@@ -701,7 +625,7 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(desc(messages.createdAt));
 
-    // Get receiver data separately since we can't join twice with the same table
+    // Get receiver data separately
     const messagesWithSender = await Promise.all(results.map(async (result) => {
       const [receiver] = await db.select().from(users).where(eq(users.id, result.messages.receiverId));
       return {
@@ -715,13 +639,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async sendMessage(message: InsertMessage): Promise<Message> {
-    const id = nanoid();
-    await db.insert(messages).values({
-      id,
-      ...message,
-    });
-
-    const [createdMessage] = await db.select().from(messages).where(eq(messages.id, id));
+    const [createdMessage] = await db.insert(messages).values(message).returning();
     return createdMessage;
   }
 
@@ -775,13 +693,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createFeedback(feedbackData: InsertFeedback): Promise<Feedback> {
-    const id = nanoid();
-    await db.insert(feedback).values({
-      id,
-      ...feedbackData,
-    });
-
-    const [createdFeedback] = await db.select().from(feedback).where(eq(feedback.id, id));
+    const [createdFeedback] = await db.insert(feedback).values(feedbackData).returning();
     return createdFeedback;
   }
 
@@ -802,7 +714,7 @@ export class DatabaseStorage implements IStorage {
 
     const results = await query;
 
-    // Get user data for requester and addressee
+    // Get user data
     const connectionsWithUsers = await Promise.all(results.map(async (result) => {
       const [requester] = await db.select().from(users).where(eq(users.id, result.requesterId));
       const [addressee] = await db.select().from(users).where(eq(users.id, result.addresseeId));
@@ -818,26 +730,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createConnection(requesterId: string, addresseeId: string): Promise<Connection> {
-    const id = nanoid();
-    await db.insert(connections).values({
-      id,
+    const [createdConnection] = await db.insert(connections).values({
       requesterId,
       addresseeId,
-    });
-
-    const [createdConnection] = await db.select().from(connections).where(eq(connections.id, id));
+    }).returning();
     return createdConnection;
   }
 
   async updateConnectionStatus(id: string, status: string): Promise<Connection> {
-    await db.update(connections)
+    const [updatedConnection] = await db.update(connections)
       .set({
         status: status as any,
         updatedAt: new Date(),
       })
-      .where(eq(connections.id, id));
-
-    const [updatedConnection] = await db.select().from(connections).where(eq(connections.id, id));
+      .where(eq(connections.id, id))
+      .returning();
     return updatedConnection;
   }
 
@@ -858,13 +765,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createNotification(notification: InsertNotification): Promise<Notification> {
-    const id = nanoid();
-    await db.insert(notifications).values({
-      id,
-      ...notification,
-    });
-
-    const [createdNotification] = await db.select().from(notifications).where(eq(notifications.id, id));
+    const [createdNotification] = await db.insert(notifications).values(notification).returning();
     return createdNotification;
   }
 
@@ -890,27 +791,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateNotificationPreferences(userId: string, preferences: Partial<InsertNotificationPreferences>): Promise<NotificationPreferences> {
-    // First try to update existing preferences
-    const existing = await this.getNotificationPreferences(userId);
-    
-    if (existing) {
-      await db.update(notificationPreferences)
-        .set({
+    const [updatedPreferences] = await db
+      .insert(notificationPreferences)
+      .values({ userId, ...preferences })
+      .onConflictDoUpdate({
+        target: notificationPreferences.userId,
+        set: {
           ...preferences,
           updatedAt: new Date(),
-        })
-        .where(eq(notificationPreferences.userId, userId));
-    } else {
-      // Create new preferences if none exist
-      const id = nanoid();
-      await db.insert(notificationPreferences).values({
-        id,
-        userId,
-        ...preferences,
-      });
-    }
-
-    const [updatedPreferences] = await db.select().from(notificationPreferences).where(eq(notificationPreferences.userId, userId));
+        },
+      })
+      .returning();
     return updatedPreferences;
   }
 
@@ -970,14 +861,10 @@ export class DatabaseStorage implements IStorage {
 
   // Project subscription operations
   async subscribeToProject(userId: string, projectId: string): Promise<ProjectSubscription> {
-    const id = nanoid();
-    await db.insert(projectSubscriptions).values({
-      id,
+    const [subscription] = await db.insert(projectSubscriptions).values({
       userId,
       projectId,
-    });
-
-    const [subscription] = await db.select().from(projectSubscriptions).where(eq(projectSubscriptions.id, id));
+    }).returning();
     return subscription;
   }
 
@@ -1028,26 +915,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createProjectApplication(application: InsertProjectApplication): Promise<ProjectApplication> {
-    const id = nanoid();
-    await db.insert(projectApplications).values({
-      id,
-      ...application,
-    });
-
-    const [createdApplication] = await db.select().from(projectApplications).where(eq(projectApplications.id, id));
+    const [createdApplication] = await db.insert(projectApplications).values(application).returning();
     return createdApplication;
   }
 
   async updateProjectApplicationStatus(applicationId: string, status: string, respondedBy: string): Promise<ProjectApplication> {
-    await db.update(projectApplications)
+    const [updatedApplication] = await db.update(projectApplications)
       .set({
         status: status as any,
         respondedAt: new Date(),
         respondedBy,
       })
-      .where(eq(projectApplications.id, applicationId));
-
-    const [updatedApplication] = await db.select().from(projectApplications).where(eq(projectApplications.id, applicationId));
+      .where(eq(projectApplications.id, applicationId))
+      .returning();
     return updatedApplication;
   }
 
@@ -1075,25 +955,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createProjectPreventive(preventive: InsertProjectPreventive): Promise<ProjectPreventive> {
-    const id = nanoid();
-    await db.insert(projectPreventives).values({
-      id,
-      ...preventive,
-    });
-
-    const [createdPreventive] = await db.select().from(projectPreventives).where(eq(projectPreventives.id, id));
+    const [createdPreventive] = await db.insert(projectPreventives).values(preventive).returning();
     return createdPreventive;
   }
 
   async updateProjectPreventive(id: string, preventive: Partial<InsertProjectPreventive>): Promise<ProjectPreventive> {
-    await db.update(projectPreventives)
+    const [updatedPreventive] = await db.update(projectPreventives)
       .set({
         ...preventive,
         updatedAt: new Date(),
       })
-      .where(eq(projectPreventives.id, id));
-
-    const [updatedPreventive] = await db.select().from(projectPreventives).where(eq(projectPreventives.id, id));
+      .where(eq(projectPreventives.id, id))
+      .returning();
     return updatedPreventive;
   }
 
