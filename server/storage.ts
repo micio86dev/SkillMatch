@@ -45,7 +45,8 @@ import {
   type InsertProjectPreventive,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, or, ilike, sql, ne } from "drizzle-orm";
+import { eq, desc, and, or, like, sql, ne } from "drizzle-orm";
+import { nanoid } from "nanoid";
 
 // Interface for storage operations
 export interface IStorage {
@@ -124,111 +125,149 @@ export interface IStorage {
   updateConnectionStatus(id: string, status: string): Promise<Connection>;
   
   // Notification operations
-  getNotifications(userId: string, limit?: number): Promise<(Notification & { relatedUser?: User })[]>;
-  getNotification(userId: string, title: string): Promise<(Notification & { relatedUser?: User }) | undefined>;
+  getNotifications(userId: string, limit?: number): Promise<(Notification & { relatedUser: User | null })[]>;
   createNotification(notification: InsertNotification): Promise<Notification>;
   markNotificationAsRead(notificationId: string): Promise<void>;
-  markNotificationEmailSent(userId: string, title: string): Promise<void>;
-  markNotificationPushSent(userId: string, title: string): Promise<void>;
   getUnreadNotificationsCount(userId: string): Promise<number>;
-  getNotificationsSince(userId: string, since: Date): Promise<Notification[]>;
   
   // Notification preferences operations
   getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined>;
-  upsertNotificationPreferences(preferences: InsertNotificationPreferences): Promise<NotificationPreferences>;
+  updateNotificationPreferences(userId: string, preferences: Partial<InsertNotificationPreferences>): Promise<NotificationPreferences>;
+  
+  // Conversation operations
+  getConversations(userId: string): Promise<Array<{
+    user: User;
+    lastMessage: Message;
+    unreadCount: number;
+  }>>;
+  
+  // Project subscription operations
+  subscribeToProject(userId: string, projectId: string): Promise<ProjectSubscription>;
+  unsubscribeFromProject(userId: string, projectId: string): Promise<void>;
+  isSubscribedToProject(userId: string, projectId: string): Promise<boolean>;
   
   // Project application operations
-  getProjectApplicationById(applicationId: string): Promise<ProjectApplication | undefined>;
-  getUserProjectApplication(projectId: string, userId: string): Promise<ProjectApplication | undefined>;
+  getProjectApplications(projectId: string): Promise<(ProjectApplication & { user: User })[]>;
+  getUserApplications(userId: string): Promise<(ProjectApplication & { project: Project & { company: User } })[]>;
+  createProjectApplication(application: InsertProjectApplication): Promise<ProjectApplication>;
+  updateProjectApplicationStatus(applicationId: string, status: string, respondedBy: string): Promise<ProjectApplication>;
+  getProjectApplicationsCount(projectId: string): Promise<number>;
+  getAcceptedProjectApplicationsCount(projectId: string): Promise<number>;
+  
+  // Project preventive operations
+  getProjectPreventives(userId: string): Promise<ProjectPreventive[]>;
+  createProjectPreventive(preventive: InsertProjectPreventive): Promise<ProjectPreventive>;
+  updateProjectPreventive(id: string, preventive: Partial<InsertProjectPreventive>): Promise<ProjectPreventive>;
+  deleteProjectPreventive(id: string): Promise<void>;
+  validateProjectAgainstPreventives(project: InsertProject, userId: string): Promise<string[]>;
 }
 
 export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    return user || undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user;
+    return user || undefined;
   }
 
-  async createUser(userData: Omit<RegisterUser, 'confirmPassword'>): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .returning();
-    return user;
+  async createUser(user: Omit<RegisterUser, 'confirmPassword'>): Promise<User> {
+    const id = nanoid();
+    await db.insert(users).values({
+      id,
+      ...user,
+    });
+    
+    // Get the created user since MySQL doesn't have .returning()
+    const [createdUser] = await db.select().from(users).where(eq(users.id, id));
+    return createdUser;
   }
 
-  async upsertUser(userData: { id: string; email?: string; firstName?: string; lastName?: string; profileImageUrl?: string }): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values({
-        id: userData.id,
-        email: userData.email || '',
-        firstName: userData.firstName || '',
-        lastName: userData.lastName || '',
-        profileImageUrl: userData.profileImageUrl || null,
-        password: '', // Required field for auth users
-      })
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          profileImageUrl: userData.profileImageUrl,
+  async upsertUser(user: { id: string; email?: string; firstName?: string; lastName?: string; profileImageUrl?: string }): Promise<User> {
+    // For MySQL, we need to handle upsert differently since drizzle-orm MySQL doesn't have onDuplicateKeyUpdate in all versions
+    // First try to get existing user
+    const existing = await this.getUser(user.id);
+    
+    if (existing) {
+      // Update existing user
+      await db.update(users)
+        .set({
+          firstName: user.firstName,
+          lastName: user.lastName,
+          profileImageUrl: user.profileImageUrl,
           updatedAt: new Date(),
-        },
-      })
-      .returning();
-    return user;
+        })
+        .where(eq(users.id, user.id));
+    } else {
+      // Create new user
+      await db.insert(users).values({
+        id: user.id,
+        email: user.email || `${user.id}@oauth.local`,
+        password: nanoid(), // Random password for OAuth users
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profileImageUrl: user.profileImageUrl,
+      });
+    }
+
+    const [upsertedUser] = await db.select().from(users).where(eq(users.id, user.id));
+    return upsertedUser;
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
-    const [updatedUser] = await db
-      .update(users)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(users.id, id))
-      .returning();
+    await db.update(users)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id));
+
+    const [updatedUser] = await db.select().from(users).where(eq(users.id, id));
     return updatedUser;
   }
 
   async updateUserLanguage(id: string, language: string): Promise<User> {
-    const [user] = await db
-      .update(users)
-      .set({ language, updatedAt: new Date() })
-      .where(eq(users.id, id))
-      .returning();
-    return user;
+    await db.update(users)
+      .set({
+        language,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id));
+
+    const [updatedUser] = await db.select().from(users).where(eq(users.id, id));
+    return updatedUser;
   }
 
   // Professional profile operations
   async getProfessionalProfile(userId: string): Promise<ProfessionalProfile | undefined> {
-    const [profile] = await db
-      .select()
-      .from(professionalProfiles)
-      .where(eq(professionalProfiles.userId, userId));
-    return profile;
+    const [profile] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.userId, userId));
+    return profile || undefined;
   }
 
   async createProfessionalProfile(profile: InsertProfessionalProfile): Promise<ProfessionalProfile> {
-    const [newProfile] = await db
-      .insert(professionalProfiles)
-      .values(profile)
-      .returning();
-    return newProfile;
+    const id = nanoid();
+    await db.insert(professionalProfiles).values({
+      id,
+      ...profile,
+    });
+
+    const [createdProfile] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.id, id));
+    return createdProfile;
   }
 
   async updateProfessionalProfile(userId: string, profile: Partial<InsertProfessionalProfile>): Promise<ProfessionalProfile> {
-    const [updated] = await db
-      .update(professionalProfiles)
-      .set({ ...profile, updatedAt: new Date() })
-      .where(eq(professionalProfiles.userId, userId))
-      .returning();
-    return updated;
+    await db.update(professionalProfiles)
+      .set({
+        ...profile,
+        updatedAt: new Date(),
+      })
+      .where(eq(professionalProfiles.userId, userId));
+
+    const [updatedProfile] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.userId, userId));
+    return updatedProfile;
   }
 
   async searchProfessionals(filters: {
@@ -247,31 +286,6 @@ export class DatabaseStorage implements IStorage {
 
     const conditions = [];
 
-    // Exclude current user if specified
-    if (filters.excludeUserId) {
-      conditions.push(ne(users.id, filters.excludeUserId));
-    }
-
-    // Search by name or email
-    if (filters.search && filters.search.trim()) {
-      const searchTerm = filters.search.trim().toLowerCase();
-      conditions.push(
-        or(
-          sql`LOWER(${users.firstName} || ' ' || ${users.lastName}) LIKE ${'%' + searchTerm + '%'}`,
-          sql`LOWER(${users.email}) LIKE ${'%' + searchTerm + '%'}`,
-          sql`LOWER(${professionalProfiles.title}) LIKE ${'%' + searchTerm + '%'}`
-        )
-      );
-    }
-
-    if (filters.skills && filters.skills.length > 0) {
-      conditions.push(
-        or(...filters.skills.map(skill => 
-          sql`${professionalProfiles.skills} @> ARRAY[${skill}]::text[]`
-        ))
-      );
-    }
-
     if (filters.availability) {
       conditions.push(eq(professionalProfiles.availability, filters.availability as any));
     }
@@ -280,12 +294,30 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(professionalProfiles.seniorityLevel, filters.seniorityLevel as any));
     }
 
-    if (filters.minRate !== undefined) {
+    if (filters.minRate) {
       conditions.push(sql`${professionalProfiles.hourlyRate} >= ${filters.minRate}`);
     }
 
-    if (filters.maxRate !== undefined) {
+    if (filters.maxRate) {
       conditions.push(sql`${professionalProfiles.hourlyRate} <= ${filters.maxRate}`);
+    }
+
+    if (filters.search) {
+      const searchTerm = `%${filters.search}%`;
+      conditions.push(
+        or(
+          like(users.firstName, searchTerm),
+          like(users.lastName, searchTerm),
+          like(users.email, searchTerm),
+          like(professionalProfiles.title, searchTerm),
+          like(professionalProfiles.bio, searchTerm),
+          sql`CONCAT(${users.firstName}, ' ', ${users.lastName}) LIKE ${searchTerm}`
+        )
+      );
+    }
+
+    if (filters.excludeUserId) {
+      conditions.push(ne(users.id, filters.excludeUserId));
     }
 
     if (conditions.length > 0) {
@@ -295,69 +327,61 @@ export class DatabaseStorage implements IStorage {
     const results = await query;
     return results.map(result => ({
       ...result.professional_profiles,
-      user: result.users
+      user: result.users,
     }));
   }
 
   // Company profile operations
   async getCompanyProfile(userId: string): Promise<CompanyProfile | undefined> {
-    const [profile] = await db
-      .select()
-      .from(companyProfiles)
-      .where(eq(companyProfiles.userId, userId));
-    return profile;
+    const [profile] = await db.select().from(companyProfiles).where(eq(companyProfiles.userId, userId));
+    return profile || undefined;
   }
 
   async createCompanyProfile(profile: InsertCompanyProfile): Promise<CompanyProfile> {
-    const [newProfile] = await db
-      .insert(companyProfiles)
-      .values(profile)
-      .returning();
-    return newProfile;
+    const id = nanoid();
+    await db.insert(companyProfiles).values({
+      id,
+      ...profile,
+    });
+
+    const [createdProfile] = await db.select().from(companyProfiles).where(eq(companyProfiles.id, id));
+    return createdProfile;
   }
 
   async updateCompanyProfile(userId: string, profile: Partial<InsertCompanyProfile>): Promise<CompanyProfile> {
-    const [updated] = await db
-      .update(companyProfiles)
-      .set({ ...profile, updatedAt: new Date() })
-      .where(eq(companyProfiles.userId, userId))
-      .returning();
-    return updated;
+    await db.update(companyProfiles)
+      .set({
+        ...profile,
+        updatedAt: new Date(),
+      })
+      .where(eq(companyProfiles.userId, userId));
+
+    const [updatedProfile] = await db.select().from(companyProfiles).where(eq(companyProfiles.userId, userId));
+    return updatedProfile;
   }
 
   async getCompanies(excludeUserId?: string): Promise<(CompanyProfile & { user: User; projectsCount: number })[]> {
-    // Build where conditions
-    let whereConditions = [eq(users.userType, 'company')];
-    
-    // Exclude current user if specified
-    if (excludeUserId) {
-      whereConditions.push(ne(users.id, excludeUserId));
-    }
-    
-    const companiesWithProjects = await db
+    let query = db
       .select({
-        id: companyProfiles.id,
-        userId: companyProfiles.userId,
-        companyName: companyProfiles.companyName,
-        description: companyProfiles.description,
-        industry: companyProfiles.industry,
-        websiteUrl: companyProfiles.websiteUrl,
-        linkedinUrl: companyProfiles.linkedinUrl,
-        location: companyProfiles.location,
-        companySize: companyProfiles.companySize,
-        createdAt: companyProfiles.createdAt,
-        updatedAt: companyProfiles.updatedAt,
+        company: companyProfiles,
         user: users,
-        projectsCount: sql<number>`count(${projects.id})::int`
+        projectsCount: sql<number>`COUNT(${projects.id})`,
       })
       .from(companyProfiles)
       .innerJoin(users, eq(companyProfiles.userId, users.id))
-      .leftJoin(projects, and(eq(projects.companyUserId, users.id), eq(projects.status, 'open')))
-      .where(and(...whereConditions))
-      .groupBy(companyProfiles.id, users.id)
-      .orderBy(desc(companyProfiles.createdAt));
+      .leftJoin(projects, eq(projects.companyUserId, users.id))
+      .groupBy(companyProfiles.id, users.id);
 
-    return companiesWithProjects;
+    if (excludeUserId) {
+      query = query.where(ne(users.id, excludeUserId)) as any;
+    }
+
+    const results = await query;
+    return results.map(result => ({
+      ...result.company,
+      user: result.user,
+      projectsCount: result.projectsCount,
+    }));
   }
 
   async getCompanyWithProjects(id: string): Promise<(CompanyProfile & { user: User; projects: Project[] }) | undefined> {
@@ -367,38 +391,33 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(users, eq(companyProfiles.userId, users.id))
       .where(eq(companyProfiles.id, id));
 
-    if (!company) {
-      return undefined;
-    }
+    if (!company) return undefined;
 
     const companyProjects = await db
       .select()
       .from(projects)
-      .where(eq(projects.companyUserId, company.users.id))
-      .orderBy(desc(projects.createdAt));
+      .where(eq(projects.companyUserId, company.users.id));
 
     return {
       ...company.company_profiles,
       user: company.users,
-      projects: companyProjects
+      projects: companyProjects,
     };
   }
 
   // Project operations
   async getProject(id: string): Promise<(Project & { company: User }) | undefined> {
-    const [result] = await db
+    const [project] = await db
       .select()
       .from(projects)
       .innerJoin(users, eq(projects.companyUserId, users.id))
       .where(eq(projects.id, id));
-    
-    if (!result) {
-      return undefined;
-    }
-    
+
+    if (!project) return undefined;
+
     return {
-      ...result.projects,
-      company: result.users
+      ...project.projects,
+      company: project.users,
     };
   }
 
@@ -426,25 +445,31 @@ export class DatabaseStorage implements IStorage {
     const results = await query;
     return results.map(result => ({
       ...result.projects,
-      company: result.users
+      company: result.users,
     }));
   }
 
   async createProject(project: InsertProject): Promise<Project> {
-    const [newProject] = await db
-      .insert(projects)
-      .values(project)
-      .returning();
-    return newProject;
+    const id = nanoid();
+    await db.insert(projects).values({
+      id,
+      ...project,
+    });
+
+    const [createdProject] = await db.select().from(projects).where(eq(projects.id, id));
+    return createdProject;
   }
 
   async updateProject(id: string, project: Partial<InsertProject>): Promise<Project> {
-    const [updated] = await db
-      .update(projects)
-      .set({ ...project, updatedAt: new Date() })
-      .where(eq(projects.id, id))
-      .returning();
-    return updated;
+    await db.update(projects)
+      .set({
+        ...project,
+        updatedAt: new Date(),
+      })
+      .where(eq(projects.id, id));
+
+    const [updatedProject] = await db.select().from(projects).where(eq(projects.id, id));
+    return updatedProject;
   }
 
   // Post operations
@@ -472,500 +497,200 @@ export class DatabaseStorage implements IStorage {
     const results = await query;
     return results.map(result => ({
       ...result.posts,
-      user: result.users
-    }));
-  }
-
-  async createPost(post: InsertPost): Promise<Post> {
-    const [newPost] = await db
-      .insert(posts)
-      .values(post)
-      .returning();
-    return newPost;
-  }
-
-  async updatePost(postId: string, userId: string, content: string): Promise<Post> {
-    // First verify the user owns the post
-    const [existingPost] = await db.select().from(posts).where(eq(posts.id, postId));
-    if (!existingPost || existingPost.userId !== userId) {
-      throw new Error("Post not found or user not authorized to edit");
-    }
-
-    const [updatedPost] = await db
-      .update(posts)
-      .set({ content, updatedAt: new Date() })
-      .where(eq(posts.id, postId))
-      .returning();
-    return updatedPost;
-  }
-
-  async deletePost(postId: string, userId: string): Promise<void> {
-    // First verify the user owns the post
-    const [existingPost] = await db.select().from(posts).where(eq(posts.id, postId));
-    if (!existingPost || existingPost.userId !== userId) {
-      throw new Error("Post not found or user not authorized to delete");
-    }
-
-    // Delete in transaction to maintain consistency
-    await db.transaction(async (tx) => {
-      // Delete all comments and their likes
-      await tx.delete(commentLikes).where(
-        sql`${commentLikes.commentId} IN (SELECT id FROM ${postComments} WHERE ${postComments.postId} = ${postId})`
-      );
-      await tx.delete(postComments).where(eq(postComments.postId, postId));
-      
-      // Delete post likes
-      await tx.delete(postLikes).where(eq(postLikes.postId, postId));
-      
-      // Delete the post
-      await tx.delete(posts).where(eq(posts.id, postId));
-    });
-  }
-
-  async likePost(postId: string, userId: string): Promise<void> {
-    await db.transaction(async (tx) => {
-      await tx.insert(postLikes).values({ postId, userId });
-      await tx
-        .update(posts)
-        .set({ likesCount: sql`${posts.likesCount} + 1` })
-        .where(eq(posts.id, postId));
-    });
-  }
-
-  async unlikePost(postId: string, userId: string): Promise<void> {
-    await db.transaction(async (tx) => {
-      await tx
-        .delete(postLikes)
-        .where(and(eq(postLikes.postId, postId), eq(postLikes.userId, userId)));
-      await tx
-        .update(posts)
-        .set({ likesCount: sql`${posts.likesCount} - 1` })
-        .where(eq(posts.id, postId));
-    });
-  }
-
-  async addComment(postId: string, userId: string, content: string): Promise<void> {
-    await db.transaction(async (tx) => {
-      await tx.insert(postComments).values({ postId, userId, content });
-      await tx
-        .update(posts)
-        .set({ commentsCount: sql`${posts.commentsCount} + 1` })
-        .where(eq(posts.id, postId));
-    });
-  }
-
-  async updateComment(commentId: string, userId: string, content: string): Promise<void> {
-    // First verify the user owns the comment
-    const [existingComment] = await db.select().from(postComments).where(eq(postComments.id, commentId));
-    if (!existingComment || existingComment.userId !== userId) {
-      throw new Error("Comment not found or user not authorized to edit");
-    }
-
-    await db
-      .update(postComments)
-      .set({ content })
-      .where(eq(postComments.id, commentId));
-  }
-
-  async deleteComment(commentId: string, userId: string): Promise<void> {
-    // First verify the user owns the comment
-    const [existingComment] = await db.select().from(postComments).where(eq(postComments.id, commentId));
-    if (!existingComment || existingComment.userId !== userId) {
-      throw new Error("Comment not found or user not authorized to delete");
-    }
-
-    await db.transaction(async (tx) => {
-      // Delete comment likes
-      await tx.delete(commentLikes).where(eq(commentLikes.commentId, commentId));
-      
-      // Delete the comment
-      await tx.delete(postComments).where(eq(postComments.id, commentId));
-      
-      // Decrease comment count on the post
-      await tx
-        .update(posts)
-        .set({ commentsCount: sql`${posts.commentsCount} - 1` })
-        .where(eq(posts.id, existingComment.postId));
-    });
-  }
-
-  async getPostComments(postId: string): Promise<Array<{ id: string; content: string; createdAt: string; user: User; likesCount: number }>> {
-    const results = await db
-      .select()
-      .from(postComments)
-      .innerJoin(users, eq(postComments.userId, users.id))
-      .where(eq(postComments.postId, postId))
-      .orderBy(desc(postComments.createdAt));
-    
-    return results.map(result => ({
-      id: result.post_comments.id,
-      content: result.post_comments.content,
-      createdAt: result.post_comments.createdAt?.toISOString() || new Date().toISOString(),
-      likesCount: result.post_comments.likesCount || 0,
-      user: result.users
-    }));
-  }
-
-  async getComment(commentId: string): Promise<{ id: string; userId: string; content: string } | undefined> {
-    const [comment] = await db
-      .select({ id: postComments.id, userId: postComments.userId, content: postComments.content })
-      .from(postComments)
-      .where(eq(postComments.id, commentId));
-    return comment;
-  }
-
-  async likeComment(commentId: string, userId: string): Promise<void> {
-    await db.transaction(async (tx) => {
-      await tx.insert(commentLikes).values({ commentId, userId });
-      await tx
-        .update(postComments)
-        .set({ likesCount: sql`${postComments.likesCount} + 1` })
-        .where(eq(postComments.id, commentId));
-    });
-  }
-
-  async unlikeComment(commentId: string, userId: string): Promise<void> {
-    await db.transaction(async (tx) => {
-      await tx
-        .delete(commentLikes)
-        .where(and(eq(commentLikes.commentId, commentId), eq(commentLikes.userId, userId)));
-      await tx
-        .update(postComments)
-        .set({ likesCount: sql`${postComments.likesCount} - 1` })
-        .where(eq(postComments.id, commentId));
-    });
-  }
-
-  async likeProject(projectId: string, userId: string): Promise<void> {
-    await db.transaction(async (tx) => {
-      await tx.insert(projectLikes).values({ projectId, userId });
-      await tx
-        .update(projects)
-        .set({ likesCount: sql`${projects.likesCount} + 1` })
-        .where(eq(projects.id, projectId));
-    });
-  }
-
-  async unlikeProject(projectId: string, userId: string): Promise<void> {
-    await db.transaction(async (tx) => {
-      await tx
-        .delete(projectLikes)
-        .where(and(eq(projectLikes.projectId, projectId), eq(projectLikes.userId, userId)));
-      await tx
-        .update(projects)
-        .set({ likesCount: sql`${projects.likesCount} - 1` })
-        .where(eq(projects.id, projectId));
-    });
-  }
-
-  // Project subscription methods
-  async subscribeToProject(projectId: string, userId: string): Promise<void> {
-    await db.insert(projectSubscriptions).values({ projectId, userId });
-  }
-
-  async unsubscribeFromProject(projectId: string, userId: string): Promise<void> {
-    await db
-      .delete(projectSubscriptions)
-      .where(and(eq(projectSubscriptions.projectId, projectId), eq(projectSubscriptions.userId, userId)));
-  }
-
-  async isSubscribedToProject(projectId: string, userId: string): Promise<boolean> {
-    const [subscription] = await db
-      .select()
-      .from(projectSubscriptions)
-      .where(and(eq(projectSubscriptions.projectId, projectId), eq(projectSubscriptions.userId, userId)))
-      .limit(1);
-    return !!subscription;
-  }
-
-  async getProjectSubscribers(projectId: string): Promise<User[]> {
-    const results = await db
-      .select()
-      .from(projectSubscriptions)
-      .innerJoin(users, eq(projectSubscriptions.userId, users.id))
-      .where(eq(projectSubscriptions.projectId, projectId));
-    
-    return results.map(result => result.users);
-  }
-
-  async getUserProjectSubscriptions(userId: string): Promise<(Project & { company: User })[]> {
-    const results = await db
-      .select()
-      .from(projectSubscriptions)
-      .innerJoin(projects, eq(projectSubscriptions.projectId, projects.id))
-      .innerJoin(users, eq(projects.companyUserId, users.id))
-      .where(eq(projectSubscriptions.userId, userId))
-      .orderBy(desc(projectSubscriptions.createdAt));
-    
-    return results.map(result => ({
-      ...result.projects,
-      company: result.users,
-    }));
-  }
-
-  // Project preventives CRUD operations
-  async createProjectPreventive(preventiveData: InsertProjectPreventive): Promise<ProjectPreventive> {
-    const [preventive] = await db
-      .insert(projectPreventives)
-      .values(preventiveData)
-      .returning();
-    return preventive;
-  }
-
-  async getProjectPreventives(userId: string): Promise<ProjectPreventive[]> {
-    const userPreventives = await db
-      .select()
-      .from(projectPreventives)
-      .where(and(eq(projectPreventives.userId, userId), eq(projectPreventives.isActive, true)))
-      .orderBy(desc(projectPreventives.createdAt));
-    
-    const globalPreventives = await db
-      .select()
-      .from(projectPreventives)
-      .where(and(eq(projectPreventives.isGlobal, true), eq(projectPreventives.isActive, true)))
-      .orderBy(desc(projectPreventives.createdAt));
-    
-    return [...userPreventives, ...globalPreventives];
-  }
-
-  async getProjectPreventive(id: string, userId: string): Promise<ProjectPreventive | undefined> {
-    const [preventive] = await db
-      .select()
-      .from(projectPreventives)
-      .where(
-        and(
-          eq(projectPreventives.id, id),
-          or(
-            eq(projectPreventives.userId, userId),
-            eq(projectPreventives.isGlobal, true)
-          )
-        )
-      );
-    return preventive;
-  }
-
-  async updateProjectPreventive(id: string, userId: string, updates: Partial<InsertProjectPreventive>): Promise<ProjectPreventive | undefined> {
-    const [preventive] = await db
-      .update(projectPreventives)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(and(eq(projectPreventives.id, id), eq(projectPreventives.userId, userId)))
-      .returning();
-    return preventive;
-  }
-
-  async deleteProjectPreventive(id: string, userId: string): Promise<void> {
-    await db
-      .delete(projectPreventives)
-      .where(and(eq(projectPreventives.id, id), eq(projectPreventives.userId, userId)));
-  }
-
-  async getProjectPreventivesByCategory(userId: string, category: string): Promise<ProjectPreventive[]> {
-    const userPreventives = await db
-      .select()
-      .from(projectPreventives)
-      .where(
-        and(
-          eq(projectPreventives.userId, userId),
-          category ? eq(projectPreventives.category, category as any) : sql`1=1`,
-          eq(projectPreventives.isActive, true)
-        )
-      );
-    
-    const globalPreventives = await db
-      .select()
-      .from(projectPreventives)
-      .where(
-        and(
-          eq(projectPreventives.isGlobal, true),
-          category ? eq(projectPreventives.category, category as any) : sql`1=1`,
-          eq(projectPreventives.isActive, true)
-        )
-      );
-    
-    return [...userPreventives, ...globalPreventives];
-  }
-
-  // Project applications CRUD operations
-  async createProjectApplication(applicationData: InsertProjectApplication): Promise<ProjectApplication> {
-    const [application] = await db
-      .insert(projectApplications)
-      .values(applicationData)
-      .returning();
-    return application;
-  }
-
-  async getProjectApplications(projectId: string): Promise<(ProjectApplication & { user: User })[]> {
-    const results = await db
-      .select()
-      .from(projectApplications)
-      .innerJoin(users, eq(projectApplications.userId, users.id))
-      .where(eq(projectApplications.projectId, projectId))
-      .orderBy(desc(projectApplications.appliedAt));
-    
-    return results.map(result => ({
-      ...result.project_applications,
       user: result.users,
     }));
   }
 
-  async getUserApplications(userId: string): Promise<(ProjectApplication & { project: Project & { company: User } })[]> {
-    const results = await db
-      .select()
-      .from(projectApplications)
-      .innerJoin(projects, eq(projectApplications.projectId, projects.id))
-      .innerJoin(users, eq(projects.companyUserId, users.id))
-      .where(eq(projectApplications.userId, userId))
-      .orderBy(desc(projectApplications.appliedAt));
+  async createPost(post: InsertPost): Promise<Post> {
+    const id = nanoid();
+    await db.insert(posts).values({
+      id,
+      ...post,
+    });
+
+    const [createdPost] = await db.select().from(posts).where(eq(posts.id, id));
+    return createdPost;
+  }
+
+  async updatePost(postId: string, userId: string, content: string): Promise<Post> {
+    await db.update(posts)
+      .set({
+        content,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(posts.id, postId), eq(posts.userId, userId)));
+
+    const [updatedPost] = await db.select().from(posts).where(eq(posts.id, postId));
+    return updatedPost;
+  }
+
+  async deletePost(postId: string, userId: string): Promise<void> {
+    await db.delete(posts).where(and(eq(posts.id, postId), eq(posts.userId, userId)));
+  }
+
+  async likePost(postId: string, userId: string): Promise<void> {
+    const id = nanoid();
+    await db.insert(postLikes).values({
+      id,
+      postId,
+      userId,
+    });
+
+    // Update like count
+    await db.update(posts)
+      .set({
+        likesCount: sql`${posts.likesCount} + 1`,
+      })
+      .where(eq(posts.id, postId));
+  }
+
+  async unlikePost(postId: string, userId: string): Promise<void> {
+    await db.delete(postLikes).where(and(eq(postLikes.postId, postId), eq(postLikes.userId, userId)));
+
+    // Update like count
+    await db.update(posts)
+      .set({
+        likesCount: sql`GREATEST(${posts.likesCount} - 1, 0)`,
+      })
+      .where(eq(posts.id, postId));
+  }
+
+  async addComment(postId: string, userId: string, content: string): Promise<void> {
+    const id = nanoid();
+    await db.insert(postComments).values({
+      id,
+      postId,
+      userId,
+      content,
+    });
+
+    // Update comment count
+    await db.update(posts)
+      .set({
+        commentsCount: sql`${posts.commentsCount} + 1`,
+      })
+      .where(eq(posts.id, postId));
+  }
+
+  async updateComment(commentId: string, userId: string, content: string): Promise<void> {
+    await db.update(postComments)
+      .set({ content })
+      .where(and(eq(postComments.id, commentId), eq(postComments.userId, userId)));
+  }
+
+  async deleteComment(commentId: string, userId: string): Promise<void> {
+    const [comment] = await db.select({ postId: postComments.postId }).from(postComments).where(eq(postComments.id, commentId));
     
+    await db.delete(postComments).where(and(eq(postComments.id, commentId), eq(postComments.userId, userId)));
+
+    if (comment) {
+      // Update comment count
+      await db.update(posts)
+        .set({
+          commentsCount: sql`GREATEST(${posts.commentsCount} - 1, 0)`,
+        })
+        .where(eq(posts.id, comment.postId));
+    }
+  }
+
+  async getPostComments(postId: string): Promise<Array<{ id: string; content: string; createdAt: string; user: User; likesCount: number }>> {
+    const results = await db
+      .select({
+        comment: postComments,
+        user: users,
+      })
+      .from(postComments)
+      .innerJoin(users, eq(postComments.userId, users.id))
+      .where(eq(postComments.postId, postId))
+      .orderBy(desc(postComments.createdAt));
+
     return results.map(result => ({
-      ...result.project_applications,
-      project: {
-        ...result.projects,
-        company: result.users,
-      },
+      id: result.comment.id,
+      content: result.comment.content,
+      createdAt: result.comment.createdAt!.toISOString(),
+      user: result.user,
+      likesCount: result.comment.likesCount || 0,
     }));
   }
 
-  async acceptProjectApplication(applicationId: string, respondedBy: string): Promise<ProjectApplication | undefined> {
-    const [application] = await db
-      .update(projectApplications)
-      .set({ 
-        status: "accepted", 
-        respondedAt: new Date(),
-        respondedBy 
+  async getComment(commentId: string): Promise<{ id: string; userId: string; content: string } | undefined> {
+    const [comment] = await db.select().from(postComments).where(eq(postComments.id, commentId));
+    return comment || undefined;
+  }
+
+  async likeComment(commentId: string, userId: string): Promise<void> {
+    const id = nanoid();
+    await db.insert(commentLikes).values({
+      id,
+      commentId,
+      userId,
+    });
+
+    // Update like count
+    await db.update(postComments)
+      .set({
+        likesCount: sql`${postComments.likesCount} + 1`,
       })
-      .where(eq(projectApplications.id, applicationId))
-      .returning();
-    
-    if (application) {
-      // Check if project should be marked as assigned
-      await this.checkAndUpdateProjectStatus(application.projectId);
-    }
-    
-    return application;
+      .where(eq(postComments.id, commentId));
   }
 
-  async rejectProjectApplication(applicationId: string, respondedBy: string): Promise<ProjectApplication | undefined> {
-    const [application] = await db
-      .update(projectApplications)
-      .set({ 
-        status: "rejected", 
-        respondedAt: new Date(),
-        respondedBy 
+  async unlikeComment(commentId: string, userId: string): Promise<void> {
+    await db.delete(commentLikes).where(and(eq(commentLikes.commentId, commentId), eq(commentLikes.userId, userId)));
+
+    // Update like count
+    await db.update(postComments)
+      .set({
+        likesCount: sql`GREATEST(${postComments.likesCount} - 1, 0)`,
       })
-      .where(eq(projectApplications.id, applicationId))
-      .returning();
-    
-    return application;
+      .where(eq(postComments.id, commentId));
   }
 
-  async getAcceptedApplicationsCount(projectId: string): Promise<number> {
-    const result = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(projectApplications)
-      .where(
-        and(
-          eq(projectApplications.projectId, projectId),
-          eq(projectApplications.status, "accepted")
-        )
-      );
-    
-    return result[0]?.count || 0;
-  }
+  async likeProject(projectId: string, userId: string): Promise<void> {
+    const id = nanoid();
+    await db.insert(projectLikes).values({
+      id,
+      projectId,
+      userId,
+    });
 
-  async checkAndUpdateProjectStatus(projectId: string): Promise<void> {
-    const [project] = await db
-      .select()
-      .from(projects)
+    // Update like count
+    await db.update(projects)
+      .set({
+        likesCount: sql`${projects.likesCount} + 1`,
+      })
       .where(eq(projects.id, projectId));
-    
-    if (!project) return;
-    
-    const acceptedCount = await this.getAcceptedApplicationsCount(projectId);
-    
-    // If accepted applications equal team size, mark project as assigned
-    if (acceptedCount >= (project.teamSize || 1) && project.status === "open") {
-      await db
-        .update(projects)
-        .set({ 
-          status: "assigned",
-          updatedAt: new Date()
-        })
-        .where(eq(projects.id, projectId));
-    }
   }
 
-  async hasUserAppliedToProject(projectId: string, userId: string): Promise<boolean> {
-    const [application] = await db
-      .select()
-      .from(projectApplications)
-      .where(
-        and(
-          eq(projectApplications.projectId, projectId),
-          eq(projectApplications.userId, userId)
-        )
-      )
-      .limit(1);
-    
-    return !!application;
-  }
+  async unlikeProject(projectId: string, userId: string): Promise<void> {
+    await db.delete(projectLikes).where(and(eq(projectLikes.projectId, projectId), eq(projectLikes.userId, userId)));
 
-  async getProjectApplicationById(applicationId: string): Promise<ProjectApplication | undefined> {
-    const [application] = await db
-      .select()
-      .from(projectApplications)
-      .where(eq(projectApplications.id, applicationId));
-    return application;
-  }
-
-  async getUserProjectApplication(projectId: string, userId: string): Promise<ProjectApplication | undefined> {
-    const [application] = await db
-      .select()
-      .from(projectApplications)
-      .where(
-        and(
-          eq(projectApplications.projectId, projectId),
-          eq(projectApplications.userId, userId)
-        )
-      );
-    return application;
+    // Update like count
+    await db.update(projects)
+      .set({
+        likesCount: sql`GREATEST(${projects.likesCount} - 1, 0)`,
+      })
+      .where(eq(projects.id, projectId));
   }
 
   async isPostLikedByUser(postId: string, userId: string): Promise<boolean> {
-    const [like] = await db
-      .select()
-      .from(postLikes)
-      .where(and(eq(postLikes.postId, postId), eq(postLikes.userId, userId)))
-      .limit(1);
+    const [like] = await db.select().from(postLikes).where(and(eq(postLikes.postId, postId), eq(postLikes.userId, userId)));
     return !!like;
   }
 
   async isCommentLikedByUser(commentId: string, userId: string): Promise<boolean> {
-    const [like] = await db
-      .select()
-      .from(commentLikes)
-      .where(and(eq(commentLikes.commentId, commentId), eq(commentLikes.userId, userId)))
-      .limit(1);
+    const [like] = await db.select().from(commentLikes).where(and(eq(commentLikes.commentId, commentId), eq(commentLikes.userId, userId)));
     return !!like;
   }
 
   async isProjectLikedByUser(projectId: string, userId: string): Promise<boolean> {
-    const [like] = await db
-      .select()
-      .from(projectLikes)
-      .where(and(eq(projectLikes.projectId, projectId), eq(projectLikes.userId, userId)))
-      .limit(1);
+    const [like] = await db.select().from(projectLikes).where(and(eq(projectLikes.projectId, projectId), eq(projectLikes.userId, userId)));
     return !!like;
   }
 
   // Message operations
   async getConversation(userId1: string, userId2: string): Promise<(Message & { sender: User; receiver: User })[]> {
     const results = await db
-      .select({
-        message: messages,
-        sender: users,
-        receiver: users,
-      })
+      .select()
       .from(messages)
       .innerJoin(users, eq(messages.senderId, users.id))
       .where(
@@ -974,136 +699,64 @@ export class DatabaseStorage implements IStorage {
           and(eq(messages.senderId, userId2), eq(messages.receiverId, userId1))
         )
       )
-      .orderBy(messages.createdAt); // Changed to ascending order for proper chat display
+      .orderBy(desc(messages.createdAt));
 
-    return results.map(result => ({
-      ...result.message,
-      sender: result.sender,
-      receiver: result.receiver,
+    // Get receiver data separately since we can't join twice with the same table
+    const messagesWithSender = await Promise.all(results.map(async (result) => {
+      const [receiver] = await db.select().from(users).where(eq(users.id, result.messages.receiverId));
+      return {
+        ...result.messages,
+        sender: result.users,
+        receiver: receiver!,
+      };
     }));
+
+    return messagesWithSender;
   }
 
   async sendMessage(message: InsertMessage): Promise<Message> {
-    const [newMessage] = await db
-      .insert(messages)
-      .values(message)
-      .returning();
-    return newMessage;
+    const id = nanoid();
+    await db.insert(messages).values({
+      id,
+      ...message,
+    });
+
+    const [createdMessage] = await db.select().from(messages).where(eq(messages.id, id));
+    return createdMessage;
   }
 
   async markMessageAsRead(messageId: string): Promise<void> {
-    await db
-      .update(messages)
+    await db.update(messages)
       .set({ isRead: true })
       .where(eq(messages.id, messageId));
   }
 
   async getUnreadMessagesCount(userId: string): Promise<number> {
     const [result] = await db
-      .select({ count: sql`count(*)` })
+      .select({ count: sql<number>`COUNT(*)` })
       .from(messages)
       .where(and(eq(messages.receiverId, userId), eq(messages.isRead, false)));
-    return Number(result.count) || 0;
+
+    return result?.count || 0;
   }
 
-  async getConversations(userId: string): Promise<any[]> {
-    // Get all conversations where the user is either sender or receiver
-    const latestMessages = await db
-      .select({
-        messageId: messages.id,
-        senderId: messages.senderId,
-        receiverId: messages.receiverId,
-        content: messages.content,
-        createdAt: messages.createdAt,
-        isRead: messages.isRead,
-        otherUserId: sql<string>`CASE WHEN ${messages.senderId} = ${userId} THEN ${messages.receiverId} ELSE ${messages.senderId} END`,
-      })
-      .from(messages)
-      .where(
-        or(
-          eq(messages.senderId, userId),
-          eq(messages.receiverId, userId)
-        )
-      )
-      .orderBy(desc(messages.createdAt));
-
-    // Group by other user and get the latest message for each conversation
-    const conversationMap = new Map();
-    for (const msg of latestMessages) {
-      if (!conversationMap.has(msg.otherUserId)) {
-        conversationMap.set(msg.otherUserId, msg);
-      }
-    }
-
-    // Get user details for each conversation partner
-    const conversations = [];
-    for (const [otherUserId, lastMessage] of Array.from(conversationMap.entries())) {
-      const otherUser = await this.getUser(otherUserId);
-      if (otherUser) {
-        // Count unread messages from this user
-        const [unreadResult] = await db
-          .select({ count: sql`count(*)` })
-          .from(messages)
-          .where(
-            and(
-              eq(messages.senderId, otherUserId),
-              eq(messages.receiverId, userId),
-              eq(messages.isRead, false)
-            )
-          );
-        
-        conversations.push({
-          id: otherUserId,
-          contact: {
-            id: otherUser.id,
-            name: `${otherUser.firstName || ''} ${otherUser.lastName || ''}`.trim() || 'User',
-            title: 'Professional', // Could be enhanced with profile data
-            profileImageUrl: otherUser.profileImageUrl,
-            isOnline: false // Could be enhanced with real-time status
-          },
-          lastMessage: {
-            content: lastMessage.content,
-            timestamp: lastMessage.createdAt,
-            senderId: lastMessage.senderId
-          },
-          unreadCount: Number(unreadResult.count) || 0
-        });
-      }
-    }
-
-    return conversations.sort((a, b) => 
-      new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime()
-    );
-  }
-
-  async markConversationAsRead(currentUserId: string, otherUserId: string): Promise<void> {
-    await db
-      .update(messages)
-      .set({ isRead: true })
-      .where(
-        and(
-          eq(messages.senderId, otherUserId),
-          eq(messages.receiverId, currentUserId),
-          eq(messages.isRead, false)
-        )
-      );
-  }
-
+  // Stats operations
   async getActiveProfessionalsCount(): Promise<number> {
     const [result] = await db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`COUNT(*)` })
       .from(professionalProfiles)
-      .innerJoin(users, eq(professionalProfiles.userId, users.id))
-      .where(eq(users.userType, 'professional'));
-    return result.count || 0;
+      .where(eq(professionalProfiles.availability, 'available'));
+
+    return result?.count || 0;
   }
 
   async getOpenProjectsCount(): Promise<number> {
     const [result] = await db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`COUNT(*)` })
       .from(projects)
       .where(eq(projects.status, 'open'));
-    return result.count || 0;
+
+    return result?.count || 0;
   }
 
   // Feedback operations
@@ -1122,83 +775,74 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createFeedback(feedbackData: InsertFeedback): Promise<Feedback> {
-    const [newFeedback] = await db
-      .insert(feedback)
-      .values(feedbackData)
-      .returning();
-    return newFeedback;
+    const id = nanoid();
+    await db.insert(feedback).values({
+      id,
+      ...feedbackData,
+    });
+
+    const [createdFeedback] = await db.select().from(feedback).where(eq(feedback.id, id));
+    return createdFeedback;
   }
 
   // Connection operations
   async getConnections(userId: string, status?: string): Promise<(Connection & { requester: User; addressee: User })[]> {
-    const conditions = [
-      or(eq(connections.requesterId, userId), eq(connections.addresseeId, userId))
-    ];
-
-    if (status) {
-      conditions.push(eq(connections.status, status as any));
-    }
-
-    // Get connections with both requester and addressee details
-    const results = await db
-      .select({
-        connection: connections,
-        requester: users,
-      })
-      .from(connections)
-      .innerJoin(users, eq(connections.requesterId, users.id))
-      .where(and(...conditions));
-
-    // Now get addressee details for each connection
-    const connectionsWithDetails = [];
-    for (const result of results) {
-      const addressee = await this.getUser(result.connection.addresseeId);
-      if (addressee) {
-        connectionsWithDetails.push({
-          ...result.connection,
-          requester: result.requester,
-          addressee: addressee,
-        });
-      }
-    }
-
-    return connectionsWithDetails;
-  }
-
-  async getConnectionStatus(userId1: string, userId2: string): Promise<Connection | null> {
-    const [connection] = await db
+    let query = db
       .select()
       .from(connections)
-      .where(
-        or(
-          and(eq(connections.requesterId, userId1), eq(connections.addresseeId, userId2)),
-          and(eq(connections.requesterId, userId2), eq(connections.addresseeId, userId1))
-        )
-      )
-      .limit(1);
-    
-    return connection || null;
+      .where(or(eq(connections.requesterId, userId), eq(connections.addresseeId, userId)))
+      .orderBy(desc(connections.createdAt));
+
+    if (status) {
+      query = query.where(and(
+        or(eq(connections.requesterId, userId), eq(connections.addresseeId, userId)),
+        eq(connections.status, status as any)
+      )) as any;
+    }
+
+    const results = await query;
+
+    // Get user data for requester and addressee
+    const connectionsWithUsers = await Promise.all(results.map(async (result) => {
+      const [requester] = await db.select().from(users).where(eq(users.id, result.requesterId));
+      const [addressee] = await db.select().from(users).where(eq(users.id, result.addresseeId));
+
+      return {
+        ...result,
+        requester: requester!,
+        addressee: addressee!,
+      };
+    }));
+
+    return connectionsWithUsers;
   }
 
   async createConnection(requesterId: string, addresseeId: string): Promise<Connection> {
-    const [connection] = await db
-      .insert(connections)
-      .values({ requesterId, addresseeId })
-      .returning();
-    return connection;
+    const id = nanoid();
+    await db.insert(connections).values({
+      id,
+      requesterId,
+      addresseeId,
+    });
+
+    const [createdConnection] = await db.select().from(connections).where(eq(connections.id, id));
+    return createdConnection;
   }
 
   async updateConnectionStatus(id: string, status: string): Promise<Connection> {
-    const [updated] = await db
-      .update(connections)
-      .set({ status: status as any, updatedAt: new Date() })
-      .where(eq(connections.id, id))
-      .returning();
-    return updated;
+    await db.update(connections)
+      .set({
+        status: status as any,
+        updatedAt: new Date(),
+      })
+      .where(eq(connections.id, id));
+
+    const [updatedConnection] = await db.select().from(connections).where(eq(connections.id, id));
+    return updatedConnection;
   }
 
   // Notification operations
-  async getNotifications(userId: string, limit = 20): Promise<(Notification & { relatedUser?: User })[]> {
+  async getNotifications(userId: string, limit = 50): Promise<(Notification & { relatedUser: User | null })[]> {
     const results = await db
       .select()
       .from(notifications)
@@ -1209,95 +853,290 @@ export class DatabaseStorage implements IStorage {
 
     return results.map(result => ({
       ...result.notifications,
-      relatedUser: result.users || undefined,
+      relatedUser: result.users,
     }));
   }
 
-  async getNotification(userId: string, title: string): Promise<(Notification & { relatedUser?: User }) | undefined> {
-    const results = await db
-      .select()
-      .from(notifications)
-      .leftJoin(users, eq(notifications.relatedUserId, users.id))
-      .where(and(eq(notifications.userId, userId), eq(notifications.title, title)))
-      .orderBy(desc(notifications.createdAt))
-      .limit(1);
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const id = nanoid();
+    await db.insert(notifications).values({
+      id,
+      ...notification,
+    });
 
-    if (results.length === 0) return undefined;
-
-    const result = results[0];
-    return {
-      ...result.notifications,
-      relatedUser: result.users || undefined,
-    };
-  }
-
-  async createNotification(notificationData: InsertNotification): Promise<Notification> {
-    const [notification] = await db
-      .insert(notifications)
-      .values(notificationData)
-      .returning();
-    return notification;
+    const [createdNotification] = await db.select().from(notifications).where(eq(notifications.id, id));
+    return createdNotification;
   }
 
   async markNotificationAsRead(notificationId: string): Promise<void> {
-    await db
-      .update(notifications)
+    await db.update(notifications)
       .set({ isRead: true })
       .where(eq(notifications.id, notificationId));
   }
 
-  async markNotificationEmailSent(userId: string, title: string): Promise<void> {
-    await db
-      .update(notifications)
-      .set({ isEmailSent: true })
-      .where(and(eq(notifications.userId, userId), eq(notifications.title, title)));
-  }
-
-  async markNotificationPushSent(userId: string, title: string): Promise<void> {
-    await db
-      .update(notifications)
-      .set({ isPushSent: true })
-      .where(and(eq(notifications.userId, userId), eq(notifications.title, title)));
-  }
-
   async getUnreadNotificationsCount(userId: string): Promise<number> {
     const [result] = await db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`COUNT(*)` })
       .from(notifications)
       .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
-    return result.count || 0;
-  }
 
-  async getNotificationsSince(userId: string, since: Date): Promise<Notification[]> {
-    return await db
-      .select()
-      .from(notifications)
-      .where(and(eq(notifications.userId, userId), sql`${notifications.createdAt} >= ${since}`))
-      .orderBy(desc(notifications.createdAt));
+    return result?.count || 0;
   }
 
   // Notification preferences operations
   async getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined> {
-    const [preferences] = await db
-      .select()
-      .from(notificationPreferences)
-      .where(eq(notificationPreferences.userId, userId));
-    return preferences;
+    const [preferences] = await db.select().from(notificationPreferences).where(eq(notificationPreferences.userId, userId));
+    return preferences || undefined;
   }
 
-  async upsertNotificationPreferences(preferencesData: InsertNotificationPreferences): Promise<NotificationPreferences> {
-    const [preferences] = await db
-      .insert(notificationPreferences)
-      .values(preferencesData)
-      .onConflictDoUpdate({
-        target: notificationPreferences.userId,
-        set: {
-          ...preferencesData,
+  async updateNotificationPreferences(userId: string, preferences: Partial<InsertNotificationPreferences>): Promise<NotificationPreferences> {
+    // First try to update existing preferences
+    const existing = await this.getNotificationPreferences(userId);
+    
+    if (existing) {
+      await db.update(notificationPreferences)
+        .set({
+          ...preferences,
           updatedAt: new Date(),
-        },
+        })
+        .where(eq(notificationPreferences.userId, userId));
+    } else {
+      // Create new preferences if none exist
+      const id = nanoid();
+      await db.insert(notificationPreferences).values({
+        id,
+        userId,
+        ...preferences,
+      });
+    }
+
+    const [updatedPreferences] = await db.select().from(notificationPreferences).where(eq(notificationPreferences.userId, userId));
+    return updatedPreferences;
+  }
+
+  // Conversation operations
+  async getConversations(userId: string): Promise<Array<{
+    user: User;
+    lastMessage: Message;
+    unreadCount: number;
+  }>> {
+    // Get all conversations for this user
+    const conversations = await db
+      .select({
+        senderId: messages.senderId,
+        receiverId: messages.receiverId,
+        content: messages.content,
+        createdAt: messages.createdAt,
+        isRead: messages.isRead,
       })
-      .returning();
-    return preferences;
+      .from(messages)
+      .where(or(eq(messages.senderId, userId), eq(messages.receiverId, userId)))
+      .orderBy(desc(messages.createdAt));
+
+    // Group by other user and get latest message
+    const conversationMap = new Map();
+    
+    for (const message of conversations) {
+      const otherUserId = message.senderId === userId ? message.receiverId : message.senderId;
+      
+      if (!conversationMap.has(otherUserId)) {
+        conversationMap.set(otherUserId, {
+          lastMessage: message,
+          unreadCount: 0,
+        });
+      }
+
+      // Count unread messages from the other user
+      if (message.receiverId === userId && !message.isRead) {
+        conversationMap.get(otherUserId).unreadCount++;
+      }
+    }
+
+    // Get user data for each conversation
+    const result = [];
+    for (const [otherUserId, data] of conversationMap) {
+      const [user] = await db.select().from(users).where(eq(users.id, otherUserId));
+      if (user) {
+        result.push({
+          user,
+          lastMessage: data.lastMessage,
+          unreadCount: data.unreadCount,
+        });
+      }
+    }
+
+    return result;
+  }
+
+  // Project subscription operations
+  async subscribeToProject(userId: string, projectId: string): Promise<ProjectSubscription> {
+    const id = nanoid();
+    await db.insert(projectSubscriptions).values({
+      id,
+      userId,
+      projectId,
+    });
+
+    const [subscription] = await db.select().from(projectSubscriptions).where(eq(projectSubscriptions.id, id));
+    return subscription;
+  }
+
+  async unsubscribeFromProject(userId: string, projectId: string): Promise<void> {
+    await db.delete(projectSubscriptions).where(
+      and(eq(projectSubscriptions.userId, userId), eq(projectSubscriptions.projectId, projectId))
+    );
+  }
+
+  async isSubscribedToProject(userId: string, projectId: string): Promise<boolean> {
+    const [subscription] = await db.select().from(projectSubscriptions).where(
+      and(eq(projectSubscriptions.userId, userId), eq(projectSubscriptions.projectId, projectId))
+    );
+    return !!subscription;
+  }
+
+  // Project application operations
+  async getProjectApplications(projectId: string): Promise<(ProjectApplication & { user: User })[]> {
+    const results = await db
+      .select()
+      .from(projectApplications)
+      .innerJoin(users, eq(projectApplications.userId, users.id))
+      .where(eq(projectApplications.projectId, projectId))
+      .orderBy(desc(projectApplications.appliedAt));
+
+    return results.map(result => ({
+      ...result.project_applications,
+      user: result.users,
+    }));
+  }
+
+  async getUserApplications(userId: string): Promise<(ProjectApplication & { project: Project & { company: User } })[]> {
+    const results = await db
+      .select()
+      .from(projectApplications)
+      .innerJoin(projects, eq(projectApplications.projectId, projects.id))
+      .innerJoin(users, eq(projects.companyUserId, users.id))
+      .where(eq(projectApplications.userId, userId))
+      .orderBy(desc(projectApplications.appliedAt));
+
+    return results.map(result => ({
+      ...result.project_applications,
+      project: {
+        ...result.projects,
+        company: result.users,
+      },
+    }));
+  }
+
+  async createProjectApplication(application: InsertProjectApplication): Promise<ProjectApplication> {
+    const id = nanoid();
+    await db.insert(projectApplications).values({
+      id,
+      ...application,
+    });
+
+    const [createdApplication] = await db.select().from(projectApplications).where(eq(projectApplications.id, id));
+    return createdApplication;
+  }
+
+  async updateProjectApplicationStatus(applicationId: string, status: string, respondedBy: string): Promise<ProjectApplication> {
+    await db.update(projectApplications)
+      .set({
+        status: status as any,
+        respondedAt: new Date(),
+        respondedBy,
+      })
+      .where(eq(projectApplications.id, applicationId));
+
+    const [updatedApplication] = await db.select().from(projectApplications).where(eq(projectApplications.id, applicationId));
+    return updatedApplication;
+  }
+
+  async getProjectApplicationsCount(projectId: string): Promise<number> {
+    const [result] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(projectApplications)
+      .where(eq(projectApplications.projectId, projectId));
+
+    return result?.count || 0;
+  }
+
+  async getAcceptedProjectApplicationsCount(projectId: string): Promise<number> {
+    const [result] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(projectApplications)
+      .where(and(eq(projectApplications.projectId, projectId), eq(projectApplications.status, 'accepted')));
+
+    return result?.count || 0;
+  }
+
+  // Project preventive operations
+  async getProjectPreventives(userId: string): Promise<ProjectPreventive[]> {
+    return await db.select().from(projectPreventives).where(eq(projectPreventives.userId, userId));
+  }
+
+  async createProjectPreventive(preventive: InsertProjectPreventive): Promise<ProjectPreventive> {
+    const id = nanoid();
+    await db.insert(projectPreventives).values({
+      id,
+      ...preventive,
+    });
+
+    const [createdPreventive] = await db.select().from(projectPreventives).where(eq(projectPreventives.id, id));
+    return createdPreventive;
+  }
+
+  async updateProjectPreventive(id: string, preventive: Partial<InsertProjectPreventive>): Promise<ProjectPreventive> {
+    await db.update(projectPreventives)
+      .set({
+        ...preventive,
+        updatedAt: new Date(),
+      })
+      .where(eq(projectPreventives.id, id));
+
+    const [updatedPreventive] = await db.select().from(projectPreventives).where(eq(projectPreventives.id, id));
+    return updatedPreventive;
+  }
+
+  async deleteProjectPreventive(id: string): Promise<void> {
+    await db.delete(projectPreventives).where(eq(projectPreventives.id, id));
+  }
+
+  async validateProjectAgainstPreventives(project: InsertProject, userId: string): Promise<string[]> {
+    const preventives = await db.select().from(projectPreventives).where(
+      and(
+        or(eq(projectPreventives.userId, userId), eq(projectPreventives.isGlobal, true)),
+        eq(projectPreventives.isActive, true)
+      )
+    );
+
+    const errors: string[] = [];
+
+    for (const preventive of preventives) {
+      try {
+        const rule = JSON.parse(preventive.validationRule);
+        
+        // Simple validation logic - can be extended
+        if (rule.type === 'budget' && rule.minBudget && project.budgetMin && Number(project.budgetMin) < rule.minBudget) {
+          errors.push(preventive.errorMessage);
+        }
+        
+        if (rule.type === 'skills' && rule.requiredSkills && project.requiredSkills) {
+          const projectSkills = Array.isArray(project.requiredSkills) ? project.requiredSkills : [];
+          const hasRequiredSkills = rule.requiredSkills.some((skill: string) => 
+            projectSkills.some(ps => ps.toLowerCase().includes(skill.toLowerCase()))
+          );
+          
+          if (!hasRequiredSkills) {
+            errors.push(preventive.errorMessage);
+          }
+        }
+      } catch (e) {
+        // Skip invalid validation rules
+        console.error('Invalid validation rule:', e);
+      }
+    }
+
+    return errors;
   }
 }
 

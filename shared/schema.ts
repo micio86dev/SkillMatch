@@ -2,235 +2,237 @@ import { sql } from 'drizzle-orm';
 import { relations } from 'drizzle-orm';
 import {
   index,
-  jsonb,
-  pgTable,
-  timestamp,
+  json,
+  mysqlTable,
+  datetime,
   varchar,
   text,
-  integer,
+  int,
   boolean,
   decimal,
-} from "drizzle-orm/pg-core";
+} from "drizzle-orm/mysql-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Session storage table.
 // (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
-export const sessions = pgTable(
+export const sessions = mysqlTable(
   "sessions",
   {
-    sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").notNull(),
-    expire: timestamp("expire").notNull(),
+    sid: varchar("sid", { length: 255 }).primaryKey(),
+    sess: json("sess").notNull(),
+    expire: datetime("expire").notNull(),
   },
-  (table) => [index("IDX_session_expire").on(table.expire)],
+  (table) => ({
+    IDX_session_expire: index("IDX_session_expire").on(table.expire)
+  })
 );
 
 // User storage table with email/password authentication
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").notNull().unique(),
-  password: varchar("password").notNull(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
-  profileImageUrl: varchar("profile_image_url"),
-  userType: varchar("user_type", { enum: ["professional", "company"] }).notNull().default("professional"),
+export const users = mysqlTable("users", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  password: varchar("password", { length: 255 }).notNull(),
+  firstName: varchar("first_name", { length: 100 }),
+  lastName: varchar("last_name", { length: 100 }),
+  profileImageUrl: varchar("profile_image_url", { length: 500 }),
+  userType: varchar("user_type", { length: 20, enum: ["professional", "company"] }).notNull().default("professional"),
   language: varchar("language", { length: 5 }).default("en"),
   isEmailVerified: boolean("is_email_verified").default(false),
   isBot: boolean("is_bot").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
 });
 
 // IT Professional profiles
-export const professionalProfiles = pgTable("professional_profiles", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  title: varchar("title"),
+export const professionalProfiles = mysqlTable("professional_profiles", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  userId: varchar("user_id", { length: 36 }).notNull(),
+  title: varchar("title", { length: 200 }),
   bio: text("bio"),
   cv: text("cv"),
-  skills: text("skills").array(),
-  seniorityLevel: varchar("seniority_level", { enum: ["junior", "mid", "senior", "lead", "principal"] }),
+  skills: json("skills"), // Changed from array to JSON
+  seniorityLevel: varchar("seniority_level", { length: 20, enum: ["junior", "mid", "senior", "lead", "principal"] }),
   hourlyRate: decimal("hourly_rate", { precision: 10, scale: 2 }),
-  availability: varchar("availability", { enum: ["available", "partially_available", "unavailable"] }).default("available"),
-  cvUrl: varchar("cv_url"),
-  portfolioUrl: varchar("portfolio_url"),
-  githubUrl: varchar("github_url"),
-  linkedinUrl: varchar("linkedin_url"),
-  twitterUrl: varchar("twitter_url"),
-  websiteUrl: varchar("website_url"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  availability: varchar("availability", { length: 30, enum: ["available", "partially_available", "unavailable"] }).default("available"),
+  cvUrl: varchar("cv_url", { length: 500 }),
+  portfolioUrl: varchar("portfolio_url", { length: 500 }),
+  githubUrl: varchar("github_url", { length: 500 }),
+  linkedinUrl: varchar("linkedin_url", { length: 500 }),
+  twitterUrl: varchar("twitter_url", { length: 500 }),
+  websiteUrl: varchar("website_url", { length: 500 }),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
 });
 
 // Company profiles
-export const companyProfiles = pgTable("company_profiles", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  companyName: varchar("company_name"),
+export const companyProfiles = mysqlTable("company_profiles", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  userId: varchar("user_id", { length: 36 }).notNull(),
+  companyName: varchar("company_name", { length: 200 }),
   description: text("description"),
-  industry: varchar("industry"),
-  websiteUrl: varchar("website_url"),
-  linkedinUrl: varchar("linkedin_url"),
-  location: varchar("location"),
-  companySize: varchar("company_size", { enum: ["1-10", "11-50", "51-200", "201-1000", "1000+"] }),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  industry: varchar("industry", { length: 100 }),
+  websiteUrl: varchar("website_url", { length: 500 }),
+  linkedinUrl: varchar("linkedin_url", { length: 500 }),
+  location: varchar("location", { length: 200 }),
+  companySize: varchar("company_size", { length: 20, enum: ["1-10", "11-50", "51-200", "201-1000", "1000+"] }),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
 });
 
 // Projects posted by companies
-export const projects = pgTable("projects", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  companyUserId: varchar("company_user_id").references(() => users.id).notNull(),
-  title: varchar("title").notNull(),
+export const projects = mysqlTable("projects", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  companyUserId: varchar("company_user_id", { length: 36 }).notNull(),
+  title: varchar("title", { length: 300 }).notNull(),
   description: text("description"),
-  requiredSkills: text("required_skills").array(),
-  seniorityLevel: varchar("seniority_level", { enum: ["junior", "mid", "senior", "lead", "principal"] }),
-  contractType: varchar("contract_type", { enum: ["hourly", "project_based", "full_time", "part_time"] }).default("project_based"),
-  teamSize: integer("team_size").default(1),
-  estimatedHours: integer("estimated_hours"),
+  requiredSkills: json("required_skills"), // Changed from array to JSON
+  seniorityLevel: varchar("seniority_level", { length: 20, enum: ["junior", "mid", "senior", "lead", "principal"] }),
+  contractType: varchar("contract_type", { length: 30, enum: ["hourly", "project_based", "full_time", "part_time"] }).default("project_based"),
+  teamSize: int("team_size").default(1),
+  estimatedHours: int("estimated_hours"),
   budgetMin: decimal("budget_min", { precision: 10, scale: 2 }),
   budgetMax: decimal("budget_max", { precision: 10, scale: 2 }),
-  status: varchar("status", { enum: ["open", "in_review", "assigned", "completed", "cancelled"] }).default("open"),
-  location: varchar("location"),
+  status: varchar("status", { length: 20, enum: ["open", "in_review", "assigned", "completed", "cancelled"] }).default("open"),
+  location: varchar("location", { length: 200 }),
   isRemote: boolean("is_remote").default(true),
-  likesCount: integer("likes_count").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  likesCount: int("likes_count").default(0),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
 });
 
 // Social posts
-export const posts = pgTable("posts", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id).notNull(),
+export const posts = mysqlTable("posts", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  userId: varchar("user_id", { length: 36 }).notNull(),
   content: text("content").notNull(),
   isPublic: boolean("is_public").default(true),
-  likesCount: integer("likes_count").default(0),
-  commentsCount: integer("comments_count").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  likesCount: int("likes_count").default(0),
+  commentsCount: int("comments_count").default(0),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
 });
 
 // Post likes
-export const postLikes = pgTable("post_likes", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  postId: varchar("post_id").references(() => posts.id).notNull(),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+export const postLikes = mysqlTable("post_likes", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  postId: varchar("post_id", { length: 36 }).notNull(),
+  userId: varchar("user_id", { length: 36 }).notNull(),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Comment likes
-export const commentLikes = pgTable("comment_likes", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  commentId: varchar("comment_id").references(() => postComments.id).notNull(),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+export const commentLikes = mysqlTable("comment_likes", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  commentId: varchar("comment_id", { length: 36 }).notNull(),
+  userId: varchar("user_id", { length: 36 }).notNull(),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Project likes
-export const projectLikes = pgTable("project_likes", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  projectId: varchar("project_id").references(() => projects.id).notNull(),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+export const projectLikes = mysqlTable("project_likes", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  projectId: varchar("project_id", { length: 36 }).notNull(),
+  userId: varchar("user_id", { length: 36 }).notNull(),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Project subscriptions - professionals can subscribe to projects for updates
-export const projectSubscriptions = pgTable("project_subscriptions", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  projectId: varchar("project_id").references(() => projects.id).notNull(),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+export const projectSubscriptions = mysqlTable("project_subscriptions", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  projectId: varchar("project_id", { length: 36 }).notNull(),
+  userId: varchar("user_id", { length: 36 }).notNull(),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Project applications - professionals apply to join projects, companies can accept/reject
-export const projectApplications = pgTable("project_applications", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  projectId: varchar("project_id").references(() => projects.id).notNull(),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  status: varchar("status", { enum: ["pending", "accepted", "rejected"] }).default("pending"),
+export const projectApplications = mysqlTable("project_applications", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  projectId: varchar("project_id", { length: 36 }).notNull(),
+  userId: varchar("user_id", { length: 36 }).notNull(),
+  status: varchar("status", { length: 20, enum: ["pending", "accepted", "rejected"] }).default("pending"),
   coverLetter: text("cover_letter"),
   proposedRate: decimal("proposed_rate", { precision: 10, scale: 2 }),
-  appliedAt: timestamp("applied_at").defaultNow(),
-  respondedAt: timestamp("responded_at"),
-  respondedBy: varchar("responded_by").references(() => users.id),
+  appliedAt: datetime("applied_at").default(sql`CURRENT_TIMESTAMP`),
+  respondedAt: datetime("responded_at"),
+  respondedBy: varchar("responded_by", { length: 36 }),
 });
 
 // Project preventives - custom validation rules for projects
-export const projectPreventives = pgTable("project_preventives", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  title: varchar("title").notNull(),
+export const projectPreventives = mysqlTable("project_preventives", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  userId: varchar("user_id", { length: 36 }).notNull(),
+  title: varchar("title", { length: 200 }).notNull(),
   description: text("description"),
   validationRule: text("validation_rule").notNull(), // JSON string with validation logic
   errorMessage: text("error_message").notNull(),
-  category: varchar("category", { enum: ["budget", "timeline", "team", "skills", "general"] }).default("general"),
+  category: varchar("category", { length: 20, enum: ["budget", "timeline", "team", "skills", "general"] }).default("general"),
   isActive: boolean("is_active").default(true),
   isGlobal: boolean("is_global").default(false), // Global preventives apply to all users
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
 });
 
 // Post comments
-export const postComments = pgTable("post_comments", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  postId: varchar("post_id").references(() => posts.id).notNull(),
-  userId: varchar("user_id").references(() => users.id).notNull(),
+export const postComments = mysqlTable("post_comments", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  postId: varchar("post_id", { length: 36 }).notNull(),
+  userId: varchar("user_id", { length: 36 }).notNull(),
   content: text("content").notNull(),
-  likesCount: integer("likes_count").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
+  likesCount: int("likes_count").default(0),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Professional connections
-export const connections = pgTable("connections", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  requesterId: varchar("requester_id").references(() => users.id).notNull(),
-  addresseeId: varchar("addressee_id").references(() => users.id).notNull(),
-  status: varchar("status", { enum: ["pending", "accepted", "declined"] }).default("pending"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+export const connections = mysqlTable("connections", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  requesterId: varchar("requester_id", { length: 36 }).notNull(),
+  addresseeId: varchar("addressee_id", { length: 36 }).notNull(),
+  status: varchar("status", { length: 20, enum: ["pending", "accepted", "declined"] }).default("pending"),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
 });
 
 // Messages between users
-export const messages = pgTable("messages", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  senderId: varchar("sender_id").references(() => users.id).notNull(),
-  receiverId: varchar("receiver_id").references(() => users.id).notNull(),
+export const messages = mysqlTable("messages", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  senderId: varchar("sender_id", { length: 36 }).notNull(),
+  receiverId: varchar("receiver_id", { length: 36 }).notNull(),
   content: text("content").notNull(),
   isRead: boolean("is_read").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Ratings and feedback
-export const feedback = pgTable("feedback", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  fromUserId: varchar("from_user_id").references(() => users.id).notNull(),
-  toUserId: varchar("to_user_id").references(() => users.id).notNull(),
-  projectId: varchar("project_id").references(() => projects.id),
-  rating: integer("rating").notNull(), // 1-5 stars
+export const feedback = mysqlTable("feedback", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  fromUserId: varchar("from_user_id", { length: 36 }).notNull(),
+  toUserId: varchar("to_user_id", { length: 36 }).notNull(),
+  projectId: varchar("project_id", { length: 36 }),
+  rating: int("rating").notNull(), // 1-5 stars
   comment: text("comment"),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Notifications
-export const notifications = pgTable("notifications", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  type: varchar("type", { enum: ["message", "like", "comment", "feedback", "connection", "application_received", "application_accepted", "application_rejected"] }).notNull(),
-  title: varchar("title").notNull(),
+export const notifications = mysqlTable("notifications", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  userId: varchar("user_id", { length: 36 }).notNull(),
+  type: varchar("type", { length: 50, enum: ["message", "like", "comment", "feedback", "connection", "application_received", "application_accepted", "application_rejected"] }).notNull(),
+  title: varchar("title", { length: 300 }).notNull(),
   message: text("message").notNull(),
-  relatedId: varchar("related_id"), // ID of related post, message, etc.
-  relatedUserId: varchar("related_user_id").references(() => users.id), // User who triggered the notification
+  relatedId: varchar("related_id", { length: 36 }), // ID of related post, message, etc.
+  relatedUserId: varchar("related_user_id", { length: 36 }), // User who triggered the notification
   isRead: boolean("is_read").default(false),
   isEmailSent: boolean("is_email_sent").default(false),
   isPushSent: boolean("is_push_sent").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // User notification preferences
-export const notificationPreferences = pgTable("notification_preferences", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id).notNull().unique(),
+export const notificationPreferences = mysqlTable("notification_preferences", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  userId: varchar("user_id", { length: 36 }).notNull().unique(),
   messageInApp: boolean("message_in_app").default(true),
   messageEmail: boolean("message_email").default(false),
   messagePush: boolean("message_push").default(false),
@@ -244,8 +246,17 @@ export const notificationPreferences = pgTable("notification_preferences", {
   feedbackEmail: boolean("feedback_email").default(false),
   feedbackPush: boolean("feedback_push").default(false),
   weeklyDigest: boolean("weekly_digest").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+});
+
+// Job imports tracking table
+export const jobImports = mysqlTable("job_imports", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  title: varchar("title", { length: 300 }).notNull(),
+  companyName: varchar("company_name", { length: 200 }),
+  sourceUrl: varchar("source_url", { length: 1000 }).notNull(),
+  importedAt: datetime("imported_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Relations
@@ -574,16 +585,6 @@ export type UpsertUser = z.infer<typeof insertUserSchema>;
 export type RegisterUser = z.infer<typeof registerUserSchema>;
 export type LoginUser = z.infer<typeof loginUserSchema>;
 export type User = typeof users.$inferSelect;
-
-// Job imports tracking table
-export const jobImports = pgTable("job_imports", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  title: varchar("title").notNull(),
-  companyName: varchar("company_name"),
-  sourceUrl: varchar("source_url").notNull(),
-  importedAt: timestamp("imported_at").defaultNow(),
-});
-
 export type JobImport = typeof jobImports.$inferSelect;
 export type InsertJobImport = typeof jobImports.$inferInsert;
 export type ProfessionalProfile = typeof professionalProfiles.$inferSelect;
