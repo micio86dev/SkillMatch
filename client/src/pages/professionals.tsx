@@ -23,6 +23,7 @@ export default function Professionals() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState({
+    search: "",
     skills: "",
     availability: "any",
     seniorityLevel: "any",
@@ -46,6 +47,7 @@ export default function Professionals() {
     queryKey: ["/api/professionals/search", queryFilters],
     queryFn: async () => {
       const params = new URLSearchParams();
+      if (queryFilters.search) params.append('search', queryFilters.search);
       if (queryFilters.skills) params.append('skills', queryFilters.skills);
       if (queryFilters.availability) params.append('availability', queryFilters.availability);
       if (queryFilters.seniorityLevel) params.append('seniorityLevel', queryFilters.seniorityLevel);
@@ -205,6 +207,7 @@ export default function Professionals() {
 
   const clearFilters = () => {
     setFilters({
+      search: "",
       skills: "",
       availability: "any",
       seniorityLevel: "any",
@@ -213,7 +216,7 @@ export default function Professionals() {
     });
   };
 
-  const hasActiveFilters = filters.skills !== "" || filters.availability !== "any" || filters.seniorityLevel !== "any" || filters.minRate !== "" || filters.maxRate !== "";
+  const hasActiveFilters = filters.search !== "" || filters.skills !== "" || filters.availability !== "any" || filters.seniorityLevel !== "any" || filters.minRate !== "" || filters.maxRate !== "";
 
   return (
     <Layout>
@@ -242,7 +245,25 @@ export default function Professionals() {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="space-y-4">
+                {/* Search field */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Search Professionals
+                  </label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                    <Input
+                      placeholder="Search by name, email, or title..."
+                      value={filters.search}
+                      onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                
+                {/* Other filters */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                     Skills
@@ -320,9 +341,21 @@ export default function Professionals() {
                   />
                 </div>
               </div>
+              </div>
 
               {hasActiveFilters && (
                 <div className="flex flex-wrap gap-2 mt-4">
+                  {filters.search && (
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      Search: {filters.search}
+                      <button
+                        onClick={() => setFilters({ ...filters, search: "" })}
+                        className="ml-1 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-full w-4 h-4 flex items-center justify-center text-xs"
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  )}
                   {filters.skills && (
                     <Badge variant="secondary" className="flex items-center gap-1">
                       Skills: {filters.skills}

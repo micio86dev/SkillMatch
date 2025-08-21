@@ -282,7 +282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/professionals/search', async (req: any, res) => {
     try {
-      const { skills, availability, seniorityLevel, minRate, maxRate } = req.query;
+      const { skills, availability, seniorityLevel, minRate, maxRate, search } = req.query;
       
       const filters: any = {};
       if (skills) filters.skills = Array.isArray(skills) ? skills : [skills];
@@ -290,6 +290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (seniorityLevel) filters.seniorityLevel = seniorityLevel as string;
       if (minRate) filters.minRate = parseFloat(minRate as string);
       if (maxRate) filters.maxRate = parseFloat(maxRate as string);
+      if (search) filters.search = search as string;
       
       // Exclude current user if authenticated
       if (req.session?.userId) {

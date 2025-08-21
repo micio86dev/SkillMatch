@@ -67,6 +67,7 @@ export interface IStorage {
     seniorityLevel?: string;
     minRate?: number;
     maxRate?: number;
+    search?: string;
     excludeUserId?: string;
   }): Promise<(ProfessionalProfile & { user: User })[]>;
   
@@ -236,6 +237,7 @@ export class DatabaseStorage implements IStorage {
     seniorityLevel?: string;
     minRate?: number;
     maxRate?: number;
+    search?: string;
     excludeUserId?: string;
   }): Promise<(ProfessionalProfile & { user: User })[]> {
     let query = db
@@ -248,6 +250,18 @@ export class DatabaseStorage implements IStorage {
     // Exclude current user if specified
     if (filters.excludeUserId) {
       conditions.push(ne(users.id, filters.excludeUserId));
+    }
+
+    // Search by name or email
+    if (filters.search && filters.search.trim()) {
+      const searchTerm = `%${filters.search.trim().toLowerCase()}%`;
+      conditions.push(
+        or(
+          sql`LOWER(CONCAT(${users.firstName}, ' ', ${users.lastName})) LIKE ${searchTerm}`,
+          sql`LOWER(${users.email}) LIKE ${searchTerm}`,
+          sql`LOWER(${professionalProfiles.title}) LIKE ${searchTerm}`
+        )
+      );
     }
 
     if (filters.skills && filters.skills.length > 0) {
