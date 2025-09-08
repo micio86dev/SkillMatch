@@ -1,8 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
+/* VSCode CSS validation disabled for Tailwind directives */
+/* stylelint-disable at-rule-no-unknown */
 @tailwind base;
-@tailwind components;
+@tailwind components;  
 @tailwind utilities;
+/* stylelint-enable at-rule-no-unknown */
 
 :root {
   --background: hsl(0 0% 100%);
@@ -16,7 +19,7 @@
   --secondary: hsl(210 40% 96%);
   --secondary-foreground: hsl(222.2 84% 4.9%);
   --muted: hsl(210 40% 96%);
-  --muted-foreground: hsl(215.4 16.3% 40%);
+  --muted-foreground: hsl(215.4 16.3% 46.1%);
   --accent: hsl(210 40% 96%);
   --accent-foreground: hsl(222.2 84% 4.9%);
   --destructive: hsl(0 84.2% 60.2%);
@@ -49,48 +52,11 @@
   --slate-400: hsl(215.4 16.3% 60%);
   --slate-600: hsl(215.4 16.3% 40%);
   --slate-700: hsl(215.4 16.3% 25%);
-  --slate-800: hsl(215.4 16.3% 15%);
-  --slate-900: hsl(222.2 84% 4.9%);
+  --slate-800: hsl(210 40% 98%);
+  --slate-900: hsl(210 40% 98%);
 }
 
-.dark {
-  --background: hsl(222.2 84% 4.9%);
-  --foreground: hsl(210 40% 98%);
-  --card: hsl(222.2 84% 4.9%);
-  --card-foreground: hsl(210 40% 98%);
-  --popover: hsl(222.2 84% 4.9%);
-  --popover-foreground: hsl(210 40% 98%);
-  --primary: hsl(221.2 83.2% 53.3%);
-  --primary-foreground: hsl(210 40% 98%);
-  --secondary: hsl(217.2 32.6% 17.5%);
-  --secondary-foreground: hsl(210 40% 98%);
-  --muted: hsl(217.2 32.6% 17.5%);
-  --muted-foreground: hsl(215 20.2% 75%);
-  --accent: hsl(217.2 32.6% 17.5%);
-  --accent-foreground: hsl(210 40% 98%);
-  --destructive: hsl(0 84.2% 45%);
-  --destructive-foreground: hsl(210 40% 98%);
-  --border: hsl(217.2 32.6% 17.5%);
-  --input: hsl(217.2 32.6% 17.5%);
-  --ring: hsl(221.2 83.2% 53.3%);
-  --chart-1: hsl(220 70% 50%);
-  --chart-2: hsl(160 60% 45%);
-  --chart-3: hsl(30 80% 55%);
-  --chart-4: hsl(280 65% 60%);
-  --chart-5: hsl(340 75% 55%);
-  
-  /* VibeSync specific dark colors - enhanced contrast */
-  --slate-50: hsl(222.2 84% 4.9%);
-  --slate-100: hsl(217.2 32.6% 15%);
-  --slate-200: hsl(217.2 32.6% 20%);
-  --slate-300: hsl(215 20.2% 80%);
-  --slate-400: hsl(215 20.2% 85%);
-  --slate-600: hsl(215 20.2% 85%);
-  --slate-700: hsl(217.2 32.6% 20%);
-  --slate-800: hsl(217.2 32.6% 15%);
-  --slate-900: hsl(222.2 84% 4.9%);
-}
-
+/* Base layer with Tailwind utilities - VSCode warnings expected and safe to ignore */
 @layer base {
   * {
     @apply border-border;
@@ -113,13 +79,14 @@
   .line-clamp-3 {
     display: -webkit-box;
     -webkit-line-clamp: 3;
+    line-clamp: 3; /* Standard property */
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
   
   /* High contrast for better readability and accessibility */
   .high-contrast {
-    @apply text-slate-900 dark:text-slate-100;
+    @apply text-slate-900 dark:text-white;
   }
   
   /* Ensure all interactive elements have proper contrast */
@@ -127,33 +94,122 @@
     @apply bg-blue-600 hover:bg-blue-700 text-white;
   }
   
+  /* Better text contrast for dark mode */
   .text-accessible {
-    @apply text-slate-700 dark:text-slate-200;
+    @apply text-slate-700 dark:text-slate-100;
   }
   
-  /* Nerdy code animations */
-  .code-animation {
-    animation: typing 2s steps(20, end), blink-caret .75s step-end infinite;
+  /* Improved text colors for dark mode */
+  .text-slate-600-dark {
+    @apply text-slate-600 dark:text-slate-300;
   }
-  
-  @keyframes typing {
-    from { width: 0 }
-    to { width: 100% }
-  }
-  
-  @keyframes blink-caret {
-    from, to { border-color: transparent }
-    50% { border-color: var(--primary-500); }
-  }
-  
-  /* Gradient text effects */
-  .gradient-text {
-    @apply bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent;
-  }
-}
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .text-slate-500-dark {
+    @apply text-slate-500 dark:text-slate-400;
   }
+
+  .text-slate-400-dark {
+    @apply text-slate-400 dark:text-slate-500;
+  }
+
+  /* Responsive navbar improvements */
+  .navbar-container {
+    @apply px-3 sm:px-4 md:px-6 lg:px-8;
+  }
+
+  /* VibeSync custom components */
+  .vibesync-card {
+    @apply bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700;
+  }
+
+  .vibesync-button {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:ring-2 focus:ring-offset-2;
+  }
+
+  .vibesync-input {
+    @apply w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg 
+           bg-white dark:bg-slate-700 text-slate-900 dark:text-white
+           placeholder:text-slate-500 dark:placeholder:text-slate-400
+           focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+  }
+
+  /* Loading states */
+  .loading-shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+  }
+
+  .dark .loading-shimmer {
+    background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+    background-size: 200% 100%;
+  }
+
+  @keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Scrollbar styling */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-slate-100 dark:bg-slate-700 rounded-full;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 dark:bg-slate-500 rounded-full hover:bg-slate-400 dark:hover:bg-slate-400;
+  }
+
+  /* Status indicators */
+  .status-online {
+    @apply text-green-600 dark:text-green-400;
+  }
+
+  .status-offline {
+    @apply text-slate-400 dark:text-slate-500;
+  }
+
+  .status-busy {
+    @apply text-red-500 dark:text-red-400;
+  }
+
+  /* Notification badges */
+  .notification-badge {
+    @apply absolute -top-2 -right-2 h-5 w-5 bg-red-500 text-white text-xs font-bold 
+           rounded-full flex items-center justify-center animate-pulse;
+  }
+
+  /* Enhanced hover effects */
+  .hover-lift {
+    @apply transition-transform duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg;
+  }
+
+  /* Code blocks */
+  .code-block {
+    @apply bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto font-mono text-sm;
+  }
+
+  .code-inline {
+    @apply bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 
+           px-2 py-1 rounded font-mono text-sm;
+  }
+
+  /* Professional networking styles */
+  .skill-tag {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+           bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200;
+  }
+
+  .experience-level {
+    @apply inline-flex items-center px-2 py-1 rounded text-xs font-medium;
+  }
+
+  .experience-junior { @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200; }
+  .experience-mid { @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200; }
+  .experience-senior { @apply bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200; }
+  .experience-lead { @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200; }
+  .experience-principal { @apply bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200; }
 }

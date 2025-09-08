@@ -13,7 +13,6 @@ import {
   ProjectSubscription,
   ProjectApplication,
   ProjectPreventive,
-  JobImport,
   type RegisterUser,
   type InsertProfessionalProfile,
   type InsertCompanyProfile,
@@ -137,10 +136,6 @@ export interface IStorage {
   updateProjectPreventive(id: string, preventive: Partial<InsertProjectPreventive>): Promise<ProjectPreventive>;
   deleteProjectPreventive(id: string): Promise<void>;
   validateProjectAgainstPreventives(project: InsertProject, userId: string): Promise<string[]>;
-  
-  // Job import operations
-  createJobImport(jobImportData: any): Promise<JobImport>;
-  getJobImports(limit?: number): Promise<JobImport[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -383,26 +378,19 @@ export class DatabaseStorage implements IStorage {
 
       const companies = await prisma.companyProfile.findMany({
         where,
-        include: {
-          user: true
+        include: { 
+          user: true,
+          _count: {
+            select: { projects: true }
+          }
         },
         orderBy: { createdAt: 'desc' }
       });
 
-      // Add projects count manually
-      const companiesWithCount = [];
-      for (const company of companies) {
-        const projectsCount = await prisma.project.count({
-          where: { companyUserId: company.userId }
-        });
-
-        companiesWithCount.push({
-          ...company,
-          projectsCount
-        });
-      }
-
-      return companiesWithCount;
+      return companies.map(company => ({
+        ...company,
+        projectsCount: company._count.projects
+      }));
     } catch (error) {
       console.error('Error getting companies:', error);
       return [];
@@ -413,22 +401,13 @@ export class DatabaseStorage implements IStorage {
     try {
       const company = await prisma.companyProfile.findUnique({
         where: { userId: id },
-        include: {
-          user: true
+        include: { 
+          user: true,
+          projects: true
         }
       });
-
-      if (!company) return undefined;
-
-      // Get projects manually
-      const projects = await prisma.project.findMany({
-        where: { companyUserId: id }
-      });
-
-      return {
-        ...company,
-        projects
-      };
+      
+      return company || undefined;
     } catch (error) {
       console.error('Error getting company with projects:', error);
       return undefined;
@@ -860,10 +839,10 @@ export class DatabaseStorage implements IStorage {
         }
       });
 
-      const conversationUserIds = Array.from(new Set<string>());
+      const conversationUserIds = new Set<string>();
       conversations.forEach(conv => {
-        if (conv.senderId !== userId) conversationUserIds.push(conv.senderId);
-        if (conv.receiverId !== userId) conversationUserIds.push(conv.receiverId);
+        if (conv.senderId !== userId) conversationUserIds.add(conv.senderId);
+        if (conv.receiverId !== userId) conversationUserIds.add(conv.receiverId);
       });
 
       const result = [];
@@ -1416,30 +1395,6 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
-  
-  // Job import operations
-  async createJobImport(jobImportData: any): Promise<JobImport> {
-    try {
-      return await prisma.jobImport.create({
-        data: jobImportData
-      });
-    } catch (error) {
-      console.error('Error creating job import record:', error);
-      throw error;
-    }
-  }
-
-  async getJobImports(limit: number = 50): Promise<JobImport[]> {
-    try {
-      return await prisma.jobImport.findMany({
-        orderBy: { importedAt: 'desc' },
-        take: limit
-      });
-    } catch (error) {
-      console.error('Error getting job imports:', error);
-      return [];
-    }
-  }
 }
 
 // Export singleton instance
@@ -1447,7 +1402,27 @@ export const storage = new DatabaseStorage();
 
 // Additional methods needed by routes.ts
 export class ExtendedDatabaseStorage extends DatabaseStorage {
-  
+
+  // Application methods
+======= REPLACE
+        data: {
+          status: status as any,
+          respondedBy,
+          respondedAt: new Date()
+        }
+      });
+    } catch (error) {
+      console.error('Error updating project application status:', error);
+      throw error;
+    }
+  }
+
+  // Export singleton instance
+export const storage = new DatabaseStorage();
+
+// Additional methods needed by routes.ts
+export class ExtendedDatabaseStorage extends DatabaseStorage {
+
   // Application methods
   async hasUserAppliedToProject(projectId: string, userId: string): Promise<boolean> {
     try {
@@ -1574,6 +1549,33 @@ export class ExtendedDatabaseStorage extends DatabaseStorage {
     }
   }
 
+  // Job import methods
+  async createJobImport(jobImportData: any): Promise<any> {
+    try {
+      return await prisma.jobImport.create({
+        data: jobImportData
+      });
+    } catch (error) {
+      console.error('Error creating job import record:', error);
+      throw error;
+    }
+  }
+
+  async getJobImports(limit: number = 50): Promise<any[]> {
+    try {
+      return await prisma.jobImport.findMany({
+        orderBy: { importedAt: 'desc' },
+        take: limit
+      });
+    } catch (error) {
+      console.error('Error getting job imports:', error);
+      return [];
+    }
+  }
+
+  // Stats methods
+  async getActiveProfessionalsCount(): Promise<number> {
+
   async isCommentLikedByUser(commentId: string, userId: string): Promise<boolean> {
     try {
       const like = await prisma.commentLike.findUnique({
@@ -1620,18 +1622,6 @@ export class ExtendedDatabaseStorage extends DatabaseStorage {
     return this.getConnection(userId1, userId2);
   }
 
-  async getConnectionById(connectionId: string): Promise<Connection | undefined> {
-    try {
-      const connection = await prisma.connection.findUnique({
-        where: { id: connectionId }
-      });
-      return connection || undefined;
-    } catch (error) {
-      console.error('Error getting connection by id:', error);
-      return undefined;
-    }
-  }
-
   // Feedback methods
   async getFeedbackForUser(toUserId: string): Promise<any[]> {
     return this.getFeedback(toUserId);
@@ -1672,7 +1662,140 @@ export class ExtendedDatabaseStorage extends DatabaseStorage {
       return 0;
     }
   }
+
+  // Connection methods
+  async getConnectionStatus(userId1: string, userId2: string): Promise<Connection | undefined> {
+    return this.getConnection(userId1, userId2);
+  }
+
+  async getConnectionById(connectionId: string): Promise<Connection | undefined> {
+    try {
+      const connection = await prisma.connection.findUnique({
+        where: { id: connectionId }
+      });
+      return connection || undefined;
+    } catch (error) {
+      console.error('Error getting connection by id:', error);
+      return undefined;
+    }
+  }
 }
 
 // Export extended singleton instance
 export const extendedStorage = new ExtendedDatabaseStorage();
+          respondedAt: new Date()
+        }
+      });
+    } catch (error) {
+      console.error('Error updating project application status:', error);
+      throw error;
+    }
+  }
+
+  async getProjectApplicationsCount(projectId: string): Promise<number> {
+    try {
+      return await prisma.projectApplication.count({
+        where: { projectId }
+      });
+    } catch (error) {
+      console.error('Error getting project applications count:', error);
+      return 0;
+    }
+  }
+
+  async getAcceptedProjectApplicationsCount(projectId: string): Promise<number> {
+    try {
+      return await prisma.projectApplication.count({
+        where: { projectId, status: 'ACCEPTED' }
+      });
+    } catch (error) {
+      console.error('Error getting accepted project applications count:', error);
+      return 0;
+    }
+  }
+
+  // Project preventive operations
+  async getProjectPreventives(userId: string): Promise<ProjectPreventive[]> {
+    try {
+      return await prisma.projectPreventive.findMany({
+        where: { userId }
+      });
+    } catch (error) {
+      console.error('Error getting project preventives:', error);
+      return [];
+    }
+  }
+
+  async createProjectPreventive(preventive: InsertProjectPreventive): Promise<ProjectPreventive> {
+    try {
+      return await prisma.projectPreventive.create({
+        data: preventive
+      });
+    } catch (error) {
+      console.error('Error creating project preventive:', error);
+      throw error;
+    }
+  }
+
+  async updateProjectPreventive(id: string, preventive: Partial<InsertProjectPreventive>): Promise<ProjectPreventive> {
+    try {
+      return await prisma.projectPreventive.update({
+        where: { id },
+        data: preventive
+      });
+    } catch (error) {
+      console.error('Error updating project preventive:', error);
+      throw error;
+    }
+  }
+
+  async deleteProjectPreventive(id: string): Promise<void> {
+    try {
+      await prisma.projectPreventive.delete({
+        where: { id }
+      });
+    } catch (error) {
+      console.error('Error deleting project preventive:', error);
+      throw error;
+    }
+  }
+
+  async validateProjectAgainstPreventives(project: InsertProject, userId: string): Promise<string[]> {
+    try {
+      const preventives = await prisma.projectPreventive.findMany({
+        where: {
+          OR: [
+            { userId, isActive: true },
+            { isGlobal: true, isActive: true }
+          ]
+        }
+      });
+
+      const errors: string[] = [];
+
+      for (const preventive of preventives) {
+        try {
+          const rule = JSON.parse(preventive.validationRule);
+          // Here you would implement the actual validation logic
+          // This is a simplified example
+          if (rule.type === 'budgetMin' && project.budgetMin && project.budgetMin < rule.value) {
+            errors.push(preventive.errorMessage);
+          }
+          if (rule.type === 'budgetMax' && project.budgetMax && project.budgetMax > rule.value) {
+            errors.push(preventive.errorMessage);
+          }
+        } catch (parseError) {
+          console.error('Error parsing validation rule:', parseError);
+        }
+      }
+
+      return errors;
+    } catch (error) {
+      console.error('Error validating project against preventives:', error);
+      return [];
+    }
+  }
+}
+
+// Export singleton instance
+export const storage = new DatabaseStorage();

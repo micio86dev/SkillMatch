@@ -1,4 +1,6 @@
-import { processJobWithAI } from "./server/ai.ts";
+import { processJobWithAI } from "./server/ai.js";
+import { extendedStorage as storage } from "./server/storage.js";
+import { connectDB } from "./shared/db.js";
 
 /**
  * Example job fetching function that processes jobs with AI before saving
@@ -6,6 +8,9 @@ import { processJobWithAI } from "./server/ai.ts";
  */
 export async function fetchAndProcessJobs() {
   try {
+    // Connect to database
+    await connectDB();
+    
     // Example job data - in a real implementation, this would come from APIs or scraping
     const rawJobs = [
       {
@@ -19,6 +24,12 @@ export async function fetchAndProcessJobs() {
         description: "Looking for backend engineer. Python, Django, PostgreSQL, REST APIs. Must have experience with cloud platforms and microservices architecture.",
         company: "StartupCo",
         location: "San Francisco"
+      },
+      {
+        title: "Full Stack Developer",
+        description: "We are looking for a full stack developer with experience in React, Node.js, and MongoDB. Experience with cloud deployment is a plus.",
+        company: "Web Solutions Inc",
+        location: "New York"
       }
     ];
 
@@ -42,7 +53,9 @@ export async function fetchAndProcessJobs() {
 
       processedJobs.push(processedJob);
       
-      // Here you would save the processed job to your database
+      // Save job to database
+      await saveJobToDatabase(processedJob);
+      
       console.log(`✅ Processed job:`, {
         original: job.title,
         normalized: aiResult.normalized_title,
@@ -59,11 +72,117 @@ export async function fetchAndProcessJobs() {
 }
 
 /**
- * Save job to database (placeholder function)
- * In real implementation, this would use your database storage
+ * Save job to database
+ * This function creates a project in the database with the job data
  */
 async function saveJobToDatabase(jobData) {
-  // This is where you'd integrate with your actual database saving logic
-  console.log("Saving job to database:", jobData.normalized_title || jobData.title);
-  // Example: await storage.createProject(jobData);
+  try {
+    // Create a company user if it doesn't exist
+    let companyUser = await storage.getUserByEmail(`${jobData.company.toLowerCase().replace(/\s+/g, '')}@company.com`);
+    
+    if (!companyUser) {
+      companyUser = await storage.createUser({
+        email: `${jobData.company.toLowerCase().replace(/\s+/g, '')}@company.com`,
+        password: "company123", // In a real implementation, this would be a secure password
+        firstName: jobData.company,
+        lastName: "Company",
+        userType: "COMPANY",
+        language: "en"
+      });
+      
+      // Create company profile
+      await storage.createCompanyProfile({
+        userId: companyUser.id,
+        companyName: jobData.company,
+        description: `Company profile for ${jobData.company}`,
+        location: jobData.location
+      });
+    }
+    
+    // Create project (job posting) with AI-processed data
+    const projectData = {
+      companyUserId: companyUser.id,
+      title: jobData.normalized_title || jobData.title,
+      description: jobData.clean_description || jobData.description,
+      location: jobData.location,
+      isRemote: jobData.location.toLowerCase() === 'remote',
+      status: 'OPEN',
+      contractType: 'FULL_TIME',
+      teamSize: 1,
+      requiredSkills: extractSkillsFromDescription(jobData.clean_description || jobData.description),
+      seniorityLevel: determineSeniorityLevel(jobData.title)
+    };
+    
+    const project = await storage.createProject(projectData);
+    console.log("✅ Job saved to database:", project.title);
+    
+    // Save job import record for tracking
+    await storage.createJobImport({
+      source: "test_script",
+      jobId: project.id,
+      rawData: JSON.stringify({
+        original_title: jobData.original_title,
+        original_description: jobData.original_description
+      }),
+      processedData: JSON.stringify({
+        normalized_title: jobData.normalized_title,
+        category: jobData.category,
+        clean_description: jobData.clean_description
+      })
+    });
+    
+    return project;
+  } catch (error) {
+    console.error("Error saving job to database:", error);
+    throw error;
+  }
+}
+
+/**
+ * Extract skills from job description
+ * In a real implementation, this would be more sophisticated
+ */
+function extractSkillsFromDescription(description) {
+  const commonSkills = [
+    'javascript', 'typescript', 'react', 'vue', 'angular', 'node.js', 'python', 
+    'django', 'flask', 'java', 'spring', 'c#', 'asp.net', 'php', 'laravel',
+    'ruby', 'rails', 'go', 'golang', 'rust', 'swift', 'kotlin', 'scala',
+    'postgresql', 'mysql', 'mongodb', 'redis', 'elasticsearch',
+    'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'terraform',
+    'git', 'github', 'gitlab', 'ci/cd', 'jenkins', 'github actions'
+  ];
+  
+  const descriptionLower = (description || '').toLowerCase();
+  return commonSkills.filter(skill => descriptionLower.includes(skill));
+}
+
+/**
+ * Determine seniority level from job title
+ * In a real implementation, this would be more sophisticated
+ */
+function determineSeniorityLevel(title) {
+  const titleLower = (title || '').toLowerCase();
+  
+  if (titleLower.includes('senior') || titleLower.includes('sr.') || titleLower.includes('lead')) {
+    return 'SENIOR';
+  } else if (titleLower.includes('mid') || titleLower.includes('intermediate')) {
+    return 'MID';
+  } else if (titleLower.includes('junior') || titleLower.includes('jr.')) {
+    return 'JUNIOR';
+  } else {
+    return 'MID'; // Default to MID if not specified
+  }
+}
+
+// Run the function if this script is executed directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  fetchAndProcessJobs()
+    .then(() => {
+      console.log("✅ Job import completed successfully");
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error("❌ Job import failed:", error);
+      process.exit(1);
+    });
 }

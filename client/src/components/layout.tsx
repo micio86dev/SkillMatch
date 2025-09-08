@@ -46,7 +46,7 @@ export function Layout({ children }: LayoutProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
@@ -65,13 +65,13 @@ export function Layout({ children }: LayoutProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen bg-background">
       {/* Navigation */}
-      <nav className="bg-white dark:bg-slate-800 shadow-sm border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="bg-card shadow-sm border-b border-border sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto navbar-container">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link href="/" className="flex items-center space-x-3">
+            <Link href="/" className="navbar-brand flex items-center space-x-3">
               <svg 
                 width="32" 
                 height="32" 
@@ -107,16 +107,16 @@ export function Layout({ children }: LayoutProps) {
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
+            <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
               {navigation.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "font-medium transition-colors relative",
+                    "navbar-item font-medium transition-colors relative",
                     location === item.href
                       ? "text-blue-600 dark:text-blue-400"
-                      : "text-slate-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
+                      : "text-foreground dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
                   )}
                 >
                   {item.name}
@@ -126,7 +126,7 @@ export function Layout({ children }: LayoutProps) {
             </div>
 
             {/* Right side controls */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3 lg:space-x-4">
               {/* Notifications (only for authenticated users) */}
               {isAuthenticated && <NotificationBell />}
               
@@ -135,147 +135,132 @@ export function Layout({ children }: LayoutProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-                className="p-2 text-slate-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                className="p-2 text-foreground dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:bg-secondary transition-colors"
                 aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
               >
                 {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
               </Button>
 
+              {/* Mobile menu toggle */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="md:hidden p-2 text-foreground dark:text-white"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              </Button>
 
               {/* Auth buttons */}
               {isAuthenticated ? (
-                <div className="flex items-center space-x-3">
+                <div className="hidden md:flex items-center space-x-3">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="flex items-center space-x-2 text-slate-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                      <Button variant="ghost" size="sm" className="flex items-center space-x-2 text-foreground dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:bg-secondary transition-colors">
                         {user?.profileImageUrl ? (
-                          <img 
-                            src={user.profileImageUrl} 
-                            alt="Profile" 
-                            className="w-6 h-6 rounded-full object-cover"
-                          />
+                          <img src={user.profileImageUrl} alt="Profile" className="w-6 h-6 rounded-full object-cover" />
                         ) : (
-                          <User className="w-4 h-4" />
+                          <User className="h-4 w-4" />
                         )}
-                        <span className="hidden sm:inline font-medium">
-                          {user?.firstName} {user?.lastName}
-                        </span>
-                        <ChevronDown className="w-3 h-3" />
+                        <span className="hidden lg:block max-w-24 truncate">{user?.firstName || user?.email}</span>
+                        <ChevronDown className="h-3 w-3" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem onClick={() => window.location.href = '/profile'}>
-                        <User className="w-4 h-4 mr-2" />
-                        My Profile
+                    <DropdownMenuContent align="end" className="w-48 bg-card border-border">
+                      <DropdownMenuItem asChild>
+                        <Link href="/profile" className="flex items-center space-x-2 text-foreground dark:text-white">
+                          <User className="h-4 w-4" />
+                          <span>{t('nav.profile')}</span>
+                        </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        onClick={async () => {
-                          try {
-                            const response = await fetch('/api/auth/logout', {
-                              method: 'POST',
-                              credentials: 'include',
-                            });
-                            if (response.ok) {
-                              window.location.href = '/login';
-                            }
-                          } catch (error) {
-                            console.error('Logout failed:', error);
-                          }
-                        }}
+                      <DropdownMenuSeparator className="bg-border" />
+                      <DropdownMenuItem
+                        onClick={() => window.location.href = "/api/logout"}
                         className="text-red-600 dark:text-red-400"
                       >
-                        Sign Out
+                        {t('auth.logout')}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
               ) : (
-                <div className="flex items-center space-x-4">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => window.location.href = "/login"}
-                    className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium transition-colors"
-                  >
-                    Sign In
+                <div className="hidden md:flex items-center space-x-2">
+                  <Button variant="ghost" size="sm" asChild className="text-foreground dark:text-white">
+                    <Link href="/login">{t('auth.login')}</Link>
                   </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => window.location.href = "/auth/signup"}
-                    className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 font-medium shadow-sm transition-colors"
-                  >
-                    Get Started
+                  <Button size="sm" asChild>
+                    <Link href="/register">{t('auth.signup')}</Link>
                   </Button>
                 </div>
               )}
-
-              {/* Mobile menu button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="md:hidden p-2 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                aria-label="Toggle mobile menu"
-              >
-                {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-              </Button>
             </div>
           </div>
 
-          {/* Mobile menu */}
+          {/* Mobile Navigation Menu */}
           {mobileMenuOpen && (
-            <div className="md:hidden py-4 border-t border-slate-200 dark:border-slate-700">
-              <div className="space-y-2">
-                {navigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={cn(
-                      "block px-4 py-2 font-medium transition-colors rounded-lg relative",
-                      location === item.href
-                        ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20"
-                        : "text-slate-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700"
-                    )}
-                  >
-                    {item.name}
-                    {item.href === '/messages' && <UnreadMessagesBadge />}
-                  </Link>
-                ))}
-                {isAuthenticated && (
-                  <>
+            <div className="md:hidden border-t border-border bg-card">
+              <div className="navbar-mobile-menu">
+                <div className="space-y-3">
+                  {navigation.map((item) => (
                     <Link
-                      href="/profile"
-                      onClick={() => setMobileMenuOpen(false)}
+                      key={item.name}
+                      href={item.href}
                       className={cn(
-                        "block px-4 py-2 font-medium transition-colors rounded-lg",
-                        location === "/profile"
-                          ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20"
-                          : "text-slate-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700"
+                        "mobile-menu-item block transition-colors",
+                        location === item.href
+                          ? "text-blue-600 dark:text-blue-400 font-medium"
+                          : "text-foreground dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
                       )}
+                      onClick={() => setMobileMenuOpen(false)}
                     >
-                      My Profile
+                      {item.name}
                     </Link>
-                    <button
-                      onClick={async () => {
-                        try {
-                          const response = await fetch('/api/auth/logout', {
-                            method: 'POST',
-                            credentials: 'include',
-                          });
-                          if (response.ok) {
-                            window.location.href = '/login';
-                          }
-                        } catch (error) {
-                          console.error('Logout failed:', error);
-                        }
-                      }}
-                      className="block w-full text-left px-4 py-2 font-medium transition-colors rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  ))}
+                </div>
+
+                {/* Mobile auth section */}
+                {!isAuthenticated && (
+                  <div className="mt-4 pt-4 border-t border-border space-y-3">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-foreground dark:text-white"
+                      asChild
                     >
-                      Sign Out
-                    </button>
-                  </>
+                      <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                        {t('auth.login')}
+                      </Link>
+                    </Button>
+                    <Button
+                      className="w-full justify-start"
+                      asChild
+                    >
+                      <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
+                        {t('auth.signup')}
+                      </Link>
+                    </Button>
+                  </div>
+                )}
+
+                {isAuthenticated && (
+                  <div className="mt-4 pt-4 border-t border-border space-y-3">
+                    <Link 
+                      href="/profile" 
+                      className="mobile-menu-item block text-foreground dark:text-white"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {t('nav.profile')}
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-red-600 dark:text-red-400"
+                      onClick={() => {
+                        window.location.href = "/api/logout";
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      {t('auth.logout')}
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
@@ -284,7 +269,7 @@ export function Layout({ children }: LayoutProps) {
       </nav>
 
       {/* Main content */}
-      <main className="min-h-[calc(100vh-64px)]">
+      <main className="flex-1 bg-background">
         {children}
       </main>
     </div>

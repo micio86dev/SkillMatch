@@ -1,0 +1,446 @@
+// Prisma schema for VibeSync - Professional IT Networking Platform
+// Configured for MongoDB Atlas
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("MONGODB_URI")
+}
+
+// User model - Core user authentication
+model User {
+  id               String  @id @default(auto()) @map("_id") @db.ObjectId
+  email            String  @unique
+  password         String
+  firstName        String?
+  lastName         String?
+  profileImageUrl  String?
+  userType         UserType @default(PROFESSIONAL)
+  language         String  @default("en")
+  isEmailVerified  Boolean @default(false)
+  isBot            Boolean @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  professionalProfile  ProfessionalProfile?
+  companyProfile      CompanyProfile?
+  projects            Project[]
+  posts               Post[]
+  postLikes           PostLike[]
+  commentLikes        CommentLike[]
+  projectLikes        ProjectLike[]
+  postComments        PostComment[]
+  sentMessages        Message[] @relation("SentMessages")
+  receivedMessages    Message[] @relation("ReceivedMessages")
+  sentFeedback        Feedback[] @relation("SentFeedback")
+  receivedFeedback    Feedback[] @relation("ReceivedFeedback")
+  sentConnections     Connection[] @relation("SentConnections")
+  receivedConnections Connection[] @relation("ReceivedConnections")
+  notifications       Notification[]
+  notificationPrefs   NotificationPreferences?
+  projectSubscriptions ProjectSubscription[]
+  projectApplications ProjectApplication[]
+  projectPreventives  ProjectPreventive[]
+
+  @@map("users")
+}
+
+// Professional profile - For IT professionals
+model ProfessionalProfile {
+  id               String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String    @unique @db.ObjectId
+  title            String?
+  bio              String?
+  cv               String?
+  skills           String[]
+  seniorityLevel   SeniorityLevel?
+  hourlyRate       Float?
+  availability     Availability @default(AVAILABLE)
+  cvUrl            String?
+  portfolioUrl     String?
+  githubUrl        String?
+  linkedinUrl      String?
+  twitterUrl       String?
+  websiteUrl       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("professionalProfiles")
+}
+
+// Company profile - For companies posting projects
+model CompanyProfile {
+  id               String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String     @unique @db.ObjectId
+  companyName      String?
+  description      String?
+  industry         String?
+  websiteUrl       String?
+  linkedinUrl      String?
+  location         String?
+  companySize      CompanySize?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("companyProfiles")
+}
+
+// Project - Job postings by companies
+model Project {
+  id               String         @id @default(auto()) @map("_id") @db.ObjectId
+  companyUserId    String         @db.ObjectId
+  title            String
+  description      String?
+  requiredSkills   String[]
+  seniorityLevel   SeniorityLevel?
+  contractType     ContractType   @default(PROJECT_BASED)
+  teamSize         Int            @default(1)
+  estimatedHours   Int?
+  budgetMin        Float?
+  budgetMax        Float?
+  status           ProjectStatus  @default(OPEN)
+  location         String?
+  isRemote         Boolean        @default(true)
+  likesCount       Int            @default(0)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  // Relations
+  company          User @relation(fields: [companyUserId], references: [id], onDelete: Cascade)
+  likes            ProjectLike[]
+  subscriptions    ProjectSubscription[]
+  applications     ProjectApplication[]
+  feedback         Feedback[]
+
+  @@map("projects")
+}
+
+// Post - Social feed posts
+model Post {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String    @db.ObjectId
+  content        String
+  isPublic       Boolean   @default(true)
+  likesCount     Int       @default(0)
+  commentsCount  Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes    PostLike[]
+  comments PostComment[]
+
+  @@map("posts")
+}
+
+// Post likes
+model PostLike {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  postId    String   @db.ObjectId
+  userId    String   @db.ObjectId
+  createdAt DateTime @default(now())
+
+  // Relations
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@map("postLikes")
+}
+
+// Post comments
+model PostComment {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  postId     String   @db.ObjectId
+  userId     String   @db.ObjectId
+  content    String
+  likesCount Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  // Relations
+  post  Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes CommentLike[]
+
+  @@map("postComments")
+}
+
+// Comment likes
+model CommentLike {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  commentId String   @db.ObjectId
+  userId    String   @db.ObjectId
+  createdAt DateTime @default(now())
+
+  // Relations
+  comment PostComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@map("commentLikes")
+}
+
+// Project likes
+model ProjectLike {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  projectId String   @db.ObjectId
+  userId    String   @db.ObjectId
+  createdAt DateTime @default(now())
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("projectLikes")
+}
+
+// Messages - Direct messaging between users
+model Message {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  senderId   String   @db.ObjectId
+  receiverId String   @db.ObjectId
+  content    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  // Relations
+  sender   User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+// Feedback - Ratings and reviews between users
+model Feedback {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  fromUserId String   @db.ObjectId
+  toUserId   String   @db.ObjectId
+  projectId  String?  @db.ObjectId
+  rating     Int      // 1-5 stars
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  // Relations
+  fromUser User     @relation("SentFeedback", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User     @relation("ReceivedFeedback", fields: [toUserId], references: [id], onDelete: Cascade)
+  project  Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@map("feedback")
+}
+
+// Connections - Professional networking
+model Connection {
+  id          String           @id @default(auto()) @map("_id") @db.ObjectId
+  requesterId String           @db.ObjectId
+  addresseeId String           @db.ObjectId
+  status      ConnectionStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // Relations
+  requester User @relation("SentConnections", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee User @relation("ReceivedConnections", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, addresseeId])
+  @@map("connections")
+}
+
+// Notifications - System notifications
+model Notification {
+  id             String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String           @db.ObjectId
+  type           NotificationType
+  title          String
+  message        String
+  relatedId      String?          @db.ObjectId
+  relatedUserId  String?          @db.ObjectId
+  isRead         Boolean          @default(false)
+  isEmailSent    Boolean          @default(false)
+  isPushSent     Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+// Notification preferences
+model NotificationPreferences {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String   @unique @db.ObjectId
+  messageInApp  Boolean  @default(true)
+  messageEmail  Boolean  @default(false)
+  messagePush   Boolean  @default(false)
+  likeInApp     Boolean  @default(true)
+  likeEmail     Boolean  @default(false)
+  likePush      Boolean  @default(false)
+  commentInApp  Boolean  @default(true)
+  commentEmail  Boolean  @default(false)
+  commentPush   Boolean  @default(false)
+  feedbackInApp Boolean  @default(true)
+  feedbackEmail Boolean  @default(false)
+  feedbackPush  Boolean  @default(false)
+  weeklyDigest  Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notificationPreferences")
+}
+
+// Project subscriptions - Users following projects
+model ProjectSubscription {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  projectId String   @db.ObjectId
+  userId    String   @db.ObjectId
+  createdAt DateTime @default(now())
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("projectSubscriptions")
+}
+
+// Project applications - User applications to projects
+model ProjectApplication {
+  id           String              @id @default(auto()) @map("_id") @db.ObjectId
+  projectId    String              @db.ObjectId
+  userId       String              @db.ObjectId
+  status       ApplicationStatus   @default(PENDING)
+  coverLetter  String?
+  proposedRate Float?
+  appliedAt    DateTime            @default(now())
+  respondedAt  DateTime?
+  respondedBy  String?             @db.ObjectId
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("projectApplications")
+}
+
+// Project preventives - Custom validation rules
+model ProjectPreventive {
+  id             String              @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String              @db.ObjectId
+  title          String
+  description    String?
+  validationRule String
+  errorMessage   String
+  category       PreventiveCategory @default(GENERAL)
+  isActive       Boolean            @default(true)
+  isGlobal       Boolean            @default(false)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("projectPreventives")
+}
+
+// Job imports - External job scraping
+model JobImport {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  companyName String?
+  sourceUrl   String
+  importedAt  DateTime @default(now())
+  jobId       String?  @db.ObjectId
+
+  @@map("jobImports")
+}
+
+// Enums
+enum UserType {
+  PROFESSIONAL
+  COMPANY
+}
+
+enum SeniorityLevel {
+  JUNIOR
+  MID
+  SENIOR
+  LEAD
+  PRINCIPAL
+}
+
+enum Availability {
+  AVAILABLE
+  PARTIALLY_AVAILABLE
+  UNAVAILABLE
+}
+
+enum CompanySize {
+  SIZE_1_10     @map("1-10")
+  SIZE_11_50    @map("11-50")
+  SIZE_51_200   @map("51-200")
+  SIZE_201_1000 @map("201-1000")
+  SIZE_1000_PLUS @map("1000+")
+}
+
+enum ContractType {
+  HOURLY
+  PROJECT_BASED
+  FULL_TIME
+  PART_TIME
+}
+
+enum ProjectStatus {
+  OPEN
+  IN_REVIEW
+  ASSIGNED
+  COMPLETED
+  CANCELLED
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum NotificationType {
+  MESSAGE
+  LIKE
+  COMMENT
+  FEEDBACK
+  CONNECTION
+  APPLICATION_RECEIVED
+  APPLICATION_ACCEPTED
+  APPLICATION_REJECTED
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum PreventiveCategory {
+  BUDGET
+  TIMELINE
+  TEAM
+  SKILLS
+  GENERAL
+}

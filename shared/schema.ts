@@ -1,462 +1,26 @@
-import { sql } from 'drizzle-orm';
-import { relations } from 'drizzle-orm';
-import {
-  index,
-  jsonb,
-  pgTable,
-  timestamp,
-  varchar,
-  text,
-  integer,
-  boolean,
-  decimal,
-} from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Session storage table.
-// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
-export const sessions = pgTable(
-  "sessions",
-  {
-    sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").notNull(),
-    expire: timestamp("expire").notNull(),
-  },
-  (table) => ({
-    IDX_session_expire: index("IDX_session_expire").on(table.expire)
-  })
-);
+// Re-export all Prisma types
+export * from '../generated/prisma';
 
-// User storage table with email/password authentication
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").notNull().unique(),
-  password: varchar("password").notNull(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
-  profileImageUrl: varchar("profile_image_url"),
-  userType: varchar("user_type").$type<"professional" | "company">().notNull().default("professional"),
-  language: varchar("language").default("en"),
-  isEmailVerified: boolean("is_email_verified").default(false),
-  isBot: boolean("is_bot").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+// Session storage interface for compatibility
+export interface ISession {
+  sid: string;
+  sess: any;
+  expire: Date;
+}
 
-// IT Professional profiles
-export const professionalProfiles = pgTable("professional_profiles", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull(),
-  title: varchar("title"),
-  bio: text("bio"),
-  cv: text("cv"),
-  skills: jsonb("skills"),
-  seniorityLevel: varchar("seniority_level").$type<"junior" | "mid" | "senior" | "lead" | "principal">(),
-  hourlyRate: decimal("hourly_rate"),
-  availability: varchar("availability").$type<"available" | "partially_available" | "unavailable">().default("available"),
-  cvUrl: varchar("cv_url"),
-  portfolioUrl: varchar("portfolio_url"),
-  githubUrl: varchar("github_url"),
-  linkedinUrl: varchar("linkedin_url"),
-  twitterUrl: varchar("twitter_url"),
-  websiteUrl: varchar("website_url"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// Company profiles
-export const companyProfiles = pgTable("company_profiles", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull(),
-  companyName: varchar("company_name"),
-  description: text("description"),
-  industry: varchar("industry"),
-  websiteUrl: varchar("website_url"),
-  linkedinUrl: varchar("linkedin_url"),
-  location: varchar("location"),
-  companySize: varchar("company_size").$type<"1-10" | "11-50" | "51-200" | "201-1000" | "1000+">(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// Projects posted by companies
-export const projects = pgTable("projects", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  companyUserId: varchar("company_user_id").notNull(),
-  title: varchar("title").notNull(),
-  description: text("description"),
-  requiredSkills: jsonb("required_skills"),
-  seniorityLevel: varchar("seniority_level").$type<"junior" | "mid" | "senior" | "lead" | "principal">(),
-  contractType: varchar("contract_type").$type<"hourly" | "project_based" | "full_time" | "part_time">().default("project_based"),
-  teamSize: integer("team_size").default(1),
-  estimatedHours: integer("estimated_hours"),
-  budgetMin: decimal("budget_min"),
-  budgetMax: decimal("budget_max"),
-  status: varchar("status").$type<"open" | "in_review" | "assigned" | "completed" | "cancelled">().default("open"),
-  location: varchar("location"),
-  isRemote: boolean("is_remote").default(true),
-  likesCount: integer("likes_count").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// Social posts
-export const posts = pgTable("posts", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull(),
-  content: text("content").notNull(),
-  isPublic: boolean("is_public").default(true),
-  likesCount: integer("likes_count").default(0),
-  commentsCount: integer("comments_count").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// Post likes
-export const postLikes = pgTable("post_likes", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  postId: varchar("post_id").notNull(),
-  userId: varchar("user_id").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Comment likes
-export const commentLikes = pgTable("comment_likes", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  commentId: varchar("comment_id").notNull(),
-  userId: varchar("user_id").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Project likes
-export const projectLikes = pgTable("project_likes", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  projectId: varchar("project_id").notNull(),
-  userId: varchar("user_id").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Project subscriptions - professionals can subscribe to projects for updates
-export const projectSubscriptions = pgTable("project_subscriptions", {
-  id: varchar("id").primaryKey(),
-  projectId: varchar("project_id").notNull(),
-  userId: varchar("user_id").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Project applications - professionals apply to join projects, companies can accept/reject
-export const projectApplications = pgTable("project_applications", {
-  id: varchar("id").primaryKey(),
-  projectId: varchar("project_id").notNull(),
-  userId: varchar("user_id").notNull(),
-  status: varchar("status").$type<"pending" | "accepted" | "rejected">().default("pending"),
-  coverLetter: text("cover_letter"),
-  proposedRate: decimal("proposed_rate"),
-  appliedAt: timestamp("applied_at").defaultNow(),
-  respondedAt: timestamp("responded_at"),
-  respondedBy: varchar("responded_by"),
-});
-
-// Project preventives - custom validation rules for projects
-export const projectPreventives = pgTable("project_preventives", {
-  id: varchar("id").primaryKey(),
-  userId: varchar("user_id").notNull(),
-  title: varchar("title").notNull(),
-  description: text("description"),
-  validationRule: text("validation_rule").notNull(), // JSON string with validation logic
-  errorMessage: text("error_message").notNull(),
-  category: varchar("category").$type<"budget" | "timeline" | "team" | "skills" | "general">().default("general"),
-  isActive: boolean("is_active").default(true),
-  isGlobal: boolean("is_global").default(false), // Global preventives apply to all users
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// Post comments
-export const postComments = pgTable("post_comments", {
-  id: varchar("id").primaryKey(),
-  postId: varchar("post_id").notNull(),
-  userId: varchar("user_id").notNull(),
-  content: text("content").notNull(),
-  likesCount: integer("likes_count").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Professional connections
-export const connections = pgTable("connections", {
-  id: varchar("id").primaryKey(),
-  requesterId: varchar("requester_id").notNull(),
-  addresseeId: varchar("addressee_id").notNull(),
-  status: varchar("status").$type<"pending" | "accepted" | "declined">().default("pending"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// Messages between users
-export const messages = pgTable("messages", {
-  id: varchar("id").primaryKey(),
-  senderId: varchar("sender_id").notNull(),
-  receiverId: varchar("receiver_id").notNull(),
-  content: text("content").notNull(),
-  isRead: boolean("is_read").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Ratings and feedback
-export const feedback = pgTable("feedback", {
-  id: varchar("id").primaryKey(),
-  fromUserId: varchar("from_user_id").notNull(),
-  toUserId: varchar("to_user_id").notNull(),
-  projectId: varchar("project_id"),
-  rating: integer("rating").notNull(), // 1-5 stars
-  comment: text("comment"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Notifications
-export const notifications = pgTable("notifications", {
-  id: varchar("id").primaryKey(),
-  userId: varchar("user_id").notNull(),
-  type: varchar("type").$type<"message" | "like" | "comment" | "feedback" | "connection" | "application_received" | "application_accepted" | "application_rejected">().notNull(),
-  title: varchar("title").notNull(),
-  message: text("message").notNull(),
-  relatedId: varchar("related_id"), // ID of related post, message, etc.
-  relatedUserId: varchar("related_user_id"), // User who triggered the notification
-  isRead: boolean("is_read").default(false),
-  isEmailSent: boolean("is_email_sent").default(false),
-  isPushSent: boolean("is_push_sent").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// User notification preferences
-export const notificationPreferences = pgTable("notification_preferences", {
-  id: varchar("id").primaryKey(),
-  userId: varchar("user_id").notNull().unique(),
-  messageInApp: boolean("message_in_app").default(true),
-  messageEmail: boolean("message_email").default(false),
-  messagePush: boolean("message_push").default(false),
-  likeInApp: boolean("like_in_app").default(true),
-  likeEmail: boolean("like_email").default(false),
-  likePush: boolean("like_push").default(false),
-  commentInApp: boolean("comment_in_app").default(true),
-  commentEmail: boolean("comment_email").default(false),
-  commentPush: boolean("comment_push").default(false),
-  feedbackInApp: boolean("feedback_in_app").default(true),
-  feedbackEmail: boolean("feedback_email").default(false),
-  feedbackPush: boolean("feedback_push").default(false),
-  weeklyDigest: boolean("weekly_digest").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// Job imports tracking table
-export const jobImports = pgTable("job_imports", {
-  id: varchar("id").primaryKey(),
-  title: varchar("title").notNull(),
-  companyName: varchar("company_name"),
-  sourceUrl: varchar("source_url").notNull(),
-  importedAt: timestamp("imported_at").defaultNow(),
-});
-
-// Relations
-export const usersRelations = relations(users, ({ one, many }) => ({
-  professionalProfile: one(professionalProfiles, {
-    fields: [users.id],
-    references: [professionalProfiles.userId],
-  }),
-  companyProfile: one(companyProfiles, {
-    fields: [users.id],
-    references: [companyProfiles.userId],
-  }),
-  posts: many(posts),
-  sentMessages: many(messages, { relationName: "sentMessages" }),
-  receivedMessages: many(messages, { relationName: "receivedMessages" }),
-  sentFeedback: many(feedback, { relationName: "sentFeedback" }),
-  receivedFeedback: many(feedback, { relationName: "receivedFeedback" }),
-  notifications: many(notifications),
-  notificationPreferences: one(notificationPreferences, {
-    fields: [users.id],
-    references: [notificationPreferences.userId],
-  }),
-  projectSubscriptions: many(projectSubscriptions),
-  projectApplications: many(projectApplications),
-  projectPreventives: many(projectPreventives),
-}));
-
-export const professionalProfilesRelations = relations(professionalProfiles, ({ one }) => ({
-  user: one(users, {
-    fields: [professionalProfiles.userId],
-    references: [users.id],
-  }),
-}));
-
-export const companyProfilesRelations = relations(companyProfiles, ({ one }) => ({
-  user: one(users, {
-    fields: [companyProfiles.userId],
-    references: [users.id],
-  }),
-}));
-
-export const projectsRelations = relations(projects, ({ one, many }) => ({
-  company: one(users, {
-    fields: [projects.companyUserId],
-    references: [users.id],
-  }),
-  likes: many(projectLikes),
-  subscriptions: many(projectSubscriptions),
-}));
-
-export const postsRelations = relations(posts, ({ one, many }) => ({
-  user: one(users, {
-    fields: [posts.userId],
-    references: [users.id],
-  }),
-  likes: many(postLikes),
-  comments: many(postComments),
-}));
-
-export const postLikesRelations = relations(postLikes, ({ one }) => ({
-  post: one(posts, {
-    fields: [postLikes.postId],
-    references: [posts.id],
-  }),
-  user: one(users, {
-    fields: [postLikes.userId],
-    references: [users.id],
-  }),
-}));
-
-export const commentLikesRelations = relations(commentLikes, ({ one }) => ({
-  comment: one(postComments, {
-    fields: [commentLikes.commentId],
-    references: [postComments.id],
-  }),
-  user: one(users, {
-    fields: [commentLikes.userId],
-    references: [users.id],
-  }),
-}));
-
-export const projectLikesRelations = relations(projectLikes, ({ one }) => ({
-  project: one(projects, {
-    fields: [projectLikes.projectId],
-    references: [projects.id],
-  }),
-  user: one(users, {
-    fields: [projectLikes.userId],
-    references: [users.id],
-  }),
-}));
-
-export const projectSubscriptionsRelations = relations(projectSubscriptions, ({ one }) => ({
-  project: one(projects, {
-    fields: [projectSubscriptions.projectId],
-    references: [projects.id],
-  }),
-  user: one(users, {
-    fields: [projectSubscriptions.userId],
-    references: [users.id],
-  }),
-}));
-
-export const projectApplicationsRelations = relations(projectApplications, ({ one }) => ({
-  project: one(projects, {
-    fields: [projectApplications.projectId],
-    references: [projects.id],
-  }),
-  user: one(users, {
-    fields: [projectApplications.userId],
-    references: [users.id],
-  }),
-  respondedByUser: one(users, {
-    fields: [projectApplications.respondedBy],
-    references: [users.id],
-  }),
-}));
-
-export const projectPreventivesRelations = relations(projectPreventives, ({ one }) => ({
-  user: one(users, {
-    fields: [projectPreventives.userId],
-    references: [users.id],
-  }),
-}));
-
-export const postCommentsRelations = relations(postComments, ({ one, many }) => ({
-  post: one(posts, {
-    fields: [postComments.postId],
-    references: [posts.id],
-  }),
-  user: one(users, {
-    fields: [postComments.userId],
-    references: [users.id],
-  }),
-  likes: many(commentLikes),
-}));
-
-export const connectionsRelations = relations(connections, ({ one }) => ({
-  requester: one(users, {
-    fields: [connections.requesterId],
-    references: [users.id],
-  }),
-  addressee: one(users, {
-    fields: [connections.addresseeId],
-    references: [users.id],
-  }),
-}));
-
-export const messagesRelations = relations(messages, ({ one }) => ({
-  sender: one(users, {
-    fields: [messages.senderId],
-    references: [users.id],
-  }),
-  receiver: one(users, {
-    fields: [messages.receiverId],
-    references: [users.id],
-  }),
-}));
-
-export const feedbackRelations = relations(feedback, ({ one }) => ({
-  fromUser: one(users, {
-    fields: [feedback.fromUserId],
-    references: [users.id],
-  }),
-  toUser: one(users, {
-    fields: [feedback.toUserId],
-    references: [users.id],
-  }),
-  project: one(projects, {
-    fields: [feedback.projectId],
-    references: [projects.id],
-  }),
-}));
-
-export const notificationsRelations = relations(notifications, ({ one }) => ({
-  user: one(users, {
-    fields: [notifications.userId],
-    references: [users.id],
-  }),
-  relatedUser: one(users, {
-    fields: [notifications.relatedUserId],
-    references: [users.id],
-  }),
-}));
-
-export const notificationPreferencesRelations = relations(notificationPreferences, ({ one }) => ({
-  user: one(users, {
-    fields: [notificationPreferences.userId],
-    references: [users.id],
-  }),
-}));
-
-// Insert schemas
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  isEmailVerified: true,
-}).extend({
-  language: z.string().optional(),
+// Validation schemas
+export const insertUserSchema = z.object({
+  email: z.string().email("validation.email"),
+  password: z.string().min(8, "validation.passwordLength"),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  profileImageUrl: z.string().optional(),
+  userType: z.enum(["PROFESSIONAL", "COMPANY"]).default("PROFESSIONAL"),
+  language: z.string().default("en"),
+  isEmailVerified: z.boolean().default(false),
+  isBot: z.boolean().default(false),
 });
 
 // Authentication schemas
@@ -466,7 +30,7 @@ export const registerUserSchema = z.object({
   confirmPassword: z.string(),
   firstName: z.string().min(1, "validation.firstNameRequired"),
   lastName: z.string().min(1, "validation.lastNameRequired"),
-  userType: z.enum(["professional", "company"]),
+  userType: z.enum(["PROFESSIONAL", "COMPANY"]),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "validation.passwordsDontMatch",
   path: ["confirmPassword"],
@@ -477,30 +41,53 @@ export const loginUserSchema = z.object({
   password: z.string().min(1, "validation.passwordRequired"),
 });
 
-export const insertProfessionalProfileSchema = createInsertSchema(professionalProfiles).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertProfessionalProfileSchema = z.object({
+  userId: z.string(),
+  title: z.string().optional(),
+  bio: z.string().optional(),
   cv: z.string().optional(),
+  skills: z.array(z.string()).optional(),
+  seniorityLevel: z.enum(["JUNIOR", "MID", "SENIOR", "LEAD", "PRINCIPAL"]).optional(),
+  hourlyRate: z.number().optional(),
+  availability: z.enum(["AVAILABLE", "PARTIALLY_AVAILABLE", "UNAVAILABLE"]).default("AVAILABLE"),
+  cvUrl: z.string().optional(),
+  portfolioUrl: z.string().optional(),
+  githubUrl: z.string().optional(),
+  linkedinUrl: z.string().optional(),
   twitterUrl: z.string().optional(),
   websiteUrl: z.string().optional(),
 });
 
-export const insertCompanyProfileSchema = createInsertSchema(companyProfiles).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertCompanyProfileSchema = z.object({
+  userId: z.string(),
+  companyName: z.string().optional(),
+  description: z.string().optional(),
+  industry: z.string().optional(),
+  websiteUrl: z.string().optional(),
+  linkedinUrl: z.string().optional(),
+  location: z.string().optional(),
+  companySize: z.enum(["SIZE_1_10", "SIZE_11_50", "SIZE_51_200", "SIZE_201_1000", "SIZE_1000_PLUS"]).optional(),
 });
 
-export const insertProjectSchema = createInsertSchema(projects).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertProjectSchema = z.object({
+  companyUserId: z.string(),
+  title: z.string().min(1),
+  description: z.string().optional(),
+  requiredSkills: z.array(z.string()).optional(),
+  seniorityLevel: z.enum(["JUNIOR", "MID", "SENIOR", "LEAD", "PRINCIPAL"]).optional(),
+  contractType: z.enum(["HOURLY", "PROJECT_BASED", "FULL_TIME", "PART_TIME"]).default("PROJECT_BASED"),
+  teamSize: z.number().default(1),
+  estimatedHours: z.number().optional(),
+  budgetMin: z.number().optional(),
+  budgetMax: z.number().optional(),
+  status: z.enum(["OPEN", "IN_REVIEW", "ASSIGNED", "COMPLETED", "CANCELLED"]).default("OPEN"),
+  location: z.string().optional(),
+  isRemote: z.boolean().default(true),
+  likesCount: z.number().default(0),
 }).refine(
   (data) => {
     // Preventive 1: Budget range validation - budgetMin must be less than budgetMax
-    if (data.budgetMin && data.budgetMax && Number(data.budgetMin) >= Number(data.budgetMax)) {
+    if (data.budgetMin && data.budgetMax && data.budgetMin >= data.budgetMax) {
       return false;
     }
     return true;
@@ -512,10 +99,10 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
 ).refine(
   (data) => {
     // Preventive 2: Minimum budget threshold - prevent unreasonably low budgets
-    if (data.budgetMin && Number(data.budgetMin) < 50) {
+    if (data.budgetMin && data.budgetMin < 50) {
       return false;
     }
-    if (data.budgetMax && Number(data.budgetMax) < 50) {
+    if (data.budgetMax && data.budgetMax < 50) {
       return false;
     }
     return true;
@@ -527,10 +114,10 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
 ).refine(
   (data) => {
     // Preventive 3: Maximum budget limit - prevent spam or unrealistic budgets
-    if (data.budgetMin && Number(data.budgetMin) > 1000000) {
+    if (data.budgetMin && data.budgetMin > 1000000) {
       return false;
     }
-    if (data.budgetMax && Number(data.budgetMax) > 1000000) {
+    if (data.budgetMax && data.budgetMax > 1000000) {
       return false;
     }
     return true;
@@ -541,94 +128,109 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
   }
 );
 
-export const insertPostSchema = createInsertSchema(posts).omit({
-  id: true,
-  likesCount: true,
-  commentsCount: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertPostSchema = z.object({
+  userId: z.string(),
+  content: z.string().min(1),
+  isPublic: z.boolean().default(true),
 });
 
-export const insertMessageSchema = createInsertSchema(messages).omit({
-  id: true,
-  isRead: true,
-  createdAt: true,
+export const insertPostCommentSchema = z.object({
+  postId: z.string(),
+  userId: z.string(),
+  content: z.string().min(1),
 });
 
-export const insertFeedbackSchema = createInsertSchema(feedback).omit({
-  id: true,
-  createdAt: true,
+export const insertConnectionSchema = z.object({
+  requesterId: z.string(),
+  addresseeId: z.string(),
+  status: z.enum(["PENDING", "ACCEPTED", "DECLINED"]).default("PENDING"),
 });
 
-export const insertNotificationSchema = createInsertSchema(notifications).omit({
-  id: true,
-  isRead: true,
-  isEmailSent: true,
-  isPushSent: true,
-  createdAt: true,
+export const insertMessageSchema = z.object({
+  senderId: z.string(),
+  receiverId: z.string(),
+  content: z.string().min(1),
+  isRead: z.boolean().default(false),
 });
 
-export const insertConnectionSchema = createInsertSchema(connections).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertFeedbackSchema = z.object({
+  fromUserId: z.string(),
+  toUserId: z.string(),
+  projectId: z.string().optional(),
+  rating: z.number().min(1).max(5),
+  comment: z.string().optional(),
 });
 
-export const insertNotificationPreferencesSchema = createInsertSchema(notificationPreferences).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertNotificationSchema = z.object({
+  userId: z.string(),
+  type: z.enum(["MESSAGE", "LIKE", "COMMENT", "FEEDBACK", "CONNECTION", "APPLICATION_RECEIVED", "APPLICATION_ACCEPTED", "APPLICATION_REJECTED"]),
+  title: z.string().min(1),
+  message: z.string().min(1),
+  relatedId: z.string().optional(),
+  relatedUserId: z.string().optional(),
+  isRead: z.boolean().default(false),
+  isEmailSent: z.boolean().default(false),
+  isPushSent: z.boolean().default(false),
 });
 
-// Types
-export type UpsertUser = z.infer<typeof insertUserSchema>;
+export const insertNotificationPreferencesSchema = z.object({
+  userId: z.string(),
+  messageInApp: z.boolean().default(true),
+  messageEmail: z.boolean().default(false),
+  messagePush: z.boolean().default(false),
+  likeInApp: z.boolean().default(true),
+  likeEmail: z.boolean().default(false),
+  likePush: z.boolean().default(false),
+  commentInApp: z.boolean().default(true),
+  commentEmail: z.boolean().default(false),
+  commentPush: z.boolean().default(false),
+  feedbackInApp: z.boolean().default(true),
+  feedbackEmail: z.boolean().default(false),
+  feedbackPush: z.boolean().default(false),
+  weeklyDigest: z.boolean().default(true),
+});
+
+export const insertProjectPreventiveSchema = z.object({
+  userId: z.string(),
+  title: z.string().min(1),
+  description: z.string().optional(),
+  validationRule: z.string().min(1, "validation.validationRuleRequired"),
+  errorMessage: z.string().min(1),
+  category: z.enum(["BUDGET", "TIMELINE", "TEAM", "SKILLS", "GENERAL"]).default("GENERAL"),
+  isActive: z.boolean().default(true),
+  isGlobal: z.boolean().default(false),
+});
+
+export const insertProjectSubscriptionSchema = z.object({
+  projectId: z.string(),
+  userId: z.string(),
+});
+
+export const insertProjectApplicationSchema = z.object({
+  projectId: z.string(),
+  userId: z.string(),
+  status: z.enum(["PENDING", "ACCEPTED", "REJECTED"]).default("PENDING"),
+  coverLetter: z.string().optional(),
+  proposedRate: z.number().optional(),
+  appliedAt: z.date().default(() => new Date()),
+  respondedAt: z.date().optional(),
+  respondedBy: z.string().optional(),
+});
+
+// Type exports for backward compatibility
+export type InsertUser = z.infer<typeof insertUserSchema>;
 export type RegisterUser = z.infer<typeof registerUserSchema>;
 export type LoginUser = z.infer<typeof loginUserSchema>;
-export type User = typeof users.$inferSelect;
-export type JobImport = typeof jobImports.$inferSelect;
-export type InsertJobImport = typeof jobImports.$inferInsert;
-export type ProfessionalProfile = typeof professionalProfiles.$inferSelect;
 export type InsertProfessionalProfile = z.infer<typeof insertProfessionalProfileSchema>;
-export type CompanyProfile = typeof companyProfiles.$inferSelect;
 export type InsertCompanyProfile = z.infer<typeof insertCompanyProfileSchema>;
-export type Project = typeof projects.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
-export type Post = typeof posts.$inferSelect;
 export type InsertPost = z.infer<typeof insertPostSchema>;
-export type Message = typeof messages.$inferSelect;
-export type InsertMessage = z.infer<typeof insertMessageSchema>;
-export type Feedback = typeof feedback.$inferSelect;
-export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
-export type Connection = typeof connections.$inferSelect;
+export type InsertPostComment = z.infer<typeof insertPostCommentSchema>;
 export type InsertConnection = z.infer<typeof insertConnectionSchema>;
-export type Notification = typeof notifications.$inferSelect;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
-export type NotificationPreferences = typeof notificationPreferences.$inferSelect;
 export type InsertNotificationPreferences = z.infer<typeof insertNotificationPreferencesSchema>;
-export type ProjectSubscription = typeof projectSubscriptions.$inferSelect;
-export type InsertProjectSubscription = typeof projectSubscriptions.$inferInsert;
-export type ProjectApplication = typeof projectApplications.$inferSelect;
-export type InsertProjectApplication = typeof projectApplications.$inferInsert;
-export type ProjectPreventive = typeof projectPreventives.$inferSelect;
-export type InsertProjectPreventive = typeof projectPreventives.$inferInsert;
-
-// Schemas for project subscriptions
-export const insertProjectSubscriptionSchema = createInsertSchema(projectSubscriptions).omit({
-  id: true,
-  createdAt: true,
-});
-
-// Schemas for project applications
-export const insertProjectApplicationSchema = createInsertSchema(projectApplications).omit({
-  id: true,
-  appliedAt: true,
-  respondedAt: true,
-  respondedBy: true,
-});
-
-// Schemas for project preventives
-export const insertProjectPreventiveSchema = createInsertSchema(projectPreventives).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export type InsertProjectPreventive = z.infer<typeof insertProjectPreventiveSchema>;
+export type InsertProjectSubscription = z.infer<typeof insertProjectSubscriptionSchema>;
+export type InsertProjectApplication = z.infer<typeof insertProjectApplicationSchema>;

@@ -2,21 +2,12 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
-// Dynamic translation loading
+// Dynamic translation loading - only EN, IT, ES
 const loadTranslations = async () => {
   const translations = await Promise.all([
     import('./translations/en.json').then(module => ({ lang: 'en', data: module.default })),
-    import('./translations/es.json').then(module => ({ lang: 'es', data: module.default })),
-    import('./translations/fr.json').then(module => ({ lang: 'fr', data: module.default })),
     import('./translations/it.json').then(module => ({ lang: 'it', data: module.default })),
-    import('./translations/de.json').then(module => ({ lang: 'de', data: module.default })),
-    import('./translations/pt.json').then(module => ({ lang: 'pt', data: module.default })),
-    import('./translations/ja.json').then(module => ({ lang: 'ja', data: module.default })),
-    import('./translations/ko.json').then(module => ({ lang: 'ko', data: module.default })),
-    import('./translations/zh.json').then(module => ({ lang: 'zh', data: module.default })),
-    import('./translations/ru.json').then(module => ({ lang: 'ru', data: module.default })),
-    import('./translations/ar.json').then(module => ({ lang: 'ar', data: module.default })),
-    import('./translations/hi.json').then(module => ({ lang: 'hi', data: module.default }))
+    import('./translations/es.json').then(module => ({ lang: 'es', data: module.default }))
   ]);
 
   const resources: any = {};
@@ -50,16 +41,7 @@ i18n
           "language.select": "Select Language",
           "language.english": "English",
           "language.spanish": "Spanish",
-          "language.french": "French",
-          "language.german": "German",
-          "language.italian": "Italian",
-          "language.portuguese": "Portuguese",
-          "language.russian": "Russian",
-          "language.chinese": "Chinese",
-          "language.japanese": "Japanese",
-          "language.korean": "Korean",
-          "language.arabic": "Arabic",
-          "language.hindi": "Hindi"
+          "language.italian": "Italian"
         }
       }
     },

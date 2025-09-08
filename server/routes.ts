@@ -1,9 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { Server as SocketIOServer } from "socket.io";
-import { storage } from "./storage";
-import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { extendedStorage as storage } from "./storage";
 import { hashPassword, verifyPassword, isAuthenticated as sessionAuth } from "./auth";
 import { setupAuth } from "./replitAuth";
 import {
@@ -17,7 +15,6 @@ import {
   insertProjectApplicationSchema,
   registerUserSchema,
   loginUserSchema,
-  connections,
 } from "@shared/schema";
 import { notificationService, createMessageNotification, createLikeNotification, createCommentLikeNotification, createProjectLikeNotification, createCommentNotification, createFeedbackNotification } from "./notifications";
 
@@ -31,6 +28,9 @@ async function createNotification(userId: string, type: string, title: string, m
       message,
       relatedId,
       relatedUserId,
+      isRead: false,
+      isEmailSent: false,
+      isPushSent: false,
     });
   } catch (error) {
     console.error('Error creating notification:', error);
@@ -38,7 +38,6 @@ async function createNotification(userId: string, type: string, title: string, m
 }
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { z } from "zod";
-import OpenAI from "openai";
 import { translateMessage, getUserLanguage } from "./translations";
 import { JobImportService } from "./job-import-service";
 
@@ -423,14 +422,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Notify the project owner
       const companyLang = await getUserLanguage(project.companyUserId, storage);
-      await storage.createNotification({
-        userId: project.companyUserId,
-        type: 'application_received',
-        title: translateMessage('notifications.applicationReceived', companyLang),
-        message: translateMessage('notifications.applicationReceivedDetails', companyLang),
-        relatedId: application.id,
-        relatedUserId: userId
-      });
+      await createNotification(
+        applicant.userId,
+        'APPLICATION_RECEIVED',
+        translateMessage('notification.applicationReceived', 'en'),
+        translateMessage('notification.applicationReceivedDesc', 'en', { project: project.title }),
+        application.id,
+        req.session.user!.id
+      );
       
       res.json(application);
     } catch (error) {
@@ -508,7 +507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : await storage.rejectProjectApplication(applicationId, userId);
       
       // Notify the applicant
-      const notificationType = status === 'accepted' ? 'application_accepted' : 'application_rejected';
+      const notificationType = status === 'accepted' ? 'APPLICATION_ACCEPTED' : 'APPLICATION_REJECTED';
       await storage.createNotification({
         userId: application.userId,
         type: notificationType,
@@ -689,8 +688,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const userId = req.session.userId!;
-      
-      const preventive = await storage.updateProjectPreventive(id, userId, req.body);
+
+      const updateData = validatedData.success ? validatedData.data : {};
+      const preventive = await storage.updateProjectPreventive(id, updateData);
       if (!preventive) {
         return res.status(404).json({ message: "Preventive not found or not authorized" });
       }
@@ -706,8 +706,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const userId = req.session.userId!;
-      
-      await storage.deleteProjectPreventive(id, userId);
+
+      await storage.deleteProjectPreventive(id);
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting preventive:", error);
@@ -1292,7 +1292,11 @@ Make the preventive specific, practical, and helpful for project management.`;
       }
 
       // Create connection request
-      const connection = await storage.createConnection(requesterId, addresseeId);
+      const connection = await storage.createConnection({
+        requesterId,
+        addresseeId,
+        status: 'PENDING'
+      });
       
       // Create notification for the addressee
       await createNotification(addresseeId, 'connection', 'New Connection Request', 
@@ -1333,23 +1337,24 @@ Make the preventive specific, practical, and helpful for project management.`;
       }
 
       // Verify the user is the addressee of this connection
-      const [connection] = await db.select().from(connections).where(eq(connections.id, connectionId));
+      const connection = await storage.getConnectionById(connectionId);
       if (!connection) {
         return res.status(404).json({ message: "Connection not found" });
       }
 
       if (connection.addresseeId !== currentUserId) {
-        return res.status(403).json({ message: "You can only respond to connection requests sent to you" });
+        return res.status(403).json({ message: "You can only respond to connections sent to you" });
       }
 
-      const updatedConnection = await storage.updateConnectionStatus(connectionId, status);
-      
+      // Update the connection status
+      const updatedConnection = await storage.updateConnectionStatus(connectionId, status.toUpperCase());
+
       // Create notification for the requester
-      const notificationMessage = status === 'accepted' 
-        ? 'Your connection request was accepted!' 
+      const notificationMessage = status === 'accepted'
+        ? 'Your connection request was accepted!'
         : 'Your connection request was declined';
-      
-      await createNotification(connection.requesterId, 'connection', 'Connection Request Response', 
+
+      await createNotification(connection.requesterId, 'connection', 'Connection Request Response',
         notificationMessage, currentUserId, currentUserId);
 
       res.json(updatedConnection);
