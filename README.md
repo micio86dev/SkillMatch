@@ -1,5 +1,14 @@
 # VibeSync - Professional IT Networking Platform 🚀
 
+## ⚠️ Important Setup Note
+
+**Before running the application, you must update the `.env` file with your actual credentials:**
+- Replace `MONGODB_URI` with your actual MongoDB connection string
+- Replace `OPENAI_API_KEY` with your OpenAI API key (optional)
+- Replace other service credentials as needed
+
+Without valid credentials, the application will not be able to connect to external services.
+
 ## 🌟 Overview
 
 **VibeSync** is a comprehensive full-stack web application designed to connect IT professionals with companies and projects. The platform serves as a networking hub where professionals can showcase their skills, companies can post projects, and both parties can engage through a social feed and messaging system.
@@ -35,15 +44,51 @@
 - **15 interconnected models**
 - **Optimized indexing** and relationships
 
-## 🚀 Quick Start Guide
+## 🚀 Quick Setup
 
-### Prerequisites
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Set up environment variables (see below)
+4. Run database migrations: `npm run db:push`
+5. Generate Prisma client: `npm run db:generate`
+6. Start the development server: `npm run dev`
 
-Make sure you have these installed:
-- **Node.js 20+** ([Download](https://nodejs.org/))
-- **npm** or **yarn**
-- **MongoDB Atlas account** ([Sign up](https://mongodb.com/cloud/atlas))
-- **Git** for version control
+## ⚙️ Environment Setup
+
+Copy the `.env.example` file to `.env` and fill in your actual values:
+
+```bash
+cp .env.example .env
+```
+
+Key environment variables required:
+
+- `MONGODB_URI`: Your MongoDB connection string
+- `OPENAI_API_KEY`: OpenAI API key for AI features (optional)
+- `JWT_SECRET`: Secret key for JWT token signing
+- `CLOUDINARY_*`: Credentials for image uploads (optional)
+
+For detailed environment configuration, see the `.env.example` file.
+
+## 🏗️ Architecture
+
+### **Frontend**
+- **React 18** with TypeScript
+- **Wouter** for routing
+- **Tailwind CSS** + **shadcn/ui** components
+- **Tanstack Query** for state management
+- **i18next** for internationalization
+- **Framer Motion** for animations
+
+### **Backend**
+- **Node.js + Express.js** with TypeScript
+- **Prisma ORM** with MongoDB Atlas
+- **Socket.IO** for real-time messaging
+- **OpenAI GPT-4** for job processing
+- **Session-based authentication**
+- **File upload** with Google Cloud Storage
+
+// ... rest of the file ...
 
 ### 1. Clone and Install
 
