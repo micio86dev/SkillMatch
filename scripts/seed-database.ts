@@ -1,21 +1,7 @@
 #!/usr/bin/env tsx
 
-import { db } from "../server/db";
-import { 
-  users, 
-  professionalProfiles, 
-  companyProfiles, 
-  projects, 
-  projectApplications,
-  notifications,
-  type User,
-  type Project,
-  type InsertUser,
-  type InsertProfessionalProfile,
-  type InsertCompanyProfile,
-  type InsertProject
-} from "../shared/schema";
-import { eq, sql } from "drizzle-orm";
+import { prisma } from "../server/prismaClient";
+import type { User, Project, InsertUser, InsertProfessionalProfile, InsertCompanyProfile, InsertProject } from "../shared/schema";
 
 // Realistic seed data using translation keys
 const professionalData = [
@@ -27,8 +13,8 @@ const professionalData = [
     availability: "full_time", seniorityLevel: "senior"
   },
   {
-    firstName: "Sofia", lastName: "García", email: "sofia.garcia@example.com", 
-    skills: ["Python", "Django", "PostgreSQL", "Docker"],
+    firstName: "Sofia", lastName: "García", email: "sofia.garcia@example.com",
+    skills: ["Python", "Django", "MongoDB", "Docker"],
     bio: "Backend specialist focused on API development and microservices architecture.",
     location: "Barcelona, Spain", hourlyRate: 65, yearsExperience: 6,
     availability: "part_time", seniorityLevel: "mid"
@@ -95,7 +81,7 @@ const projectTemplates = [
   {
     title: "API Development for SaaS Platform",
     description: "Develop REST API for B2B SaaS platform with authentication, data analytics, and third-party integrations. Focus on scalability and security.",
-    requiredSkills: ["Python", "FastAPI", "PostgreSQL", "Docker"],
+    requiredSkills: ["Python", "FastAPI", "MongoDB", "Docker"],
     seniorityLevel: "senior", contractType: "project_based", teamSize: 4,
     budgetMin: 30000, budgetMax: 50000, estimatedHours: 600
   },
@@ -123,30 +109,30 @@ async function seedDatabase() {
     console.log("🧹 Clearing existing data...");
     try {
       // Delete in reverse dependency order
-      await db.delete(notifications);
-      await db.delete(projectApplications);
-      
+      await prisma.notifications.deleteMany();
+      await prisma.projectApplications.deleteMany();
+
       // Handle project dependencies
-      const projectLikesResult = await db.execute(sql`DELETE FROM project_likes`);
-      const projectCommentsResult = await db.execute(sql`DELETE FROM project_comments`); 
-      const projectSubscriptionsResult = await db.execute(sql`DELETE FROM project_subscriptions`);
-      
-      await db.delete(projects);
-      
+      await prisma.$executeRaw`DELETE FROM project_likes`;
+      await prisma.$executeRaw`DELETE FROM project_comments`;
+      await prisma.$executeRaw`DELETE FROM project_subscriptions`;
+
+      await prisma.projects.deleteMany();
+
       // Handle post dependencies
-      const postLikesResult = await db.execute(sql`DELETE FROM post_likes`);
-      const postCommentsResult = await db.execute(sql`DELETE FROM post_comments`);
-      const postsResult = await db.execute(sql`DELETE FROM posts`);
-      
+      await prisma.$executeRaw`DELETE FROM post_likes`;
+      await prisma.$executeRaw`DELETE FROM post_comments`;
+      await prisma.$executeRaw`DELETE FROM posts`;
+
       // Delete profiles and users last
-      await db.delete(companyProfiles);
-      await db.delete(professionalProfiles);
-      
+      await prisma.companyProfiles.deleteMany();
+      await prisma.professionalProfiles.deleteMany();
+
       // Handle other user dependencies
-      const messagesResult = await db.execute(sql`DELETE FROM messages`);
-      const connectionsResult = await db.execute(sql`DELETE FROM connections`);
-      
-      await db.delete(users);
+      await prisma.$executeRaw`DELETE FROM messages`;
+      await prisma.$executeRaw`DELETE FROM connections`;
+
+      await prisma.users.deleteMany();
       
       console.log("✅ Successfully cleared all existing data");
     } catch (clearError) {
@@ -161,25 +147,29 @@ async function seedDatabase() {
       const baseProfile = professionalData[i % professionalData.length];
       const uniqueEmail = `${baseProfile.firstName.toLowerCase()}${i + 1}@example.com`;
       
-      const [user] = await db.insert(users).values({
-        email: uniqueEmail,
-        password: "password123", // In real app, this would be hashed
-        firstName: baseProfile.firstName,
-        lastName: `${baseProfile.lastName}${i > 4 ? i - 4 : ''}`,
-        userType: "professional",
-        language: ["en", "it", "es"][i % 3] // Mix of languages
-      }).returning();
+      const user = await prisma.users.create({
+        data: {
+          email: uniqueEmail,
+          password: "password123", // In real app, this would be hashed
+          firstName: baseProfile.firstName,
+          lastName: `${baseProfile.lastName}${i > 4 ? i - 4 : ''}`,
+          userType: "professional",
+          language: ["en", "it", "es"][i % 3] // Mix of languages
+        }
+      });
 
-      await db.insert(professionalProfiles).values({
-        userId: user.id,
-        bio: baseProfile.bio,
-        skills: baseProfile.skills,
-        yearsExperience: baseProfile.yearsExperience + (i % 3),
-        hourlyRate: (baseProfile.hourlyRate + (i * 5)).toString(),
-        availability: baseProfile.availability,
-        seniorityLevel: baseProfile.seniorityLevel,
-        location: baseProfile.location,
-        isAvailable: i % 4 !== 0 // 75% available
+      await prisma.professionalProfiles.create({
+        data: {
+          userId: user.id,
+          bio: baseProfile.bio,
+          skills: baseProfile.skills,
+          yearsExperience: baseProfile.yearsExperience + (i % 3),
+          hourlyRate: (baseProfile.hourlyRate + (i * 5)).toString(),
+          availability: baseProfile.availability,
+          seniorityLevel: baseProfile.seniorityLevel,
+          location: baseProfile.location,
+          isAvailable: i % 4 !== 0 // 75% available
+        }
       });
 
       professionals.push(user);
@@ -195,23 +185,27 @@ async function seedDatabase() {
       const baseCompany = companyData[i % companyData.length];
       const uniqueEmail = `company${i + 1}@${baseCompany.companyName.toLowerCase()}.com`;
       
-      const [user] = await db.insert(users).values({
-        email: uniqueEmail,
-        password: "password123",
-        firstName: baseCompany.firstName,
-        lastName: `${baseCompany.lastName}${i > 2 ? i - 2 : ''}`,
-        userType: "company",
-        language: ["en", "it", "es"][i % 3]
-      }).returning();
+      const user = await prisma.users.create({
+        data: {
+          email: uniqueEmail,
+          password: "password123",
+          firstName: baseCompany.firstName,
+          lastName: `${baseCompany.lastName}${i > 2 ? i - 2 : ''}`,
+          userType: "company",
+          language: ["en", "it", "es"][i % 3]
+        }
+      });
 
-      await db.insert(companyProfiles).values({
-        userId: user.id,
-        companyName: `${baseCompany.companyName}${i > 2 ? ' ' + (i - 2) : ''}`,
-        industry: baseCompany.industry,
-        description: baseCompany.description,
-        location: baseCompany.location,
-        companySize: baseCompany.companySize,
-        website: `https://${baseCompany.companyName.toLowerCase()}${i > 2 ? i - 2 : ''}.com`
+      await prisma.companyProfiles.create({
+        data: {
+          userId: user.id,
+          companyName: `${baseCompany.companyName}${i > 2 ? ' ' + (i - 2) : ''}`,
+          industry: baseCompany.industry,
+          description: baseCompany.description,
+          location: baseCompany.location,
+          companySize: baseCompany.companySize,
+          website: `https://${baseCompany.companyName.toLowerCase()}${i > 2 ? i - 2 : ''}.com`
+        }
       });
 
       companies.push(user);
@@ -221,21 +215,23 @@ async function seedDatabase() {
       for (let j = 0; j < projectCount; j++) {
         const projectTemplate = projectTemplates[(i * 3 + j) % projectTemplates.length];
         
-        const [project] = await db.insert(projects).values({
-          companyUserId: user.id,
-          title: `${projectTemplate.title} ${i > 2 ? `(${i - 2})` : ''}`,
-          description: projectTemplate.description,
-          requiredSkills: projectTemplate.requiredSkills,
-          seniorityLevel: projectTemplate.seniorityLevel,
-          contractType: projectTemplate.contractType,
-          teamSize: projectTemplate.teamSize,
-          budgetMin: projectTemplate.budgetMin.toString(),
-          budgetMax: projectTemplate.budgetMax.toString(),
-          estimatedHours: projectTemplate.estimatedHours,
-          status: "open",
-          isRemote: true,
-          location: baseCompany.location
-        }).returning();
+        const project = await prisma.projects.create({
+          data: {
+            companyUserId: user.id,
+            title: `${projectTemplate.title} ${i > 2 ? `(${i - 2})` : ''}`,
+            description: projectTemplate.description,
+            requiredSkills: projectTemplate.requiredSkills,
+            seniorityLevel: projectTemplate.seniorityLevel,
+            contractType: projectTemplate.contractType,
+            teamSize: projectTemplate.teamSize,
+            budgetMin: projectTemplate.budgetMin.toString(),
+            budgetMax: projectTemplate.budgetMax.toString(),
+            estimatedHours: projectTemplate.estimatedHours,
+            status: "open",
+            isRemote: true,
+            location: baseCompany.location
+          }
+        });
 
         allProjects.push({ ...project, companyUser: user });
       }
@@ -269,49 +265,56 @@ async function seedDatabase() {
         const respondedAt = status !== 'pending' ? 
           new Date(appliedAt.getTime() + Math.random() * 3 * 24 * 60 * 60 * 1000) : null;
         
-        await db.insert(projectApplications).values({
-          projectId: project.id,
-          userId: professional.id,
-          status,
-          coverLetter: `I'm excited to apply for ${project.title}. With my experience in the required technologies, I believe I can contribute effectively to this project. My background includes relevant experience that aligns with your needs.`,
-          proposedRate: "65.00",
-          appliedAt,
-          respondedAt,
-          respondedBy: respondedAt ? project.companyUserId : null
+        await prisma.projectApplications.create({
+          data: {
+            projectId: project.id,
+            userId: professional.id,
+            status,
+            coverLetter: `I'm excited to apply for ${project.title}. With my experience in the required technologies, I believe I can contribute effectively to this project. My background includes relevant experience that aligns with your needs.`,
+            proposedRate: "65.00",
+            appliedAt,
+            respondedAt,
+            respondedBy: respondedAt ? project.companyUserId : null
+          }
         });
         
         applicationsCount++;
         
         // Create notification for company when application received
-        await db.insert(notifications).values({
-          userId: project.companyUserId,
-          type: 'application_received',
-          title: 'New Application Received',
-          message: `${professional.firstName} ${professional.lastName} applied to ${project.title}`,
-          relatedId: project.id,
-          relatedUserId: professional.id,
-          isRead: Math.random() > 0.5
+        await prisma.notifications.create({
+          data: {
+            userId: project.companyUserId,
+            type: 'application_received',
+            title: 'New Application Received',
+            message: `${professional.firstName} ${professional.lastName} applied to ${project.title}`,
+            relatedId: project.id,
+            relatedUserId: professional.id,
+            isRead: Math.random() > 0.5
+          }
         });
-        
+
         // Create notification for professional when application responded
         if (status !== 'pending') {
-          await db.insert(notifications).values({
-            userId: professional.id,
-            type: status === 'accepted' ? 'application_accepted' : 'application_rejected',
-            title: `Application ${status === 'accepted' ? 'Accepted' : 'Rejected'}`,
-            message: `Your application for ${project.title} has been ${status}`,
-            relatedId: project.id,
-            relatedUserId: project.companyUserId,
-            isRead: Math.random() > 0.3
+          await prisma.notifications.create({
+            data: {
+              userId: professional.id,
+              type: status === 'accepted' ? 'application_accepted' : 'application_rejected',
+              title: `Application ${status === 'accepted' ? 'Accepted' : 'Rejected'}`,
+              message: `Your application for ${project.title} has been ${status}`,
+              relatedId: project.id,
+              relatedUserId: project.companyUserId,
+              isRead: Math.random() > 0.3
+            }
           });
         }
       }
       
       // Update project status if full
       if (acceptedCount >= (project.teamSize || 1)) {
-        await db.update(projects)
-          .set({ status: "assigned" })
-          .where(eq(projects.id, project.id));
+        await prisma.projects.update({
+          where: { id: project.id },
+          data: { status: "assigned" }
+        });
         fullProjectsCount++;
       }
       

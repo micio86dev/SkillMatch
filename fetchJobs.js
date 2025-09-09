@@ -21,7 +21,7 @@ export async function fetchAndProcessJobs() {
       },
       {
         title: "backend engineer python",
-        description: "Looking for backend engineer. Python, Django, PostgreSQL, REST APIs. Must have experience with cloud platforms and microservices architecture.",
+        description: "Looking for backend engineer. Python, Django, MongoDB, REST APIs. Must have experience with cloud platforms and microservices architecture.",
         company: "StartupCo",
         location: "San Francisco"
       },
@@ -144,10 +144,10 @@ async function saveJobToDatabase(jobData) {
  */
 function extractSkillsFromDescription(description) {
   const commonSkills = [
-    'javascript', 'typescript', 'react', 'vue', 'angular', 'node.js', 'python', 
+    'javascript', 'typescript', 'react', 'vue', 'angular', 'node.js', 'python',
     'django', 'flask', 'java', 'spring', 'c#', 'asp.net', 'php', 'laravel',
     'ruby', 'rails', 'go', 'golang', 'rust', 'swift', 'kotlin', 'scala',
-    'postgresql', 'mysql', 'mongodb', 'redis', 'elasticsearch',
+    'mongodb', 'postgresql', 'mysql', 'redis', 'elasticsearch',
     'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'terraform',
     'git', 'github', 'gitlab', 'ci/cd', 'jenkins', 'github actions'
   ];

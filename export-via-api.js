@@ -53,7 +53,7 @@ async function exportDatabase() {
         export_method: 'API',
         platform: 'VibeSync Professional Networking',
         stats: stats,
-        note: 'Database PostgreSQL con ' + stats.activeProfessionals + ' professionisti e ' + stats.openProjects + ' progetti'
+        note: 'Database MongoDB con ' + stats.activeProfessionals + ' professionisti e ' + stats.openProjects + ' progetti'
       }, null, 2));
       
       console.log(`📁 Report salvato: ${filename}`);

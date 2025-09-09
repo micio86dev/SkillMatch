@@ -1,5 +1,6 @@
-import { storage } from "../storage";
 import bcrypt from "bcrypt";
+
+import { storage } from "../storage";
 import { nanoid } from "nanoid";
 
 // Realistic professional data for seeding
@@ -20,7 +21,7 @@ const professionTitles = [
 
 const skillSets = [
   ["JavaScript", "React", "Node.js", "TypeScript", "HTML/CSS"],
-  ["Python", "Django", "Flask", "PostgreSQL", "Redis"],
+  ["Python", "Django", "Flask", "MongoDB", "Redis"],
   ["Java", "Spring Boot", "Microservices", "Maven", "JUnit"],
   ["PHP", "Laravel", "MySQL", "Composer", "PHPUnit"],
   ["C#", ".NET Core", "Entity Framework", "Azure", "SQL Server"],
@@ -308,10 +309,17 @@ export class ProfessionalUsersSeeder {
           password: hashedPassword,
           firstName: name.firstName,
           lastName: name.lastName,
-          userType: "professional",
-          language: getRandomElement(["en", "es", "fr", "de", "pt", "it"]),
-          profileImageUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name.firstName}${name.lastName}`
+          userType: "PROFESSIONAL"
+          // Removed profileImageUrl as it's not part of the RegisterUser type
         });
+
+        // Update user with profile image URL
+        const profileImageUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${name.firstName}${name.lastName}`;
+        await storage.updateUser(user.id, { profileImageUrl });
+
+        // Update user with language preference
+        const language = getRandomElement(["en", "es", "fr", "de", "pt", "it"]);
+        await storage.updateUser(user.id, { language });
 
         // Create professional profile
         await storage.createProfessionalProfile({
@@ -321,7 +329,7 @@ export class ProfessionalUsersSeeder {
           cv: generateCV(name, title, skills, years),
           skills,
           seniorityLevel: seniorityLevel as any,
-          hourlyRate: hourlyRate.toString(),
+          hourlyRate: hourlyRate,
           availability: availability as any,
           portfolioUrl: generatePortfolioUrl(name.firstName, name.lastName),
           ...socialUrls

@@ -187,6 +187,12 @@ export const insertNotificationPreferencesSchema = z.object({
   feedbackInApp: z.boolean().default(true),
   feedbackEmail: z.boolean().default(false),
   feedbackPush: z.boolean().default(false),
+  connectionInApp: z.boolean().default(true),
+  connectionEmail: z.boolean().default(false),
+  connectionPush: z.boolean().default(false),
+  applicationInApp: z.boolean().default(true),
+  applicationEmail: z.boolean().default(false),
+  applicationPush: z.boolean().default(false),
   weeklyDigest: z.boolean().default(true),
 });
 

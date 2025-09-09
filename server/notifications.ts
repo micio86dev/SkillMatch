@@ -1,14 +1,16 @@
 import { Server as SocketIOServer } from 'socket.io';
+import sgMail = require('@sendgrid/mail');
+
+import type { InsertNotification, Notification, NotificationPreferences, User } from '../shared/schema';
 import { storage } from './storage';
-import { t } from './i18n-server';
 import { sendEmail } from './email';
-import type { InsertNotification, NotificationPreferences, User } from '@shared/schema';
+import { translateMessage } from './translations';
 
 export interface NotificationService {
   createNotification(notification: InsertNotification): Promise<void>;
   sendRealTimeNotification(userId: string, notification: any): void;
-  sendEmailNotification(userId: string, notification: any): Promise<void>;
-  sendPushNotification(userId: string, notification: any): Promise<void>;
+  sendEmailNotification(userId: string, notification: Notification): Promise<void>;
+  sendPushNotification(userId: string, notification: Notification): Promise<void>;
   sendWeeklyDigest(userId: string): Promise<void>;
 }
 
@@ -22,25 +24,27 @@ class NotificationServiceImpl implements NotificationService {
   async createNotification(notification: InsertNotification): Promise<void> {
     try {
       // Store notification in database
-      await storage.createNotification(notification);
+      const createdNotification = await storage.createNotification(notification);
       
       // Get user preferences
       const preferences = await storage.getNotificationPreferences(notification.userId);
       
       // Send real-time notification if enabled
       if (this.shouldSendInApp(notification.type, preferences || null)) {
-        const fullNotification = await storage.getNotification(notification.userId, notification.title);
-        this.sendRealTimeNotification(notification.userId, fullNotification);
+        const fullNotification = await storage.getNotificationById(createdNotification.id);
+        if (fullNotification) {
+          this.sendRealTimeNotification(notification.userId, fullNotification);
+        }
       }
       
       // Send email notification if enabled
       if (this.shouldSendEmail(notification.type, preferences || null)) {
-        await this.sendEmailNotification(notification.userId, notification);
+        await this.sendEmailNotification(notification.userId, createdNotification);
       }
       
       // Send push notification if enabled
       if (this.shouldSendPush(notification.type, preferences || null)) {
-        await this.sendPushNotification(notification.userId, notification);
+        await this.sendPushNotification(notification.userId, createdNotification);
       }
     } catch (error) {
       console.error('Error creating notification:', error);
@@ -53,28 +57,28 @@ class NotificationServiceImpl implements NotificationService {
     }
   }
 
-  async sendEmailNotification(userId: string, notification: InsertNotification): Promise<void> {
+  async sendEmailNotification(userId: string, notification: Notification): Promise<void> {
     try {
       const user = await storage.getUser(userId);
       if (!user || !user.email) return;
-
+      
       const subject = notification.title;
       const html = this.generateEmailTemplate(notification, user);
       
       await sendEmail(user.email, subject, html);
       
       // Mark email as sent
-      await storage.markNotificationEmailSent(notification.userId, notification.title);
+      await storage.markNotificationEmailSent(notification.id);
     } catch (error) {
       console.error('Error sending email notification:', error);
     }
   }
 
-  async sendPushNotification(userId: string, notification: InsertNotification): Promise<void> {
+  async sendPushNotification(userId: string, notification: Notification): Promise<void> {
     try {
       // Browser push notifications would be implemented here
       // For now, we'll just mark it as sent
-      await storage.markNotificationPushSent(notification.userId, notification.title);
+      await storage.markNotificationPushSent(notification.id);
     } catch (error) {
       console.error('Error sending push notification:', error);
     }
@@ -86,13 +90,13 @@ class NotificationServiceImpl implements NotificationService {
       const preferences = await storage.getNotificationPreferences(userId);
       
       if (!user || !user.email || !preferences?.weeklyDigest) return;
-
+      
       // Get last week's activity
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       const notifications = await storage.getNotificationsSince(userId, weekAgo);
       
       if (notifications.length === 0) return;
-
+      
       const subject = `Your Weekly VibeSync Digest`;
       const html = this.generateWeeklyDigestTemplate(notifications, user);
       
@@ -103,39 +107,77 @@ class NotificationServiceImpl implements NotificationService {
   }
 
   private shouldSendInApp(type: string, preferences: NotificationPreferences | null): boolean {
-    if (!preferences) return true; // Default to enabled
+    if (!preferences) return true; // Default to sending if no preferences
+    
     switch (type) {
-      case 'message': return preferences.messageInApp ?? true;
-      case 'like': return preferences.likeInApp ?? true;
-      case 'comment': return preferences.commentInApp ?? true;
-      case 'feedback': return preferences.feedbackInApp ?? true;
-      default: return true;
+      case 'MESSAGE':
+        return preferences.messageInApp;
+      case 'LIKE':
+        return preferences.likeInApp;
+      case 'COMMENT':
+        return preferences.commentInApp;
+      case 'FEEDBACK':
+        return preferences.feedbackInApp;
+      case 'CONNECTION':
+        return preferences.connectionInApp;
+      case 'APPLICATION_RECEIVED':
+      case 'APPLICATION_ACCEPTED':
+      case 'APPLICATION_REJECTED':
+        return preferences.applicationInApp;
+      default:
+        return true;
     }
   }
 
   private shouldSendEmail(type: string, preferences: NotificationPreferences | null): boolean {
-    if (!preferences) return false; // Default to disabled
+    if (!preferences) return false; // Default to not sending email if no preferences
+    
     switch (type) {
-      case 'message': return preferences.messageEmail ?? false;
-      case 'like': return preferences.likeEmail ?? false;
-      case 'comment': return preferences.commentEmail ?? false;
-      case 'feedback': return preferences.feedbackEmail ?? false;
-      default: return false;
+      case 'MESSAGE':
+        return preferences.messageEmail;
+      case 'LIKE':
+        return preferences.likeEmail;
+      case 'COMMENT':
+        return preferences.commentEmail;
+      case 'FEEDBACK':
+        return preferences.feedbackEmail;
+      case 'CONNECTION':
+        return preferences.connectionEmail;
+      case 'APPLICATION_RECEIVED':
+      case 'APPLICATION_ACCEPTED':
+      case 'APPLICATION_REJECTED':
+        return preferences.applicationEmail;
+      default:
+        return false;
     }
   }
 
   private shouldSendPush(type: string, preferences: NotificationPreferences | null): boolean {
-    if (!preferences) return false; // Default to disabled
+    if (!preferences) return false; // Default to not sending push if no preferences
+    
     switch (type) {
-      case 'message': return preferences.messagePush ?? false;
-      case 'like': return preferences.likePush ?? false;
-      case 'comment': return preferences.commentPush ?? false;
-      case 'feedback': return preferences.feedbackPush ?? false;
-      default: return false;
+      case 'MESSAGE':
+        return preferences.messagePush;
+      case 'LIKE':
+        return preferences.likePush;
+      case 'COMMENT':
+        return preferences.commentPush;
+      case 'FEEDBACK':
+        return preferences.feedbackPush;
+      case 'CONNECTION':
+        return preferences.connectionPush;
+      case 'APPLICATION_RECEIVED':
+      case 'APPLICATION_ACCEPTED':
+      case 'APPLICATION_REJECTED':
+        return preferences.applicationPush;
+      default:
+        return false;
     }
   }
 
   private generateEmailTemplate(notification: InsertNotification, user: User): string {
+    const appUrl = process.env.APP_URL || 'http://localhost:5000';
+    
     return `
       <!DOCTYPE html>
       <html>
@@ -144,32 +186,27 @@ class NotificationServiceImpl implements NotificationService {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${notification.title}</title>
         <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
-          .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
-          .header { background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; padding: 40px 20px; text-align: center; }
-          .content { padding: 40px 20px; }
-          .footer { background-color: #f1f5f9; padding: 20px; text-align: center; color: #64748b; font-size: 14px; }
-          .button { display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 500; margin: 20px 0; }
-          .notification-content { background-color: #f8fafc; border-left: 4px solid #3b82f6; padding: 20px; margin: 20px 0; border-radius: 0 6px 6px 0; }
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #4f46e5; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; background-color: #f9fafb; }
+          .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
+          .button { display: inline-block; padding: 10px 20px; background-color: #4f46e5; color: white; text-decoration: none; border-radius: 4px; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
             <h1>VibeSync</h1>
-            <p>Stay connected with your professional network</p>
           </div>
           <div class="content">
-            <h2>Hi ${user.firstName || 'there'}!</h2>
-            <div class="notification-content">
-              <h3>${notification.title}</h3>
-              <p>${notification.message}</p>
-            </div>
-            <a href="${process.env.REPLIT_DOMAINS?.split(',')[0] || 'http://localhost:5000'}" class="button">View on VibeSync</a>
+            <h2>${notification.title}</h2>
+            <p>${notification.message}</p>
+            <a href="${appUrl}" class="button">View Notification</a>
           </div>
           <div class="footer">
-            <p>You're receiving this because you have email notifications enabled.</p>
-            <p>You can change your notification preferences in your profile settings.</p>
+            <p>This email was sent to ${user.email} because you have notifications enabled.</p>
+            <p>You can change your notification preferences in your account settings.</p>
           </div>
         </div>
       </body>
@@ -178,16 +215,15 @@ class NotificationServiceImpl implements NotificationService {
   }
 
   private generateWeeklyDigestTemplate(notifications: any[], user: User): string {
-    const messageCount = notifications.filter(n => n.type === 'message').length;
-    const likeCount = notifications.filter(n => n.type === 'like').length;
-    const commentCount = notifications.filter(n => n.type === 'comment').length;
-    const feedbackCount = notifications.filter(n => n.type === 'feedback').length;
+    const appUrl = process.env.APP_URL || 'http://localhost:5000';
     
-    // Group likes by type for better summary
-    const postLikes = notifications.filter(n => n.type === 'like' && n.title === 'Post Liked').length;
-    const commentLikes = notifications.filter(n => n.type === 'like' && n.title === 'Comment Liked').length;
-    const projectLikes = notifications.filter(n => n.type === 'like' && n.title === 'Project Liked').length;
-
+    const notificationsHtml = notifications.map(notification => `
+      <div style="margin-bottom: 20px; padding: 15px; border-left: 4px solid #4f46e5; background-color: #f8f9fa;">
+        <h3>${notification.title}</h3>
+        <p>${notification.message}</p>
+      </div>
+    `).join('');
+    
     return `
       <!DOCTYPE html>
       <html>
@@ -196,49 +232,25 @@ class NotificationServiceImpl implements NotificationService {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Your Weekly VibeSync Digest</title>
         <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
-          .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
-          .header { background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; padding: 40px 20px; text-align: center; }
-          .content { padding: 40px 20px; }
-          .footer { background-color: #f1f5f9; padding: 20px; text-align: center; color: #64748b; font-size: 14px; }
-          .stats { display: flex; flex-wrap: wrap; gap: 20px; margin: 30px 0; }
-          .stat-card { flex: 1; min-width: 120px; background-color: #f8fafc; padding: 20px; border-radius: 8px; text-align: center; border-left: 4px solid #3b82f6; }
-          .stat-number { font-size: 32px; font-weight: bold; color: #1e293b; margin-bottom: 8px; }
-          .stat-label { color: #64748b; font-size: 14px; }
-          .button { display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 500; margin: 20px 0; }
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #4f46e5; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; background-color: #f9fafb; }
+          .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
+          .button { display: inline-block; padding: 10px 20px; background-color: #4f46e5; color: white; text-decoration: none; border-radius: 4px; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
             <h1>VibeSync</h1>
-            <p>Your Weekly Activity Summary</p>
+            <p>Your Weekly Digest</p>
           </div>
           <div class="content">
-            <h2>Hi ${user.firstName || 'there'}!</h2>
-            <p>Here's what happened in your network this week:</p>
-            
-            <div class="stats">
-              <div class="stat-card">
-                <div class="stat-number">${messageCount}</div>
-                <div class="stat-label">New Messages</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-number">${likeCount}</div>
-                <div class="stat-label">Post Likes</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-number">${commentCount}</div>
-                <div class="stat-label">Comments</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-number">${feedbackCount}</div>
-                <div class="stat-label">Feedback</div>
-              </div>
-            </div>
-            
-            <p>Stay engaged with your professional network and discover new opportunities!</p>
-            <a href="${process.env.REPLIT_DOMAINS?.split(',')[0] || 'http://localhost:5000'}" class="button">Open VibeSync</a>
+            <h2>Hello ${user.firstName || user.email}!</h2>
+            <p>Here's what happened in your VibeSync network this week:</p>
+            ${notificationsHtml}
+            <a href="${appUrl}" class="button">Open VibeSync</a>
           </div>
           <div class="footer">
             <p>You're receiving this weekly digest because you have it enabled in your preferences.</p>
@@ -251,19 +263,14 @@ class NotificationServiceImpl implements NotificationService {
   }
 }
 
-export const notificationService = new NotificationServiceImpl();
-
 // Helper functions for creating specific notification types
 export async function createMessageNotification(receiverId: string, senderId: string, messageContent: string) {
   const sender = await storage.getUser(senderId);
   await notificationService.createNotification({
     userId: receiverId,
-    type: 'message',
-    title: t('notifications.newMessage'),
-    message: t('notifications.messageSent', {
-      name: sender?.firstName || t('notifications.someone'),
-      preview: `${messageContent.substring(0, 100)}${messageContent.length > 100 ? '...' : ''}`
-    }),
+    type: 'MESSAGE',
+    title: 'New Message',
+    message: `You have a new message from ${sender?.firstName || 'someone'}: ${messageContent.substring(0, 100)}${messageContent.length > 100 ? '...' : ''}`,
     relatedId: senderId,
     relatedUserId: senderId,
   });
@@ -273,11 +280,9 @@ export async function createLikeNotification(postOwnerId: string, likerId: strin
   const liker = await storage.getUser(likerId);
   await notificationService.createNotification({
     userId: postOwnerId,
-    type: 'like',
-    title: t('notifications.postLiked'),
-    message: t('notifications.postLikedBy', {
-      name: liker?.firstName || t('notifications.someone')
-    }),
+    type: 'LIKE',
+    title: 'Post Liked',
+    message: `Your post was liked by ${liker?.firstName || 'someone'}`,
     relatedId: postId,
     relatedUserId: likerId,
   });
@@ -287,11 +292,9 @@ export async function createCommentLikeNotification(commentOwnerId: string, like
   const liker = await storage.getUser(likerId);
   await notificationService.createNotification({
     userId: commentOwnerId,
-    type: 'like',
-    title: t('notifications.commentLiked'),
-    message: t('notifications.commentLikedBy', {
-      name: liker?.firstName || t('notifications.someone')
-    }),
+    type: 'LIKE',
+    title: 'Comment Liked',
+    message: `Your comment was liked by ${liker?.firstName || 'someone'}`,
     relatedId: commentId,
     relatedUserId: likerId,
   });
@@ -301,11 +304,9 @@ export async function createProjectLikeNotification(projectOwnerId: string, like
   const liker = await storage.getUser(likerId);
   await notificationService.createNotification({
     userId: projectOwnerId,
-    type: 'like',
-    title: t('notifications.projectLiked'),
-    message: t('notifications.projectLikedBy', {
-      name: liker?.firstName || t('notifications.someone')
-    }),
+    type: 'LIKE',
+    title: 'Project Liked',
+    message: `Your project was liked by ${liker?.firstName || 'someone'}`,
     relatedId: projectId,
     relatedUserId: likerId,
   });
@@ -315,12 +316,9 @@ export async function createCommentNotification(postOwnerId: string, commenterId
   const commenter = await storage.getUser(commenterId);
   await notificationService.createNotification({
     userId: postOwnerId,
-    type: 'comment',
-    title: t('notifications.newComment'),
-    message: t('notifications.commentedOnPost', {
-      name: commenter?.firstName || t('notifications.someone'),
-      preview: `${commentContent.substring(0, 100)}${commentContent.length > 100 ? '...' : ''}`
-    }),
+    type: 'COMMENT',
+    title: 'New Comment',
+    message: `Your post was commented on by ${commenter?.firstName || 'someone'}: ${commentContent.substring(0, 100)}${commentContent.length > 100 ? '...' : ''}`,
     relatedId: postId,
     relatedUserId: commenterId,
   });
@@ -330,14 +328,12 @@ export async function createFeedbackNotification(userId: string, feedbackGiverId
   const feedbackGiver = await storage.getUser(feedbackGiverId);
   await notificationService.createNotification({
     userId: userId,
-    type: 'feedback',
-    title: t('notifications.newFeedbackReceived'),
-    message: t('notifications.feedbackReceived', {
-      name: feedbackGiver?.firstName || t('notifications.someone'),
-      rating,
-      comment: comment ? `: "${comment.substring(0, 100)}${comment.length > 100 ? '...' : ''}"` : ''
-    }),
+    type: 'FEEDBACK',
+    title: 'New Feedback Received',
+    message: `You received feedback from ${feedbackGiver?.firstName || 'someone'} with rating ${rating}${comment ? `: "${comment.substring(0, 100)}${comment.length > 100 ? '...' : ''}"` : ''}`,
     relatedId: feedbackGiverId,
     relatedUserId: feedbackGiverId,
   });
 }
+
+export const notificationService = new NotificationServiceImpl();

@@ -61,9 +61,9 @@ async function importTestJobs() {
       },
       {
         title: "Backend Engineer - Python/Django",
-        description: "Join our backend team to build scalable APIs and microservices. Experience with Python, Django, and PostgreSQL is required.",
+        description: "Join our backend team to build scalable APIs and microservices. Experience with Python, Django, and MongoDB is required.",
         location: "New York, NY",
-        requiredSkills: ["python", "django", "postgresql", "rest", "api"],
+        requiredSkills: ["python", "django", "mongodb", "rest", "api"],
         seniorityLevel: "MID"
       },
       {

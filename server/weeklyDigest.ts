@@ -1,60 +1,39 @@
 import { storage } from './storage';
-import { notificationService } from './notifications';
 
-export async function sendWeeklyDigests() {
-  try {
-    console.log('Starting weekly digest process...');
-    
-    // For now, we'll skip getting all users since we don't have a getUsers method
-    // In production, you'd implement storage.getUsers() or iterate through user IDs
-    console.log('Weekly digest would be sent to all users with enabled preferences');
-    
-    // In production, iterate through users here
-    // for (const user of users) {
-    //   const preferences = await storage.getNotificationPreferences(user.id);
-    //   if (preferences?.weeklyDigest) {
-    //     await notificationService.sendWeeklyDigest(user.id);
-    //     console.log(`Weekly digest sent to user: ${user.email}`);
-    //   }
-    // }
-    
-    console.log('Weekly digest process completed');
-  } catch (error) {
-    console.error('Error sending weekly digests:', error);
-  }
-}
-
-// Function to create test notifications for demonstration
+// Create some test notifications for a user (useful for development/testing)
 export async function createTestNotifications(userId: string) {
   try {
-    // Create test notifications
+    // Create a message notification
     await storage.createNotification({
       userId,
-      type: 'message',
+      type: 'MESSAGE',
       title: 'New Message',
       message: 'John Doe sent you a message about the React project',
       relatedUserId: userId, // In real scenario, this would be the sender's ID
     });
 
+    // Create a like notification
     await storage.createNotification({
       userId,
-      type: 'like',
+      type: 'LIKE',
       title: 'Post Liked',
       message: 'Sarah Wilson liked your post about TypeScript best practices',
       relatedUserId: userId,
     });
 
+    // Create a comment notification
     await storage.createNotification({
       userId,
-      type: 'comment',
+      type: 'COMMENT',
       title: 'New Comment',
-      message: 'Mike Johnson commented on your post: "Great insights on React hooks!"',
+      message: 'Mike Johnson commented on your post about project management',
       relatedUserId: userId,
     });
 
+    // Create a feedback notification
     await storage.createNotification({
       userId,
-      type: 'feedback',
+      type: 'FEEDBACK',
       title: 'New Feedback',
       message: 'Emma Davis left you a 5-star feedback: "Excellent work on the project!"',
       relatedUserId: userId,
@@ -68,19 +47,22 @@ export async function createTestNotifications(userId: string) {
 
 // Simple scheduling function (in production, use a proper cron job)
 export function startWeeklyDigestScheduler() {
-  // Run weekly digest every Sunday at 9:00 AM
-  const interval = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+  // Run every Monday at 9 AM
+  const now = new Date();
+  const nextMonday = new Date(now);
+  nextMonday.setDate(now.getDate() + (8 - now.getDay()) % 7);
+  nextMonday.setHours(9, 0, 0, 0);
   
-  setInterval(() => {
-    const now = new Date();
-    const dayOfWeek = now.getDay(); // 0 = Sunday
-    const hour = now.getHours();
+  const timeUntilNextMonday = nextMonday.getTime() - now.getTime();
+  
+  setTimeout(async () => {
+    // In a real implementation, this would send digests to all users
+    console.log('Weekly digest scheduler would run here');
     
-    // Run on Sunday at 9 AM
-    if (dayOfWeek === 0 && hour === 9) {
-      sendWeeklyDigests();
-    }
-  }, 60 * 60 * 1000); // Check every hour
-  
-  console.log('Weekly digest scheduler started');
+    // Schedule the next run
+    setInterval(async () => {
+      // In a real implementation, this would send digests to all users
+      console.log('Weekly digest scheduler running...');
+    }, 7 * 24 * 60 * 60 * 1000); // Run every week
+  }, timeUntilNextMonday);
 }

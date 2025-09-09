@@ -211,12 +211,12 @@ async function fetchJobsFromSources() {
     },
     {
       title: "backend engineer python",
-      description: "Looking for backend engineer. Python, Django, PostgreSQL, REST APIs. Must have experience with cloud platforms and microservices architecture.",
+      description: "Looking for backend engineer. Python, Django, MongoDB, REST APIs. Must have experience with cloud platforms and microservices architecture.",
       company: "StartupCo",
       location: "San Francisco",
       contractType: "FULL_TIME",
       seniorityLevel: "MID",
-      requiredSkills: ["python", "django", "postgresql", "rest"],
+      requiredSkills: ["python", "django", "mongodb", "rest"],
       sourceUrl: "https://another-job-site.com/listing/67890",
       postedAt: new Date(Date.now() - 2 * 60 * 60 * 1000) // 2 ore fa
     },

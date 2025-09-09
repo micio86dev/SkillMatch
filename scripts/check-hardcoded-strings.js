@@ -13,7 +13,6 @@ const IGNORE_PATTERNS = [
   '.git',
   'dist',
   'build',
-  '.replit',
   '__pycache__',
   '.pytest_cache',
   'scripts/check-hardcoded-strings.js', // ignore self
@@ -23,10 +22,8 @@ const IGNORE_PATTERNS = [
   'tsconfig.json',
   'vite.config.ts',
   'tailwind.config.ts',
-  'drizzle.config.ts',
   '.gitignore',
   'README.md',
-  'replit.md'
 ];
 
 // File extensions to check

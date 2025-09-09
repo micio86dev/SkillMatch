@@ -386,7 +386,7 @@ export class JobScraper {
     return [
       {
         title: "Senior Full Stack Developer",
-        content: "We are looking for a Senior Full Stack Developer to join our dynamic team. You will be responsible for developing and maintaining web applications using React, Node.js, and PostgreSQL. Requirements: 5+ years of experience with JavaScript, TypeScript, React, Node.js, PostgreSQL, AWS, Docker. Experience with microservices architecture and CI/CD pipelines. Strong problem-solving skills and ability to work in agile environment. Competitive salary $120k-160k plus equity.",
+        content: "We are looking for a Senior Full Stack Developer to join our dynamic team. You will be responsible for developing and maintaining web applications using React, Node.js, and MongoDB. Requirements: 5+ years of experience with JavaScript, TypeScript, React, Node.js, MongoDB, AWS, Docker. Experience with microservices architecture and CI/CD pipelines. Strong problem-solving skills and ability to work in agile environment. Competitive salary $120k-160k plus equity.",
         companyName: "TechFlow Solutions",
         location: "Remote",
         sourceUrl: "https://indeed.com/jobs/tech-flow-1"
@@ -400,7 +400,7 @@ export class JobScraper {
       },
       {
         title: "Backend Node.js Engineer",
-        content: "We're seeking a Backend Engineer to design and implement scalable APIs and microservices. Requirements: Strong Node.js and Express.js experience, database design (PostgreSQL/MongoDB), RESTful API development, Docker and Kubernetes, AWS/Azure cloud services, automated testing, agile methodologies. Experience with GraphQL and event-driven architecture is a plus. Salary: $110k-150k.",
+        content: "We're seeking a Backend Engineer to design and implement scalable APIs and microservices. Requirements: Strong Node.js and Express.js experience, database design (MongoDB), RESTful API development, Docker and Kubernetes, AWS/Azure cloud services, automated testing, agile methodologies. Experience with GraphQL and event-driven architecture is a plus. Salary: $110k-150k.",
         companyName: "CloudScale Systems",
         location: "Austin, TX",
         sourceUrl: "https://indeed.com/jobs/cloudscale-3"

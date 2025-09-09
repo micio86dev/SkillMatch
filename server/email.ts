@@ -1,4 +1,7 @@
-import sgMail from '@sendgrid/mail';
+import sgMail = require('@sendgrid/mail');
+
+import type { User } from '../shared/schema';
+import { translateMessage } from './translations';
 
 if (!process.env.SENDGRID_API_KEY) {
   console.warn('SENDGRID_API_KEY not found. Email notifications will be disabled.');
@@ -20,14 +23,13 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
         name: 'VibeSync'
       },
       subject,
-      html,
+      html
     };
 
     await sgMail.send(msg);
-    console.log('Email sent successfully to:', to);
     return true;
   } catch (error) {
-    console.error('SendGrid email error:', error);
+    console.error('Error sending email:', error);
     return false;
   }
 }

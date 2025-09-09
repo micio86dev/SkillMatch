@@ -21,7 +21,7 @@ export default function Landing() {
       title: "Full-Stack Developer",
       rating: 4.9,
       reviews: 127,
-      skills: ["React", "Node.js", "PostgreSQL"],
+      skills: ["React", "Node.js", "MongoDB"],
       bio: "Senior developer with 8+ years building scalable web applications. Specialized in modern React ecosystems and cloud architecture.",
       availability: "available",
       rate: 85,

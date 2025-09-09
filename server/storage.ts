@@ -1,4 +1,4 @@
-import { prisma } from '@shared/db';
+import { prisma } from '../shared/db';
 import {
   User,
   ProfessionalProfile,
@@ -27,7 +27,7 @@ import {
   type InsertProjectSubscription,
   type InsertProjectApplication,
   type InsertProjectPreventive,
-} from "@shared/schema";
+} from "../shared/schema";
 
 // Interface for storage operations
 export interface IStorage {
@@ -107,7 +107,7 @@ export interface IStorage {
   createFeedback(feedback: InsertFeedback): Promise<Feedback>;
   
   // Notification operations
-  getNotifications(userId: string): Promise<Notification[]>;
+  getNotifications(userId: string, limit?: number): Promise<Notification[]>;
   getUnreadNotificationCount(userId: string): Promise<number>;
   createNotification(notification: InsertNotification): Promise<Notification>;
   markNotificationAsRead(notificationId: string): Promise<void>;
@@ -115,6 +115,10 @@ export interface IStorage {
   getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined>;
   createNotificationPreferences(preferences: InsertNotificationPreferences): Promise<NotificationPreferences>;
   updateNotificationPreferences(userId: string, preferences: Partial<InsertNotificationPreferences>): Promise<NotificationPreferences>;
+  getNotificationById(notificationId: string): Promise<Notification | undefined>;
+  markNotificationEmailSent(notificationId: string): Promise<void>;
+  markNotificationPushSent(notificationId: string): Promise<void>;
+  getNotificationsSince(userId: string, since: Date): Promise<Notification[]>;
   
   // Project subscription operations
   getProjectSubscriptions(userId: string): Promise<any[]>;
@@ -1077,12 +1081,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Notification operations
-  async getNotifications(userId: string): Promise<Notification[]> {
+  async getNotifications(userId: string, limit?: number): Promise<Notification[]> {
     try {
       return await prisma.notification.findMany({
         where: { userId },
         orderBy: { createdAt: 'desc' },
-        take: 50
+        take: limit || 50
       });
     } catch (error) {
       console.error('Error getting notifications:', error);
@@ -1169,6 +1173,59 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error updating notification preferences:', error);
       throw error;
+    }
+  }
+
+  // Additional notification methods
+  async getNotificationById(notificationId: string): Promise<Notification | undefined> {
+    try {
+      return await prisma.notification.findUnique({
+        where: { id: notificationId }
+      });
+    } catch (error) {
+      console.error('Error getting notification by ID:', error);
+      return undefined;
+    }
+  }
+
+  async markNotificationEmailSent(notificationId: string): Promise<void> {
+    try {
+      await prisma.notification.update({
+        where: { id: notificationId },
+        data: { isEmailSent: true }
+      });
+    } catch (error) {
+      console.error('Error marking notification email as sent:', error);
+      throw error;
+    }
+  }
+
+  async markNotificationPushSent(notificationId: string): Promise<void> {
+    try {
+      await prisma.notification.update({
+        where: { id: notificationId },
+        data: { isPushSent: true }
+      });
+    } catch (error) {
+      console.error('Error marking notification push as sent:', error);
+      throw error;
+    }
+  }
+
+  async getNotificationsSince(userId: string, since: Date): Promise<Notification[]> {
+    try {
+      return await prisma.notification.findMany({
+        where: {
+          userId,
+          createdAt: {
+            gte: since
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+    } catch (error) {
+      console.error('Error getting notifications since date:', error);
+      return [];
     }
   }
 
